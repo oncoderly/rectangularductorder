@@ -18,6 +18,7 @@ interface SelectedPart {
   checkboxes: PartCheckbox;
   directions?: { [key: string]: number };
   quantity: number;
+  notes?: string;
 }
 
 interface PartSelectorProps {
@@ -30,6 +31,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   const [checkboxes, setCheckboxes] = useState<PartCheckbox>({});
   const [directions, setDirections] = useState<{ [key: string]: number }>({});
   const [quantity, setQuantity] = useState<number>(1);
+  const [notes, setNotes] = useState<string>('');
 
   const selectedPart = selectedPartKey ? parts[selectedPartKey] : null;
 
@@ -48,6 +50,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     setCheckboxes({});
     setDirections({});
     setQuantity(1);
+    setNotes('');
   };
 
   const handleMeasurementChange = (key: string, value: string) => {
@@ -82,7 +85,8 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
       measurements: { ...measurements },
       checkboxes: { ...checkboxes },
       directions: { ...directions },
-      quantity
+      quantity,
+      notes: notes.trim() || undefined
     };
 
     onAddPart(newPart);
@@ -92,6 +96,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     setCheckboxes({});
     setDirections({});
     setQuantity(1);
+    setNotes('');
   };
 
   return (
@@ -149,57 +154,273 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                       {measurement.label}
                     </h4>
                     {measurement.directions.map((direction) => (
-                      <div key={direction.key} className="form-row">
-                        <label className="measurement-label">{direction.label}:</label>
-                        <div className="input-unit-wrap">
+                      <div key={direction.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        {/* Label */}
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#34495e', minWidth: '60px', textAlign: 'right' }}>
+                          {direction.label}:
+                        </label>
+                        
+                        {/* Input */}
+                        <div style={{ position: 'relative', minWidth: '60px' }}>
                           <input
                             type="number"
                             min="0"
+                            max="50"
                             className="focus-ring"
                             placeholder="0"
-                            style={{ width: '100px' }}
+                            style={{ 
+                              width: '60px',
+                              textAlign: 'center',
+                              fontSize: '11px',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              border: '1px solid #e3e8ed'
+                            }}
+                            value={directions[`${measurement.key}_${direction.key}`] || ''}
                             onChange={(e) => handleDirectionChange(
                               measurement.key, 
                               direction.key, 
-                              Number(e.target.value)
+                              Number(e.target.value) || 0
                             )}
                           />
-                          <span className="unit-inside">adet</span>
+                          <span style={{ 
+                            fontSize: '10px',
+                            color: '#6c757d',
+                            marginLeft: '2px'
+                          }}>adet</span>
                         </div>
+                        
+                        {/* -/+ Buttons */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
+                            const newValue = Math.max(0, currentValue - 1);
+                            handleDirectionChange(measurement.key, direction.key, newValue);
+                          }}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            background: '#ff6b6b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          −
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
+                            const newValue = Math.min(50, currentValue + 1);
+                            handleDirectionChange(measurement.key, direction.key, newValue);
+                          }}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            background: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          +
+                        </button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="form-row">
-                    <label className="measurement-label">{measurement.label}:</label>
-                    <div className="input-unit-wrap">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    {/* Label */}
+                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#34495e', minWidth: '40px', textAlign: 'right' }}>
+                      {measurement.label}:
+                    </label>
+                    
+                    {/* Slider */}
+                    <div style={{ flex: '1', maxWidth: '100px' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        step="1"
+                        value={measurements[measurement.key] || 0}
+                        onChange={(e) => handleMeasurementChange(measurement.key, e.target.value)}
+                        style={{
+                          width: '100%',
+                          height: '6px',
+                          borderRadius: '3px',
+                          background: '#e3e8ed',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Value Display + Input */}
+                    <div style={{ position: 'relative', minWidth: '60px' }}>
                       <input
                         type="number"
                         min="0"
-                        step="0.1"
+                        max="200"
+                        step="1"
                         className="focus-ring"
-                        placeholder="Değer girin"
-                        style={{ width: '100%', maxWidth: '150px' }}
+                        placeholder="0"
+                        style={{ 
+                          width: '60px',
+                          textAlign: 'center',
+                          fontSize: '11px',
+                          padding: '4px',
+                          borderRadius: '4px',
+                          border: '1px solid #e3e8ed'
+                        }}
                         value={measurements[measurement.key] || ''}
-                        onChange={(e) => handleMeasurementChange(measurement.key, e.target.value)}
+                        onChange={(e) => {
+                          const value = Math.min(200, Math.max(0, Number(e.target.value) || 0));
+                          handleMeasurementChange(measurement.key, value.toString());
+                        }}
                       />
-                      <span className="unit-inside">mm</span>
+                      <span style={{ 
+                        fontSize: '10px',
+                        color: '#6c757d',
+                        marginLeft: '2px'
+                      }}>cm</span>
                     </div>
+                    
+                    {/* -/+ Buttons */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentValue = Number(measurements[measurement.key]) || 0;
+                        const newValue = Math.max(0, currentValue - 5);
+                        handleMeasurementChange(measurement.key, newValue.toString());
+                      }}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        background: '#ff6b6b',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      −
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentValue = Number(measurements[measurement.key]) || 0;
+                        const newValue = Math.min(200, currentValue + 5);
+                        handleMeasurementChange(measurement.key, newValue.toString());
+                      }}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        background: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      +
+                    </button>
                   </div>
                 )}
               </div>
             ))}
             
-            <div className="form-row">
-              <label className="measurement-label">Adet:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              {/* Label */}
+              <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#34495e', minWidth: '40px', textAlign: 'right' }}>
+                Adet:
+              </label>
+              
+              {/* Input */}
               <input
                 type="number"
                 min="1"
+                max="100"
                 className="focus-ring"
-                style={{ width: '100%', maxWidth: '100px' }}
+                style={{ 
+                  width: '60px',
+                  textAlign: 'center',
+                  fontSize: '11px',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  border: '1px solid #e3e8ed'
+                }}
                 value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
               />
+              
+              {/* -/+ Buttons */}
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  background: '#ff6b6b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                −
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.min(100, quantity + 1))}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  background: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                +
+              </button>
             </div>
           </div>
 
@@ -243,6 +464,28 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
               </div>
             </div>
           )}
+
+          <div style={{ marginTop: '20px' }}>
+            <div className="form-row">
+              <label htmlFor="notes" style={{ fontSize: '32px' }}>📝 Notlar:</label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Bu parça için özel notlarınızı yazın..."
+                style={{
+                  width: '100%',
+                  minHeight: '80px',
+                  padding: '12px',
+                  fontSize: '28px',
+                  border: '2px solid #e3e8ed',
+                  borderRadius: '8px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+          </div>
 
           <button
             onClick={handleAddPart}

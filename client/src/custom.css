@@ -76,7 +76,7 @@ html, body {
 
 .form-row label {
     font-weight: bold;
-    font-size: 15px;
+    font-size: 30px;
     color: #34495e;
 }
 
@@ -84,7 +84,7 @@ html, body {
 .form-row input[type="number"],
 .form-row select {
     padding: 8px 12px;
-    font-size: 14px;
+    font-size: 28px;
     border: 2px solid #e3e8ed;
     border-radius: 8px;
     box-sizing: border-box;
@@ -193,8 +193,8 @@ html, body {
 }
 
 .order-img img {
-    max-width: 120px;
-    max-height: 120px;
+    max-width: 360px;
+    max-height: 360px;
     width: 100%;
     height: auto;
     border-radius: 12px;

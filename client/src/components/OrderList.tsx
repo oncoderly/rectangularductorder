@@ -102,8 +102,8 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           alignItems: 'flex-start',
         },
         partImage: {
-          width: 120,
-          height: 120,
+          width: 360,
+          height: 360,
           borderRadius: 12,
           borderWidth: 2,
           borderColor: '#e3e8ed',
@@ -261,7 +261,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                         {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
                           <View key={key} style={styles.measurement}>
                             <Text style={styles.measurementLabel}>{formatMeasurementLabel(key)}</Text>
-                            <Text style={styles.measurementValue}>{value} mm</Text>
+                            <Text style={styles.measurementValue}>{value} cm</Text>
                           </View>
                         ))}
                       </View>
@@ -413,7 +413,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                   {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
                     <div key={key}>
                       <span className="measurement-label">{formatMeasurementLabel(key)}:</span>
-                      <span className="measurement-value">{value} mm</span>
+                      <span className="measurement-value">{value} cm</span>
                     </div>
                   ))}
                   {part.directions && Object.entries(part.directions).filter(([, value]) => value > 0).map(([key, value]) => (
