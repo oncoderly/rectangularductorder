@@ -1,8 +1,23 @@
 import React from 'react';
-import { pdf, Document, Page, Text, View, Image } from '@react-pdf/renderer';
+import { pdf, Document, Page, Text, View, Image, Font } from '@react-pdf/renderer';
 import { parts } from '../data/parts';
 import { pdfStyles } from '../styles/pdfStyles';
 import '../styles/OrderList.css';
+
+// Türkçe karakter desteği için font kaydı
+Font.register({
+  family: 'Roboto',
+  fonts: [
+    {
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-light-webfont.ttf',
+      fontWeight: 'normal'
+    },
+    {
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf',
+      fontWeight: 'bold'
+    }
+  ]
+});
 
 interface PartMeasurement {
   [key: string]: number | string;
@@ -52,10 +67,10 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
       const PDFDocument = () => (
         <Document>
           <Page size="A4" style={pdfStyles.page}>
-            <Text style={pdfStyles.header}>RECTANGULAR DUCT SİPARİŞİ</Text>
+            <Text style={pdfStyles.header}>HAVA KANALI SİPARİŞ LİSTESİ</Text>
             
             <View style={pdfStyles.customerInfo}>
-              <Text style={pdfStyles.customerTitle}>📋 Müşteri Bilgileri</Text>
+              <Text style={pdfStyles.customerTitle}>Müşteri Bilgileri</Text>
               <Text style={pdfStyles.customerText}>Müşteri: {user.firstName} {user.lastName}</Text>
               <Text style={pdfStyles.customerText}>E-posta: {user.email}</Text>
               <Text style={pdfStyles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
@@ -71,7 +86,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                 <View style={pdfStyles.partContent}>
                   <View style={pdfStyles.partHeader}>
                     <Text style={pdfStyles.partTitle}>#{index + 1} - {part.name}</Text>
-                    <Text style={pdfStyles.partQuantity}>📦 Adet: {part.quantity}</Text>
+                    <Text style={pdfStyles.partQuantity}>Adet: {part.quantity}</Text>
                   </View>
                   
                   {(() => {
@@ -80,7 +95,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                     
                     return (
                       <View style={pdfStyles.measurementsContainer}>
-                        <Text style={pdfStyles.measurementsTitle}>📏 Ölçüler:</Text>
+                        <Text style={pdfStyles.measurementsTitle}>Ölçüler</Text>
                         <View style={pdfStyles.measurementRow}>
                           {selectedPart.measurements.map((measurement) => {
                             if (measurement.directions) {
@@ -99,7 +114,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                               return (
                                 <View key={measurement.key} style={pdfStyles.measurement}>
                                   <Text style={pdfStyles.measurementLabel}>{measurement.label}:</Text>
-                                  <Text style={pdfStyles.measurementValue}>{value} cm</Text>
+                                  <Text style={pdfStyles.measurementValue}>{value} {(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? '°' : 'cm'}</Text>
                                 </View>
                               );
                             }
@@ -115,12 +130,11 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                     
                     return (
                       <View style={pdfStyles.optionsContainer}>
-                        <Text style={pdfStyles.optionsTitle}>⚙️ Seçenekler:</Text>
-                        {selectedPart.checkboxes.map((checkbox) => {
-                          const isChecked = part.checkboxes[checkbox.key] || false;
+                        <Text style={pdfStyles.optionsTitle}>Seçenekler:</Text>
+                        {selectedPart.checkboxes.filter((checkbox) => part.checkboxes[checkbox.key] || false).map((checkbox) => {
                           return (
                             <Text key={checkbox.key} style={pdfStyles.option}>
-                              {isChecked ? '✓' : '☐'} {checkbox.label}
+                              ✓ {checkbox.label}
                             </Text>
                           );
                         })}
@@ -240,23 +254,38 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                   <div className="measurements-section-title">
                     📏 Ölçüler:
                   </div>
-                  {Object.entries(part.measurements).map(([key, value]) => (
-                    <div key={key}>
-                      <span className="measurement-label">{formatMeasurementLabel(key)}:</span>
-                      <span className="measurement-value">{value} cm</span>
-                    </div>
-                  ))}
-                  {part.directions && Object.entries(part.directions).filter(([, value]) => value > 0).map(([key, value]) => (
-                    <div key={key}>
-                      <span className="measurement-label">{key.replace('_', ' ').toUpperCase()}:</span>
-                      <span className="measurement-value">{value} adet</span>
-                    </div>
-                  ))}
+                  {(() => {
+                    const selectedPart = parts[part.partKey];
+                    if (!selectedPart) return null;
+                    
+                    return selectedPart.measurements.map((measurement) => {
+                      if (measurement.directions) {
+                        return measurement.directions.map((direction) => {
+                          const directionKey = `${measurement.key}_${direction.key}`;
+                          const value = part.directions?.[directionKey] || 0;
+                          return (
+                            <div key={directionKey}>
+                              <span className="measurement-label">{direction.label}:</span>
+                              <span className="measurement-value">{value} adet</span>
+                            </div>
+                          );
+                        });
+                      } else {
+                        const value = part.measurements[measurement.key] || 0;
+                        return (
+                          <div key={measurement.key}>
+                            <span className="measurement-label">{measurement.label}:</span>
+                            <span className="measurement-value">{value} {(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? '°' : 'cm'}</span>
+                          </div>
+                        );
+                      }
+                    }).flat();
+                  })()}
                   
                   {Object.keys(part.checkboxes).filter(key => part.checkboxes[key]).length > 0 && (
                     <div className="options-section">
                       <div className="options-title">
-                        ⚙️ Seçenekler:
+                        Secenekler:
                       </div>
                       {Object.entries(part.checkboxes).filter(([, value]) => value).map(([key]) => (
                         <div key={key} className="option-item">

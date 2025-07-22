@@ -33,7 +33,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l",  label: "L" }
+            { key: "l",  label: "L", default: 120 }
         ],
         checkboxes: []
     },
@@ -43,8 +43,8 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "r1", label: "R1", default: 90 },
-            { key: "a1", label: "A1" }
+            { key: "r1", label: "R1", default: 15 },
+            { key: "a1", label: "A (Açı)", default: 90 }
         ],
         checkboxes: []
     },
@@ -56,13 +56,12 @@ export const parts: PartData = {
             { key: "h1", label: "H1" },
             { key: "w2", label: "W2" },
             { key: "h2", label: "H2" },
-            { key: "r1", label: "R1", default: 90 },
-            { key: "a1", label: "A1" }
+            { key: "r1", label: "R1", default: 15 },
+            { key: "a1", label: "A (Açı)", default: 90 }
         ],
         checkboxes: [
-            { key: "alt_duz", label: "Alt Düz" },
-            { key: "ust_duz", label: "Üst Düz" },
-            { key: "ortali",  label: "Ortali" }
+            { key: "sol_duz", label: "Sol Düz" },
+            { key: "sag_duz", label: "Sağ Düz" }
         ]
     },
     "3-reduksiyon.png": {
@@ -71,7 +70,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l",  label: "L" },
+            { key: "l",  label: "L", default: 40 },
             { key: "w2", label: "W2" },
             { key: "h2", label: "H2" }
         ],
@@ -79,8 +78,7 @@ export const parts: PartData = {
             { key: "sol_duz", label: "Sol Düz" },
             { key: "sag_duz", label: "Sağ Düz" },
             { key: "alt_duz", label: "Alt Düz" },
-            { key: "ust_duz", label: "Üst Düz" },
-            { key: "ortali",  label: "Ortali" }
+            { key: "ust_duz", label: "Üst Düz" }
         ]
     },
     "4-pantolon-tip1.png": {
@@ -89,25 +87,17 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 40 },
             { key: "h2", label: "H2" },
             { key: "w2", label: "W2" },
             { key: "w3", label: "W3" },
             { key: "h3", label: "H3" },
-            { key: "r1", label: "R1", default: 90 },
-            { key: "a1", label: "A1" }
+            { key: "r1", label: "R1", default: 15 },
+            { key: "a1", label: "A (Açı)", default: 90 }
         ],
         checkboxes: [
-            { key: "sol1_duz", label: "Sol-1 Düz" },
-            { key: "sag1_duz", label: "Sağ-1 Düz" },
-            { key: "alt1_duz", label: "Alt-1 Düz" },
-            { key: "ust1_duz", label: "Üst-1 Düz" },
-            { key: "ortali1", label: "Ortali-1" },
-            { key: "sol2_duz", label: "Sol-2 Düz" },
-            { key: "sag2_duz", label: "Sağ-2 Düz" },
-            { key: "alt2_duz", label: "Alt-2 Düz" },
-            { key: "ust2_duz", label: "Üst-2 Düz" },
-            { key: "ortali2", label: "Ortali-2" }
+            { key: "alt_duz", label: "Alt Düz" },
+            { key: "ust_duz", label: "Üst Düz" }
         ]
     },
     "5-saplama-yaka.png": {
@@ -116,7 +106,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 10 },
             { key: "w2", label: "W2" }
         ],
         checkboxes: []
@@ -136,7 +126,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 40 },
             { key: "o", label: "Ø" }
         ],
         checkboxes: []
@@ -147,7 +137,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 100 },
             { key: "w2", label: "W2" },
             { key: "h2", label: "H2" },
             { key: "es", label: "ES" }
@@ -164,10 +154,10 @@ export const parts: PartData = {
             { key: "w2", label: "W2" },
             { key: "w3", label: "W3" },
             { key: "h3", label: "H3" },
-            { key: "r1", label: "R1", default: 90 },
-            { key: "a1", label: "A1" },
-            { key: "r2", label: "R2", default: 90 },
-            { key: "a2", label: "A2" }
+            { key: "r1", label: "R1", default: 15 },
+            { key: "a1", label: "A1 (Açı)", default: 90 },
+            { key: "r2", label: "R2", default: 15 },
+            { key: "a2", label: "A2 (Açı)", default: 90 }
         ],
         checkboxes: [
             { key: "alt1_duz", label: "Alt-1 Düz" },
@@ -184,7 +174,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 40 },
             {
                 key: "o",
                 label: "Ø",
@@ -205,7 +195,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 40 },
             { key: "o", label: "Ø" }
         ],
         checkboxes: []
@@ -216,7 +206,7 @@ export const parts: PartData = {
         measurements: [
             { key: "w1", label: "W1" },
             { key: "h1", label: "H1" },
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 40 },
             {
                 key: "o",
                 label: "Ø MANŞON YÖNÜ VE ADETİ",
@@ -244,7 +234,7 @@ export const parts: PartData = {
         name: "Manşon",
         image: "images/MANŞON.png",
         measurements: [
-            { key: "l", label: "L" },
+            { key: "l", label: "L", default: 20 },
             { key: "o", label: "Ø" }
         ],
         checkboxes: []

@@ -39,6 +39,19 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
 
   const selectedPart = selectedPartKey ? parts[selectedPartKey] : null;
 
+  // İlk yükleme sırasında varsayılan değerleri ayarla
+  useEffect(() => {
+    if (selectedPart) {
+      const newMeasurements: PartMeasurement = {};
+      selectedPart.measurements.forEach(m => {
+        if (m.default !== undefined) {
+          newMeasurements[m.key] = m.default.toString();
+        }
+      });
+      setMeasurements(newMeasurements);
+    }
+  }, [selectedPart]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (notesRef.current && imageRef.current) {
@@ -68,7 +81,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     const newMeasurements: PartMeasurement = {};
     part.measurements.forEach(m => {
       if (m.default !== undefined) {
-        newMeasurements[m.key] = m.default;
+        newMeasurements[m.key] = m.default.toString();
       }
     });
     setMeasurements(newMeasurements);
@@ -86,10 +99,76 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   };
 
   const handleCheckboxChange = (key: string, checked: boolean) => {
-    setCheckboxes(prev => ({
-      ...prev,
-      [key]: checked
-    }));
+    // Pantolon Tip 1 için Alt Düz ve Üst Düz seçenekleri birbirini iptal etsin
+    if (selectedPartKey === '4-pantolon-tip1.png' && (key === 'alt_duz' || key === 'ust_duz')) {
+      if (checked) {
+        // Seçilen checkbox'ı aç, diğerini kapat
+        setCheckboxes(prev => ({
+          ...prev,
+          alt_duz: key === 'alt_duz',
+          ust_duz: key === 'ust_duz'
+        }));
+      } else {
+        // Checkbox'ı kapat
+        setCheckboxes(prev => ({
+          ...prev,
+          [key]: false
+        }));
+      }
+    }
+    // Redüksiyonlu Dirsek için Sol Düz ve Sağ Düz seçenekleri birbirini iptal etsin
+    else if (selectedPartKey === '2-reduksiyonlu-dirsek.png' && (key === 'sol_duz' || key === 'sag_duz')) {
+      if (checked) {
+        // Seçilen checkbox'ı aç, diğerini kapat
+        setCheckboxes(prev => ({
+          ...prev,
+          sol_duz: key === 'sol_duz',
+          sag_duz: key === 'sag_duz'
+        }));
+      } else {
+        // Checkbox'ı kapat
+        setCheckboxes(prev => ({
+          ...prev,
+          [key]: false
+        }));
+      }
+    }
+    // Redüksiyon için Sol Düz ve Sağ Düz seçenekleri birbirini iptal etsin
+    else if (selectedPartKey === '3-reduksiyon.png' && (key === 'sol_duz' || key === 'sag_duz')) {
+      if (checked) {
+        setCheckboxes(prev => ({
+          ...prev,
+          sol_duz: key === 'sol_duz',
+          sag_duz: key === 'sag_duz'
+        }));
+      } else {
+        setCheckboxes(prev => ({
+          ...prev,
+          [key]: false
+        }));
+      }
+    }
+    // Redüksiyon için Alt Düz ve Üst Düz seçenekleri birbirini iptal etsin
+    else if (selectedPartKey === '3-reduksiyon.png' && (key === 'alt_duz' || key === 'ust_duz')) {
+      if (checked) {
+        setCheckboxes(prev => ({
+          ...prev,
+          alt_duz: key === 'alt_duz',
+          ust_duz: key === 'ust_duz'
+        }));
+      } else {
+        setCheckboxes(prev => ({
+          ...prev,
+          [key]: false
+        }));
+      }
+    } else {
+      // Diğer parçalar için normal davranış
+      setCheckboxes(prev => ({
+        ...prev,
+        [key]: checked
+      }));
+    }
   };
 
   const handleDirectionChange = (measurementKey: string, directionKey: string, value: number) => {
@@ -274,65 +353,26 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     {/* Label */}
-                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#34495e', minWidth: '40px', textAlign: 'right' }}>
+                    <label style={{ 
+                      fontSize: '12px', 
+                      fontWeight: 'bold', 
+                      color: '#34495e', 
+                      minWidth: '60px', 
+                      textAlign: 'right',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      justifyContent: 'flex-end',
+                      height: '24px'
+                    }}>
                       {measurement.label}:
                     </label>
                     
-                    {/* Slider */}
-                    <div style={{ flex: '1', maxWidth: '100px' }}>
-                      <input
-                        type="range"
-                        min="0"
-                        max="200"
-                        step="1"
-                        value={measurements[measurement.key] || 0}
-                        onChange={(e) => handleMeasurementChange(measurement.key, e.target.value)}
-                        style={{
-                          width: '100%',
-                          height: '6px',
-                          borderRadius: '3px',
-                          background: '#e3e8ed',
-                          outline: 'none',
-                          cursor: 'pointer'
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Value Display + Input */}
-                    <div style={{ position: 'relative', minWidth: '60px' }}>
-                      <input
-                        type="number"
-                        min="0"
-                        max="200"
-                        step="1"
-                        className="focus-ring"
-                        placeholder="0"
-                        style={{ 
-                          width: '60px',
-                          textAlign: 'center',
-                          fontSize: '11px',
-                          padding: '4px',
-                          borderRadius: '4px',
-                          border: '1px solid #e3e8ed'
-                        }}
-                        value={measurements[measurement.key] || ''}
-                        onChange={(e) => {
-                          const value = Math.min(200, Math.max(0, Number(e.target.value) || 0));
-                          handleMeasurementChange(measurement.key, value.toString());
-                        }}
-                      />
-                      <span style={{ 
-                        fontSize: '10px',
-                        color: '#6c757d',
-                        marginLeft: '2px'
-                      }}>cm</span>
-                    </div>
-                    
-                    {/* -/+ Buttons */}
+                    {/* -5 Button */}
                     <button
                       type="button"
                       onClick={() => {
                         const currentValue = Number(measurements[measurement.key]) || 0;
+                        const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
                         const newValue = Math.max(0, currentValue - 5);
                         handleMeasurementChange(measurement.key, newValue.toString());
                       }}
@@ -354,11 +394,75 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                       −
                     </button>
                     
+                    {/* Slider */}
+                    <div style={{ flex: '1', maxWidth: '100px' }}>
+                      <input
+                        type="range"
+                        min="0"
+                        max={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? '180' : '200'}
+                        step="1"
+                        value={measurements[measurement.key] || 0}
+                        onChange={(e) => handleMeasurementChange(measurement.key, e.target.value)}
+                        style={{
+                          width: '100%',
+                          height: '6px',
+                          borderRadius: '3px',
+                          background: '#e3e8ed',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Value Display + Input */}
+                    <div style={{ position: 'relative', minWidth: '60px' }}>
+                      <input
+                        type={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 'text' : 'number'}
+                        min={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "0"}
+                        max={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "200"}
+                        step={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "1"}
+                        className="focus-ring"
+                        placeholder={measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2' ? '0°' : '0'}
+                        style={{ 
+                          width: '60px',
+                          textAlign: 'center',
+                          fontSize: '11px',
+                          padding: '4px',
+                          borderRadius: '4px',
+                          border: '1px solid #e3e8ed'
+                        }}
+                        value={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 
+                          (measurements[measurement.key] !== undefined && measurements[measurement.key] !== '' ? measurements[measurement.key] + '°' : '') : 
+                          (measurements[measurement.key] || '')}
+                        onChange={(e) => {
+                          const inputValue = e.target.value.replace('°', '');
+                          if (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') {
+                            // Açı değerleri için sadece sayı girişi kontrol et
+                            const numericValue = inputValue.replace(/[^0-9]/g, '');
+                            const value = Math.min(180, Math.max(0, Number(numericValue) || 0));
+                            handleMeasurementChange(measurement.key, value.toString());
+                          } else {
+                            const value = Math.min(200, Math.max(0, Number(inputValue) || 0));
+                            handleMeasurementChange(measurement.key, value.toString());
+                          }
+                        }}
+                      />
+                      {!(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') && (
+                        <span style={{ 
+                          fontSize: '10px',
+                          color: '#6c757d',
+                          marginLeft: '2px'
+                        }}>cm</span>
+                      )}
+                    </div>
+                    
+                    {/* +5 Button */}
                     <button
                       type="button"
                       onClick={() => {
                         const currentValue = Number(measurements[measurement.key]) || 0;
-                        const newValue = Math.min(200, currentValue + 5);
+                        const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
+                        const newValue = Math.min(maxValue, currentValue + 5);
                         handleMeasurementChange(measurement.key, newValue.toString());
                       }}
                       style={{
