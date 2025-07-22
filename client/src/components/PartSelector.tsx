@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { parts } from '../data/parts';
 
 interface PartMeasurement {
@@ -32,8 +32,33 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   const [directions, setDirections] = useState<{ [key: string]: number }>({});
   const [quantity, setQuantity] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
+  const [imageScrollUp, setImageScrollUp] = useState<boolean>(false);
+  
+  const notesRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
 
   const selectedPart = selectedPartKey ? parts[selectedPartKey] : null;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (notesRef.current && imageRef.current) {
+        const notesRect = notesRef.current.getBoundingClientRect();
+        const imageRect = imageRef.current.getBoundingClientRect();
+        
+        // Notes kısmı görünür alanda mı kontrol et
+        const notesVisible = notesRect.top < window.innerHeight && notesRect.bottom > 0;
+        
+        if (notesVisible) {
+          setImageScrollUp(true);
+        } else {
+          setImageScrollUp(false);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handlePartSelect = (partKey: string) => {
     setSelectedPartKey(partKey);
@@ -130,7 +155,10 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
       {/* Selected Part Details */}
       {selectedPart && (
         <div style={{ marginTop: '24px' }}>
-          <div className="image-panel">
+          <div 
+            ref={imageRef}
+            className={`image-panel ${imageScrollUp ? 'scroll-up' : ''}`}
+          >
             <img 
               src={`/${selectedPart.image}`} 
               alt={selectedPart.name}
@@ -465,7 +493,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
             </div>
           )}
 
-          <div style={{ marginTop: '20px' }}>
+          <div ref={notesRef} style={{ marginTop: '20px' }}>
             <div className="form-row">
               <label htmlFor="notes" style={{ fontSize: '32px' }}>📝 Notlar:</label>
               <textarea

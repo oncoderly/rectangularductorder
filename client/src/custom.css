@@ -54,6 +54,14 @@ html, body {
     justify-content: center;
     border-radius: 12px;
     margin-bottom: 24px;
+    position: sticky;
+    top: 20px;
+    z-index: 10;
+    transition: transform 0.3s ease;
+}
+
+.image-panel.scroll-up {
+    transform: translateY(-100px);
 }
 
 .image-panel img {
