@@ -1,6 +1,8 @@
 import React from 'react';
-import { pdf, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { pdf, Document, Page, Text, View, Image } from '@react-pdf/renderer';
 import { parts } from '../data/parts';
+import { pdfStyles } from '../styles/pdfStyles';
+import '../styles/OrderList.css';
 
 interface PartMeasurement {
   [key: string]: number | string;
@@ -46,217 +48,30 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
 
     setLoading(true);
     try {
-      const styles = StyleSheet.create({
-        page: {
-          fontFamily: 'Helvetica',
-          fontSize: 6,
-          paddingTop: 30,
-          paddingLeft: 60,
-          paddingRight: 60,
-          paddingBottom: 30,
-          backgroundColor: '#f5f7fa',
-        },
-        header: {
-          fontSize: 12,
-          fontWeight: 'bold',
-          textAlign: 'center',
-          marginBottom: 30,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: '#667eea',
-          paddingBottom: 15,
-          borderBottomWidth: 3,
-          borderBottomColor: '#667eea',
-        },
-        customerInfo: {
-          marginBottom: 25,
-          backgroundColor: '#ffffff',
-          padding: 20,
-          borderRadius: 12,
-          borderWidth: 2,
-          borderColor: '#e3e8ed',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-        },
-        customerTitle: {
-          fontSize: 7,
-          fontWeight: 'bold',
-          color: '#2c3e50',
-          marginBottom: 10,
-          paddingBottom: 8,
-          borderBottomWidth: 1,
-          borderBottomColor: '#e3e8ed',
-        },
-        customerText: {
-          fontSize: 6,
-          color: '#495057',
-          marginBottom: 5,
-        },
-        partItem: {
-          marginBottom: 15,
-          padding: 15,
-          backgroundColor: '#ffffff',
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: '#e3e8ed',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-          flexDirection: 'row',
-          gap: 15,
-          alignItems: 'flex-start',
-          minHeight: 200,
-        },
-        partImage: {
-          width: 150,
-          height: 150,
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: '#e3e8ed',
-          backgroundColor: '#f8f9fa',
-          objectFit: 'contain',
-          flexShrink: 0,
-        },
-        partContent: {
-          flex: 1,
-        },
-        partHeader: {
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 15,
-          paddingBottom: 10,
-          borderBottomWidth: 1,
-          borderBottomColor: '#f0f0f0',
-        },
-        partTitle: {
-          fontSize: 8,
-          fontWeight: 'bold',
-          color: '#2c3e50',
-        },
-        partQuantity: {
-          fontSize: 6,
-          fontWeight: 'bold',
-          backgroundColor: '#ff6b6b',
-          color: '#ffffff',
-          padding: '8px 12px',
-          borderRadius: 8,
-        },
-        measurementsContainer: {
-          marginVertical: 10,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          padding: 12,
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: '#e3e8ed',
-        },
-        measurementsTitle: {
-          fontWeight: 'bold',
-          marginBottom: 8,
-          color: '#495057',
-          fontSize: 5.5,
-        },
-        measurementRow: {
-          flexDirection: 'column',
-          gap: 6,
-        },
-        measurement: {
-          backgroundColor: '#f8f9ff',
-          padding: 8,
-          borderRadius: 6,
-          borderLeftWidth: 2,
-          borderLeftColor: '#667eea',
-          minWidth: 0,
-          marginBottom: 4,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        },
-        measurementLabel: {
-          fontSize: 5,
-          fontWeight: 'bold',
-          color: '#495057',
-          marginBottom: 2,
-        },
-        measurementValue: {
-          fontSize: 6,
-          color: '#667eea',
-          fontWeight: 'bold',
-        },
-        optionsContainer: {
-          marginTop: 10,
-          backgroundColor: '#f8f9fa',
-          padding: 8,
-          borderRadius: 6,
-          borderWidth: 1,
-          borderColor: '#e3e8ed',
-        },
-        optionsTitle: {
-          fontWeight: 'bold',
-          marginBottom: 6,
-          color: '#495057',
-          fontSize: 5,
-        },
-        option: {
-          color: '#28a745',
-          marginBottom: 3,
-          fontSize: 5,
-        },
-        notes: {
-          backgroundColor: '#fef3c7',
-          border: '1px solid #fbbf24',
-          padding: 10,
-          borderRadius: 5,
-          marginTop: 10,
-        },
-        notesTitle: {
-          fontWeight: 'bold',
-          color: '#92400e',
-          fontSize: 6,
-          marginBottom: 5,
-        },
-        notesContent: {
-          color: '#78350f',
-          fontSize: 5.5,
-        },
-        footer: {
-          marginTop: 30,
-          paddingTop: 20,
-          borderTopWidth: 2,
-          borderTopColor: '#667eea',
-          textAlign: 'center',
-        },
-        footerStats: {
-          fontSize: 6,
-          fontWeight: 'bold',
-          color: '#2c3e50',
-          marginBottom: 8,
-        },
-        footerDate: {
-          fontSize: 5,
-          color: '#6b7280',
-        },
-      });
 
       const PDFDocument = () => (
         <Document>
-          <Page size="A4" style={styles.page}>
-            <Text style={styles.header}>RECTANGULAR DUCT SİPARİŞİ</Text>
+          <Page size="A4" style={pdfStyles.page}>
+            <Text style={pdfStyles.header}>RECTANGULAR DUCT SİPARİŞİ</Text>
             
-            <View style={styles.customerInfo}>
-              <Text style={styles.customerTitle}>📋 Müşteri Bilgileri</Text>
-              <Text style={styles.customerText}>Müşteri: {user.firstName} {user.lastName}</Text>
-              <Text style={styles.customerText}>E-posta: {user.email}</Text>
-              <Text style={styles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
+            <View style={pdfStyles.customerInfo}>
+              <Text style={pdfStyles.customerTitle}>📋 Müşteri Bilgileri</Text>
+              <Text style={pdfStyles.customerText}>Müşteri: {user.firstName} {user.lastName}</Text>
+              <Text style={pdfStyles.customerText}>E-posta: {user.email}</Text>
+              <Text style={pdfStyles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
             </View>
             
             {orderList.map((part, index) => (
-              <View key={index} style={styles.partItem}>
+              <View key={index} style={pdfStyles.partItem}>
                 <Image 
-                  style={styles.partImage}
-                  src={`http://localhost:5050/${part.image}`}
+                  style={pdfStyles.partImage}
+                  src={`${window.location.origin}/${part.image}`}
                 />
                 
-                <View style={styles.partContent}>
-                  <View style={styles.partHeader}>
-                    <Text style={styles.partTitle}>#{index + 1} - {part.name}</Text>
-                    <Text style={styles.partQuantity}>📦 Adet: {part.quantity}</Text>
+                <View style={pdfStyles.partContent}>
+                  <View style={pdfStyles.partHeader}>
+                    <Text style={pdfStyles.partTitle}>#{index + 1} - {part.name}</Text>
+                    <Text style={pdfStyles.partQuantity}>📦 Adet: {part.quantity}</Text>
                   </View>
                   
                   {(() => {
@@ -264,27 +79,27 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                     if (!selectedPart) return null;
                     
                     return (
-                      <View style={styles.measurementsContainer}>
-                        <Text style={styles.measurementsTitle}>📏 Ölçüler:</Text>
-                        <View style={styles.measurementRow}>
+                      <View style={pdfStyles.measurementsContainer}>
+                        <Text style={pdfStyles.measurementsTitle}>📏 Ölçüler:</Text>
+                        <View style={pdfStyles.measurementRow}>
                           {selectedPart.measurements.map((measurement) => {
                             if (measurement.directions) {
                               return measurement.directions.map((direction) => {
                                 const directionKey = `${measurement.key}_${direction.key}`;
                                 const value = part.directions?.[directionKey] || 0;
                                 return (
-                                  <View key={directionKey} style={styles.measurement}>
-                                    <Text style={styles.measurementLabel}>{direction.label}:</Text>
-                                    <Text style={styles.measurementValue}>{value} adet</Text>
+                                  <View key={directionKey} style={pdfStyles.measurement}>
+                                    <Text style={pdfStyles.measurementLabel}>{direction.label}:</Text>
+                                    <Text style={pdfStyles.measurementValue}>{value} adet</Text>
                                   </View>
                                 );
                               });
                             } else {
                               const value = part.measurements[measurement.key] || 0;
                               return (
-                                <View key={measurement.key} style={styles.measurement}>
-                                  <Text style={styles.measurementLabel}>{measurement.label}:</Text>
-                                  <Text style={styles.measurementValue}>{value} cm</Text>
+                                <View key={measurement.key} style={pdfStyles.measurement}>
+                                  <Text style={pdfStyles.measurementLabel}>{measurement.label}:</Text>
+                                  <Text style={pdfStyles.measurementValue}>{value} cm</Text>
                                 </View>
                               );
                             }
@@ -299,12 +114,12 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                     if (!selectedPart || selectedPart.checkboxes.length === 0) return null;
                     
                     return (
-                      <View style={styles.optionsContainer}>
-                        <Text style={styles.optionsTitle}>⚙️ Seçenekler:</Text>
+                      <View style={pdfStyles.optionsContainer}>
+                        <Text style={pdfStyles.optionsTitle}>⚙️ Seçenekler:</Text>
                         {selectedPart.checkboxes.map((checkbox) => {
                           const isChecked = part.checkboxes[checkbox.key] || false;
                           return (
-                            <Text key={checkbox.key} style={styles.option}>
+                            <Text key={checkbox.key} style={pdfStyles.option}>
                               {isChecked ? '✓' : '☐'} {checkbox.label}
                             </Text>
                           );
@@ -314,18 +129,18 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                   })()}
                   
                   {part.notes && (
-                    <View style={styles.notes}>
-                      <Text style={styles.notesTitle}>Notlar:</Text>
-                      <Text style={styles.notesContent}>{part.notes}</Text>
+                    <View style={pdfStyles.notes}>
+                      <Text style={pdfStyles.notesTitle}>Notlar:</Text>
+                      <Text style={pdfStyles.notesContent}>{part.notes}</Text>
                     </View>
                   )}
                 </View>
               </View>
             ))}
             
-            <View style={styles.footer}>
-              <Text style={styles.footerStats}>Toplam Parça Sayısı: {orderList.length} | Toplam Adet: {orderList.reduce((sum, part) => sum + part.quantity, 0)}</Text>
-              <Text style={styles.footerDate}>Bu sipariş {new Date().toLocaleDateString('tr-TR')} tarihinde oluşturulmuştur.</Text>
+            <View style={pdfStyles.footer}>
+              <Text style={pdfStyles.footerStats}>Toplam Parça Sayısı: {orderList.length} | Toplam Adet: {orderList.reduce((sum, part) => sum + part.quantity, 0)}</Text>
+              <Text style={pdfStyles.footerDate}>Bu sipariş {new Date().toLocaleDateString('tr-TR')} tarihinde oluşturulmuştur.</Text>
             </View>
           </Page>
         </Document>
@@ -376,25 +191,16 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
         <h2 className="panel-title">
           Sipariş Listesi
         </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+        <div className="panel-header-stats">
           {orderList.length > 0 && (
-            <span style={{ 
-              fontSize: '0.8em', 
-              background: 'rgba(250, 112, 154, 0.1)', 
-              color: '#fa709a',
-              padding: '4px 8px',
-              borderRadius: '12px',
-              fontWeight: 'normal',
-              textAlign: 'center'
-            }}>
+            <span className="order-stats-badge">
               {orderList.length} parça, {orderList.reduce((sum, part) => sum + part.quantity, 0)} adet
             </span>
           )}
           <button
             onClick={generatePDF}
             disabled={loading || orderList.length === 0}
-            className={`custom-btn pdf-btn ${loading || orderList.length === 0 ? 'loading' : ''}`}
-            style={{ fontSize: '12px', padding: '8px 12px' }}
+            className={`custom-btn pdf-btn pdf-button ${loading || orderList.length === 0 ? 'loading' : ''}`}
           >
             {loading ? '📄 PDF...' : '📄 PDF İndir'}
           </button>
@@ -402,28 +208,22 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
       </div>
 
       {orderList.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '48px 24px',
-          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-          borderRadius: '12px',
-          border: '1px solid #e3e8ed'
-        }}>
-          <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📋</div>
-          <p style={{ fontSize: '1.2em', fontWeight: '600', color: '#495057', marginBottom: '8px' }}>
+        <div className="empty-order-container">
+          <div className="empty-order-icon">📋</div>
+          <p className="empty-order-title">
             Henüz sipariş eklenmemiş
           </p>
-          <p style={{ fontSize: '0.9em', color: '#6c757d' }}>
+          <p className="empty-order-subtitle">
             Sol panelden parça seçerek sipariş oluşturmaya başlayın
           </p>
         </div>
       ) : (
-        <div id="order-cards" className="custom-scrollbar" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        <div id="order-cards" className="custom-scrollbar order-cards-container">
           {orderList.map((part, index) => (
             <div key={part.id} className="order-card slide-in">
               <div className="order-img">
                 <img 
-                  src={`http://localhost:5050/${part.image}`} 
+                  src={`/${part.image}`} 
                   alt={part.name}
                   onError={(e) => {
                     e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMSAyMUg0M1Y0M0gyMVYyMVoiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPgo=';
@@ -437,7 +237,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                 </div>
                 
                 <div className="order-measurements">
-                  <div style={{ fontWeight: 'bold', marginBottom: '12px', color: '#495057' }}>
+                  <div className="measurements-section-title">
                     📏 Ölçüler:
                   </div>
                   {Object.entries(part.measurements).map(([key, value]) => (
@@ -454,38 +254,30 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                   ))}
                   
                   {Object.keys(part.checkboxes).filter(key => part.checkboxes[key]).length > 0 && (
-                    <div style={{ marginTop: '16px' }}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#495057' }}>
+                    <div className="options-section">
+                      <div className="options-title">
                         ⚙️ Seçenekler:
                       </div>
                       {Object.entries(part.checkboxes).filter(([, value]) => value).map(([key]) => (
-                        <div key={key} style={{ color: '#28a745', marginBottom: '4px' }}>
+                        <div key={key} className="option-item">
                           ✓ {formatCheckboxLabel(key)}
                         </div>
                       ))}
                     </div>
                   )}
                   
-                  <div style={{ marginTop: '16px' }}>
-                    <span style={{
-                      background: 'linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%)',
-                      color: 'white',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontWeight: 'bold',
-                      fontSize: '0.9em'
-                    }}>
+                  <div>
+                    <span className="quantity-badge">
                       📦 Adet: {part.quantity}
                     </span>
                   </div>
                 </div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', marginLeft: '16px' }}>
+              <div className="remove-button-container">
                 <button
                   onClick={() => onRemovePart(part.id)}
-                  className="custom-btn remove-btn"
-                  style={{ fontSize: '14px', padding: '8px 16px' }}
+                  className="custom-btn remove-btn remove-button"
                 >
                   🗑️ Sil
                 </button>

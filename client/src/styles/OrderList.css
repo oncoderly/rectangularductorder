@@ -1,0 +1,96 @@
+/* OrderList Component Styles */
+
+.empty-order-container {
+  text-align: center;
+  padding: 48px 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #e3e8ed;
+}
+
+.empty-order-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.empty-order-title {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.empty-order-subtitle {
+  font-size: 0.9em;
+  color: #6c757d;
+}
+
+.order-cards-container {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.panel-header-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.order-stats-badge {
+  font-size: 0.8em;
+  background: rgba(250, 112, 154, 0.1);
+  color: #fa709a;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: normal;
+  text-align: center;
+}
+
+.pdf-button {
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.measurements-section-title {
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #495057;
+}
+
+.quantity-badge {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 0.9em;
+  margin-top: 16px;
+  display: inline-block;
+}
+
+.options-section {
+  margin-top: 16px;
+}
+
+.options-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.option-item {
+  color: #28a745;
+  margin-bottom: 4px;
+}
+
+.remove-button-container {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+}
+
+.remove-button {
+  font-size: 14px;
+  padding: 8px 16px;
+}

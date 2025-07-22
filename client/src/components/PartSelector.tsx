@@ -132,7 +132,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
         <div style={{ marginTop: '24px' }}>
           <div className="image-panel">
             <img 
-              src={`http://localhost:5050/${selectedPart.image}`} 
+              src={`/${selectedPart.image}`} 
               alt={selectedPart.name}
               onError={(e) => {
                 e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMSAyMUg0M1Y0M0gyMVYyMVoiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjwvc3ZnPgo=';
