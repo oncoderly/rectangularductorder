@@ -178,15 +178,6 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
     }
   };
 
-  const formatMeasurementLabel = (key: string): string => {
-    const labelMap: { [key: string]: string } = {
-      w1: 'Genişlik 1', w2: 'Genişlik 2', w3: 'Genişlik 3',
-      h1: 'Yükseklik 1', h2: 'Yükseklik 2', h3: 'Yükseklik 3',
-      l: 'Uzunluk', r1: 'Yarıçap 1', r2: 'Yarıçap 2',
-      a1: 'Açı 1', a2: 'Açı 2', o: 'Çap', es: 'ES'
-    };
-    return labelMap[key] || key.toUpperCase();
-  };
 
   const formatCheckboxLabel = (key: string): string => {
     return key.replace(/_/g, ' ').split(' ').map(word => 

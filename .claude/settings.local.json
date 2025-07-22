@@ -10,7 +10,8 @@
       "Bash(grep:*)",
       "Bash(node server-new.js)",
       "Bash(node:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

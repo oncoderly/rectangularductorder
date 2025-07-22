@@ -56,7 +56,6 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     const handleScroll = () => {
       if (notesRef.current && imageRef.current) {
         const notesRect = notesRef.current.getBoundingClientRect();
-        const imageRect = imageRef.current.getBoundingClientRect();
         
         // Notes kısmı görünür alanda mı kontrol et
         const notesVisible = notesRect.top < window.innerHeight && notesRect.bottom > 0;
@@ -195,8 +194,16 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
 
     onAddPart(newPart);
     
-    // Reset measurements and checkboxes but keep the same part selected
-    setMeasurements({});
+    // Reset measurements but keep default values, checkboxes, directions and quantity
+    if (selectedPart) {
+      const defaultMeasurements: PartMeasurement = {};
+      selectedPart.measurements.forEach(m => {
+        if (m.default !== undefined) {
+          defaultMeasurements[m.key] = m.default.toString();
+        }
+      });
+      setMeasurements(defaultMeasurements);
+    }
     setCheckboxes({});
     setDirections({});
     setQuantity(1);
@@ -372,7 +379,6 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                       type="button"
                       onClick={() => {
                         const currentValue = Number(measurements[measurement.key]) || 0;
-                        const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
                         const newValue = Math.max(0, currentValue - 5);
                         handleMeasurementChange(measurement.key, newValue.toString());
                       }}
