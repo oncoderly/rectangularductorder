@@ -50,11 +50,13 @@ interface OrderListProps {
   orderList: SelectedPart[];
   user: User;
   onRemovePart: (partId: string) => void;
+  onClearAll: () => void;
 }
 
-const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) => {
+const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, onClearAll }) => {
   const [loading, setLoading] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
+  const [showClearModal, setShowClearModal] = React.useState(false);
   const [pdfBlob, setPdfBlob] = React.useState<Blob | null>(null);
 
   const generatePDF = async () => {
@@ -355,6 +357,15 @@ PDF dosyası ekte yer almaktadır.
     setShowShareModal(false);
   };
 
+  const handleClearAll = () => {
+    setShowClearModal(true);
+  };
+
+  const confirmClearAll = () => {
+    onClearAll();
+    setShowClearModal(false);
+  };
+
   const formatCheckboxLabel = (key: string): string => {
     return key.replace(/_/g, ' ').split(' ').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
@@ -363,40 +374,111 @@ PDF dosyası ekte yer almaktadır.
 
   return (
     <div className="panel slide-in">
-      <div className="panel-header">
-        <div className="panel-icon" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        </div>
-        <h2 className="panel-title">
-          Sipariş Listesi
+      {/* Header - Başlık */}
+      <div className="panel-header" style={{ paddingBottom: '16px', borderBottom: '2px solid #e5e7eb', marginBottom: '20px' }}>
+        <h2 className="panel-title" style={{ fontSize: '24px', marginBottom: '16px', textAlign: 'center' }}>
+          📋 Sipariş Listesi
         </h2>
-        <div className="panel-header-stats">
-          {orderList.length > 0 && (
-            <span className="order-stats-badge">
+        
+        {/* Stats */}
+        {orderList.length > 0 && (
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <span className="order-stats-badge" style={{ 
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}>
               {orderList.length} parça, {orderList.reduce((sum, part) => sum + part.quantity, 0)} adet
             </span>
-          )}
+          </div>
+        )}
+        
+        {/* Buttons Container */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
           <button
             onClick={generatePDF}
             disabled={loading || orderList.length === 0}
-            className={`custom-btn pdf-btn pdf-button ${loading || orderList.length === 0 ? 'loading' : ''}`}
+            className={`custom-btn pdf-btn ${loading || orderList.length === 0 ? 'loading' : ''}`}
+            style={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: loading || orderList.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: loading || orderList.length === 0 ? 0.7 : 1,
+              transition: 'all 0.2s ease',
+              minWidth: '120px',
+              flex: '1',
+              maxWidth: '150px'
+            }}
+            onMouseOver={(e) => !loading && orderList.length > 0 && (e.currentTarget.style.transform = 'translateY(-1px)')}
+            onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
           >
             {loading ? '📄 PDF...' : '📄 PDF İndir'}
           </button>
+          
           <button
             onClick={generatePDFForShare}
             disabled={loading || orderList.length === 0}
             className={`custom-btn share-btn ${loading || orderList.length === 0 ? 'loading' : ''}`}
             style={{ 
-              background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
-              marginLeft: '8px',
-              fontSize: '14px'
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: loading || orderList.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: loading || orderList.length === 0 ? 0.7 : 1,
+              transition: 'all 0.2s ease',
+              minWidth: '120px',
+              flex: '1',
+              maxWidth: '150px'
             }}
+            onMouseOver={(e) => !loading && orderList.length > 0 && (e.currentTarget.style.transform = 'translateY(-1px)')}
+            onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
           >
             {loading ? '📤 Hazırlanıyor...' : '📤 Paylaş'}
           </button>
+          
+          {orderList.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              disabled={loading}
+              className="custom-btn clear-all-btn"
+              style={{ 
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+                transition: 'all 0.2s ease',
+                minWidth: '120px',
+                flex: '1',
+                maxWidth: '150px'
+              }}
+              onMouseOver={(e) => !loading && (e.currentTarget.style.transform = 'translateY(-1px)')}
+              onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
+            >
+              🗑️ Tümünü Sil
+            </button>
+          )}
         </div>
       </div>
 
@@ -551,7 +633,7 @@ PDF dosyası ekte yer almaktadır.
                   justifyContent: 'center',
                   gap: '12px',
                   padding: '16px 24px',
-                  background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
@@ -575,7 +657,7 @@ PDF dosyası ekte yer almaktadır.
                   justifyContent: 'center',
                   gap: '12px',
                   padding: '16px 24px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
@@ -615,6 +697,119 @@ PDF dosyası ekte yer almaktadır.
                 }}
               >
                 İptal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tümünü Sil Onay Modal */}
+      {showClearModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowClearModal(false)}
+        >
+          <div 
+            style={{
+              background: 'white',
+              padding: '32px',
+              borderRadius: '16px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              maxWidth: '400px',
+              width: '90%',
+              animation: 'slideIn 0.3s ease-out'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ 
+                fontSize: '48px', 
+                marginBottom: '16px',
+                filter: 'drop-shadow(0 4px 8px rgba(231, 76, 60, 0.3))'
+              }}>
+                ⚠️
+              </div>
+              <h3 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold', 
+                color: '#e74c3c',
+                marginBottom: '8px'
+              }}>
+                Tüm Siparişleri Sil
+              </h3>
+              <p style={{ 
+                color: '#7f8c8d', 
+                fontSize: '16px',
+                lineHeight: '1.5',
+                marginBottom: '8px'
+              }}>
+                <strong>{orderList.length} parça</strong> silinecek
+              </p>
+              <p style={{ 
+                color: '#7f8c8d', 
+                fontSize: '14px',
+                lineHeight: '1.5'
+              }}>
+                Bu işlem geri alınamaz. Emin misiniz?
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowClearModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  background: 'transparent',
+                  color: '#7f8c8d',
+                  border: '2px solid #ecf0f1',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = '#bdc3c7';
+                  e.currentTarget.style.color = '#2c3e50';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = '#ecf0f1';
+                  e.currentTarget.style.color = '#7f8c8d';
+                }}
+              >
+                İptal
+              </button>
+
+              <button
+                onClick={confirmClearAll}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                🗑️ Evet, Sil
               </button>
             </div>
           </div>

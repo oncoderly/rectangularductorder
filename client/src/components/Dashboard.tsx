@@ -61,6 +61,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     setOrderList(prev => prev.filter(p => p.id !== partId));
   };
 
+  const handleClearAll = () => {
+    setOrderList([]);
+  };
+
   const handleLogout = async () => {
     try {
       await axios.post('http://localhost:5050/api/logout', {}, {
@@ -114,6 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             orderList={orderList} 
             user={user} 
             onRemovePart={handleRemovePart} 
+            onClearAll={handleClearAll}
           />
         </div>
       </main>

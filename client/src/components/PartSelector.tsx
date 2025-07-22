@@ -213,12 +213,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   return (
     <div className="panel slide-in">
       <div className="panel-header">
-        <div className="panel-icon">
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a4 4 0 004-4V5z" />
-          </svg>
-        </div>
-        <h2 className="panel-title">Parça Seçimi</h2>
+        <h2 className="panel-title">🔧 Parça Seçimi</h2>
       </div>
       
       {/* Part Selection Dropdown */}
@@ -317,7 +312,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             height: '24px',
                             fontSize: '14px',
                             fontWeight: 'bold',
-                            background: '#ff6b6b',
+                            background: '#ef4444',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
@@ -342,7 +337,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             height: '24px',
                             fontSize: '14px',
                             fontWeight: 'bold',
-                            background: '#28a745',
+                            background: '#3b82f6',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
