@@ -90,25 +90,27 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           marginBottom: 5,
         },
         partItem: {
-          marginBottom: 20,
-          padding: 20,
+          marginBottom: 15,
+          padding: 15,
           backgroundColor: '#ffffff',
-          borderRadius: 16,
-          borderWidth: 2,
-          borderColor: 'transparent',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: '#e3e8ed',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
           flexDirection: 'row',
-          gap: 20,
+          gap: 15,
           alignItems: 'flex-start',
+          minHeight: 200,
         },
         partImage: {
-          width: 360,
-          height: 360,
-          borderRadius: 12,
-          borderWidth: 2,
+          width: 150,
+          height: 150,
+          borderRadius: 8,
+          borderWidth: 1,
           borderColor: '#e3e8ed',
           backgroundColor: '#f8f9fa',
           objectFit: 'contain',
+          flexShrink: 0,
         },
         partContent: {
           flex: 1,
@@ -136,32 +138,34 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           borderRadius: 8,
         },
         measurementsContainer: {
-          marginVertical: 15,
-          backgroundColor: 'rgba(255, 255, 255, 0.7)',
-          padding: 16,
-          borderRadius: 12,
+          marginVertical: 10,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          padding: 12,
+          borderRadius: 8,
           borderWidth: 1,
           borderColor: '#e3e8ed',
         },
         measurementsTitle: {
           fontWeight: 'bold',
-          marginBottom: 12,
+          marginBottom: 8,
           color: '#495057',
-          fontSize: 12,
+          fontSize: 11,
         },
         measurementRow: {
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: 8,
+          flexDirection: 'column',
+          gap: 6,
         },
         measurement: {
           backgroundColor: '#f8f9ff',
-          padding: 10,
-          borderRadius: 8,
-          borderLeftWidth: 3,
+          padding: 8,
+          borderRadius: 6,
+          borderLeftWidth: 2,
           borderLeftColor: '#667eea',
-          minWidth: 110,
-          marginBottom: 8,
+          minWidth: 0,
+          marginBottom: 4,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         },
         measurementLabel: {
           fontSize: 10,
@@ -175,23 +179,23 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           fontWeight: 'bold',
         },
         optionsContainer: {
-          marginTop: 15,
+          marginTop: 10,
           backgroundColor: '#f8f9fa',
-          padding: 12,
-          borderRadius: 8,
+          padding: 8,
+          borderRadius: 6,
           borderWidth: 1,
           borderColor: '#e3e8ed',
         },
         optionsTitle: {
           fontWeight: 'bold',
-          marginBottom: 8,
+          marginBottom: 6,
           color: '#495057',
-          fontSize: 12,
+          fontSize: 10,
         },
         option: {
           color: '#28a745',
-          marginBottom: 4,
-          fontSize: 11,
+          marginBottom: 3,
+          fontSize: 10,
         },
         notes: {
           backgroundColor: '#fef3c7',
@@ -260,14 +264,14 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                       <View style={styles.measurementRow}>
                         {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
                           <View key={key} style={styles.measurement}>
-                            <Text style={styles.measurementLabel}>{formatMeasurementLabel(key)}</Text>
+                            <Text style={styles.measurementLabel}>{formatMeasurementLabel(key)}:</Text>
                             <Text style={styles.measurementValue}>{value} cm</Text>
                           </View>
                         ))}
                       </View>
                       {part.directions && Object.entries(part.directions).filter(([, value]) => value > 0).map(([key, value]) => (
                         <View key={key} style={styles.measurement}>
-                          <Text style={styles.measurementLabel}>{key.replace('_', ' ').toUpperCase()}</Text>
+                          <Text style={styles.measurementLabel}>{key.replace('_', ' ').toUpperCase()}:</Text>
                           <Text style={styles.measurementValue}>{value} adet</Text>
                         </View>
                       ))}
