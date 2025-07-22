@@ -489,7 +489,7 @@ PDF dosyası ekte yer almaktadır.
             Henüz sipariş eklenmemiş
           </p>
           <p className="empty-order-subtitle">
-            Sol panelden parça seçerek sipariş oluşturmaya başlayın
+            Üst panelden parça seçerek sipariş oluşturmaya başlayın
           </p>
         </div>
       ) : (
