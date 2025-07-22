@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import './index.css';

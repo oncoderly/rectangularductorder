@@ -29,6 +29,14 @@ app.use(session({
 
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Rectangular Duct Order API', 
+        version: '1.0.0',
+        endpoints: ['/api/register', '/api/login', '/api/me', '/api/logout']
+    });
+});
+
 const USERS_FILE = path.join(__dirname, 'users.json');
 
 const loadUsers = async () => {

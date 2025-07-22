@@ -1,5 +1,5 @@
 import React from 'react';
-import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { pdf, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
 interface PartMeasurement {
   [key: string]: number | string;
@@ -18,6 +18,7 @@ interface SelectedPart {
   checkboxes: PartCheckbox;
   directions?: { [key: string]: number };
   quantity: number;
+  notes?: string;
 }
 
 interface User {
@@ -52,71 +53,145 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           paddingLeft: 60,
           paddingRight: 60,
           paddingBottom: 30,
+          backgroundColor: '#f5f7fa',
         },
         header: {
-          fontSize: 20,
+          fontSize: 24,
           fontWeight: 'bold',
           textAlign: 'center',
           marginBottom: 30,
-          borderBottomWidth: 2,
-          borderBottomColor: '#000',
-          paddingBottom: 10,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: '#667eea',
+          paddingBottom: 15,
+          borderBottomWidth: 3,
+          borderBottomColor: '#667eea',
         },
         customerInfo: {
-          marginBottom: 20,
-          backgroundColor: '#f5f5f5',
-          padding: 15,
-          borderRadius: 5,
+          marginBottom: 25,
+          backgroundColor: '#ffffff',
+          padding: 20,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: '#e3e8ed',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        },
+        customerTitle: {
+          fontSize: 14,
+          fontWeight: 'bold',
+          color: '#2c3e50',
+          marginBottom: 10,
+          paddingBottom: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: '#e3e8ed',
+        },
+        customerText: {
+          fontSize: 12,
+          color: '#495057',
+          marginBottom: 5,
         },
         partItem: {
           marginBottom: 20,
-          padding: 15,
-          border: '1px solid #ddd',
-          borderRadius: 5,
+          padding: 20,
+          backgroundColor: '#ffffff',
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: 'transparent',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          flexDirection: 'row',
+          gap: 20,
+          alignItems: 'flex-start',
+        },
+        partImage: {
+          width: 120,
+          height: 120,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: '#e3e8ed',
+          backgroundColor: '#f8f9fa',
+          objectFit: 'contain',
+        },
+        partContent: {
+          flex: 1,
         },
         partHeader: {
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 10,
+          marginBottom: 15,
+          paddingBottom: 10,
+          borderBottomWidth: 1,
+          borderBottomColor: '#f0f0f0',
         },
         partTitle: {
           fontSize: 16,
           fontWeight: 'bold',
-          color: '#2563eb',
+          color: '#2c3e50',
         },
         partQuantity: {
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: 'bold',
-          backgroundColor: '#e5e7eb',
-          padding: 5,
-          borderRadius: 15,
+          backgroundColor: '#ff6b6b',
+          color: '#ffffff',
+          padding: '8px 12px',
+          borderRadius: 8,
         },
         measurementsContainer: {
-          marginVertical: 10,
+          marginVertical: 15,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          padding: 16,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: '#e3e8ed',
+        },
+        measurementsTitle: {
+          fontWeight: 'bold',
+          marginBottom: 12,
+          color: '#495057',
+          fontSize: 12,
         },
         measurementRow: {
           flexDirection: 'row',
           flexWrap: 'wrap',
-          gap: 10,
+          gap: 8,
         },
         measurement: {
-          backgroundColor: '#f8fafc',
-          padding: 8,
-          borderRadius: 4,
+          backgroundColor: '#f8f9ff',
+          padding: 10,
+          borderRadius: 8,
           borderLeftWidth: 3,
-          borderLeftColor: '#3b82f6',
-          minWidth: 120,
-          marginBottom: 5,
+          borderLeftColor: '#667eea',
+          minWidth: 110,
+          marginBottom: 8,
         },
         measurementLabel: {
           fontSize: 10,
           fontWeight: 'bold',
-          color: '#374151',
+          color: '#495057',
+          marginBottom: 2,
         },
         measurementValue: {
           fontSize: 12,
-          color: '#1f2937',
+          color: '#667eea',
+          fontWeight: 'bold',
+        },
+        optionsContainer: {
+          marginTop: 15,
+          backgroundColor: '#f8f9fa',
+          padding: 12,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: '#e3e8ed',
+        },
+        optionsTitle: {
+          fontWeight: 'bold',
+          marginBottom: 8,
+          color: '#495057',
+          fontSize: 12,
+        },
+        option: {
+          color: '#28a745',
+          marginBottom: 4,
+          fontSize: 11,
         },
         notes: {
           backgroundColor: '#fef3c7',
@@ -138,11 +213,19 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
         footer: {
           marginTop: 30,
           paddingTop: 20,
-          borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
+          borderTopWidth: 2,
+          borderTopColor: '#667eea',
           textAlign: 'center',
+        },
+        footerStats: {
+          fontSize: 12,
+          fontWeight: 'bold',
+          color: '#2c3e50',
+          marginBottom: 8,
+        },
+        footerDate: {
+          fontSize: 10,
           color: '#6b7280',
-          fontSize: 11,
         },
       });
 
@@ -152,43 +235,67 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
             <Text style={styles.header}>RECTANGULAR DUCT SİPARİŞİ</Text>
             
             <View style={styles.customerInfo}>
-              <Text>Müşteri: {user.firstName} {user.lastName}</Text>
-              <Text>E-posta: {user.email}</Text>
-              <Text>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
+              <Text style={styles.customerTitle}>📋 Müşteri Bilgileri</Text>
+              <Text style={styles.customerText}>Müşteri: {user.firstName} {user.lastName}</Text>
+              <Text style={styles.customerText}>E-posta: {user.email}</Text>
+              <Text style={styles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
             </View>
             
             {orderList.map((part, index) => (
               <View key={index} style={styles.partItem}>
-                <View style={styles.partHeader}>
-                  <Text style={styles.partTitle}>{index + 1}. {part.name}</Text>
-                  <Text style={styles.partQuantity}>Adet: {part.quantity}</Text>
-                </View>
+                <Image 
+                  style={styles.partImage}
+                  src={`http://localhost:5050/${part.image}`}
+                />
                 
-                {Object.keys(part.measurements).length > 0 && (
-                  <View style={styles.measurementsContainer}>
-                    <View style={styles.measurementRow}>
-                      {Object.entries(part.measurements).map(([key, value]) => (
+                <View style={styles.partContent}>
+                  <View style={styles.partHeader}>
+                    <Text style={styles.partTitle}>#{index + 1} - {part.name}</Text>
+                    <Text style={styles.partQuantity}>📦 Adet: {part.quantity}</Text>
+                  </View>
+                  
+                  {Object.keys(part.measurements).length > 0 && (
+                    <View style={styles.measurementsContainer}>
+                      <Text style={styles.measurementsTitle}>📏 Ölçüler:</Text>
+                      <View style={styles.measurementRow}>
+                        {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
+                          <View key={key} style={styles.measurement}>
+                            <Text style={styles.measurementLabel}>{formatMeasurementLabel(key)}</Text>
+                            <Text style={styles.measurementValue}>{value} mm</Text>
+                          </View>
+                        ))}
+                      </View>
+                      {part.directions && Object.entries(part.directions).filter(([, value]) => value > 0).map(([key, value]) => (
                         <View key={key} style={styles.measurement}>
-                          <Text style={styles.measurementLabel}>{formatMeasurementLabel(key)}</Text>
-                          <Text style={styles.measurementValue}>{value} mm</Text>
+                          <Text style={styles.measurementLabel}>{key.replace('_', ' ').toUpperCase()}</Text>
+                          <Text style={styles.measurementValue}>{value} adet</Text>
                         </View>
                       ))}
                     </View>
-                  </View>
-                )}
-                
-                {part.notes && (
-                  <View style={styles.notes}>
-                    <Text style={styles.notesTitle}>Notlar:</Text>
-                    <Text style={styles.notesContent}>{part.notes}</Text>
-                  </View>
-                )}
+                  )}
+
+                  {Object.keys(part.checkboxes).filter(key => part.checkboxes[key]).length > 0 && (
+                    <View style={styles.optionsContainer}>
+                      <Text style={styles.optionsTitle}>⚙️ Seçenekler:</Text>
+                      {Object.entries(part.checkboxes).filter(([, value]) => value).map(([key]) => (
+                        <Text key={key} style={styles.option}>✓ {formatCheckboxLabel(key)}</Text>
+                      ))}
+                    </View>
+                  )}
+                  
+                  {part.notes && (
+                    <View style={styles.notes}>
+                      <Text style={styles.notesTitle}>Notlar:</Text>
+                      <Text style={styles.notesContent}>{part.notes}</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             ))}
             
             <View style={styles.footer}>
-              <Text>Toplam Parça Sayısı: {orderList.length} | Toplam Adet: {orderList.reduce((sum, part) => sum + part.quantity, 0)}</Text>
-              <Text>Bu sipariş {new Date().toLocaleDateString('tr-TR')} tarihinde oluşturulmuştur.</Text>
+              <Text style={styles.footerStats}>Toplam Parça Sayısı: {orderList.length} | Toplam Adet: {orderList.reduce((sum, part) => sum + part.quantity, 0)}</Text>
+              <Text style={styles.footerDate}>Bu sipariş {new Date().toLocaleDateString('tr-TR')} tarihinde oluşturulmuştur.</Text>
             </View>
           </Page>
         </Document>
@@ -303,13 +410,13 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                   <div style={{ fontWeight: 'bold', marginBottom: '12px', color: '#495057' }}>
                     📏 Ölçüler:
                   </div>
-                  {Object.entries(part.measurements).filter(([key, value]) => value !== undefined && value !== '').map(([key, value]) => (
+                  {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
                     <div key={key}>
                       <span className="measurement-label">{formatMeasurementLabel(key)}:</span>
                       <span className="measurement-value">{value} mm</span>
                     </div>
                   ))}
-                  {part.directions && Object.entries(part.directions).filter(([key, value]) => value > 0).map(([key, value]) => (
+                  {part.directions && Object.entries(part.directions).filter(([, value]) => value > 0).map(([key, value]) => (
                     <div key={key}>
                       <span className="measurement-label">{key.replace('_', ' ').toUpperCase()}:</span>
                       <span className="measurement-value">{value} adet</span>
@@ -321,7 +428,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                       <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#495057' }}>
                         ⚙️ Seçenekler:
                       </div>
-                      {Object.entries(part.checkboxes).filter(([key, value]) => value).map(([key, value]) => (
+                      {Object.entries(part.checkboxes).filter(([, value]) => value).map(([key]) => (
                         <div key={key} style={{ color: '#28a745', marginBottom: '4px' }}>
                           ✓ {formatCheckboxLabel(key)}
                         </div>

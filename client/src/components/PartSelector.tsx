@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { parts } from '../data/parts';
-import type { PartDefinition } from '../data/parts';
 
 interface PartMeasurement {
   [key: string]: number | string;
