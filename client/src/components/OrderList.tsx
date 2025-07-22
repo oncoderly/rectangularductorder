@@ -48,12 +48,13 @@ interface User {
 
 interface OrderListProps {
   orderList: SelectedPart[];
-  user: User;
+  user: User | null;
   onRemovePart: (partId: string) => void;
   onClearAll: () => void;
+  onRequireAuth?: () => void;
 }
 
-const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, onClearAll }) => {
+const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, onClearAll, onRequireAuth }) => {
   const [loading, setLoading] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showClearModal, setShowClearModal] = React.useState(false);
@@ -62,6 +63,11 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
   const generatePDF = async () => {
     if (orderList.length === 0) {
       alert('Sipariş listesi boş!');
+      return;
+    }
+
+    if (!user && onRequireAuth) {
+      onRequireAuth();
       return;
     }
 
@@ -75,8 +81,8 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
             
             <View style={pdfStyles.customerInfo}>
               <Text style={pdfStyles.customerTitle}>Müşteri Bilgileri</Text>
-              <Text style={pdfStyles.customerText}>Müşteri: {user.firstName} {user.lastName}</Text>
-              <Text style={pdfStyles.customerText}>E-posta: {user.email}</Text>
+              <Text style={pdfStyles.customerText}>Müşteri: {user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}</Text>
+              <Text style={pdfStyles.customerText}>E-posta: {user ? user.email : '-'}</Text>
               <Text style={pdfStyles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
             </View>
             
@@ -188,6 +194,11 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
       return;
     }
 
+    if (!user && onRequireAuth) {
+      onRequireAuth();
+      return;
+    }
+
     setLoading(true);
     try {
       const PDFDocument = () => (
@@ -197,8 +208,8 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
             
             <View style={pdfStyles.customerInfo}>
               <Text style={pdfStyles.customerTitle}>Müşteri Bilgileri</Text>
-              <Text style={pdfStyles.customerText}>Müşteri: {user.firstName} {user.lastName}</Text>
-              <Text style={pdfStyles.customerText}>E-posta: {user.email}</Text>
+              <Text style={pdfStyles.customerText}>Müşteri: {user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}</Text>
+              <Text style={pdfStyles.customerText}>E-posta: {user ? user.email : '-'}</Text>
               <Text style={pdfStyles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
             </View>
             
@@ -302,7 +313,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
     if (!pdfBlob) return;
 
     const fileName = `siparis_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
-    const message = `🛒 Hava Kanalı Sipariş Listesi\n\n📋 Toplam ${orderList.length} parça, ${orderList.reduce((sum, part) => sum + part.quantity, 0)} adet\n👤 Müşteri: ${user.firstName} ${user.lastName}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}\n\nPDF dosyası ektedir.`;
+    const message = `🛒 Hava Kanalı Sipariş Listesi\n\n📋 Toplam ${orderList.length} parça, ${orderList.reduce((sum, part) => sum + part.quantity, 0)} adet\n👤 Müşteri: ${user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}\n\nPDF dosyası ektedir.`;
     
     // Mobil cihazlarda doğrudan WhatsApp uygulamasını aç
     if (navigator.share) {
@@ -331,8 +342,8 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
 
 📋 Toplam Parça Sayısı: ${orderList.length}
 📦 Toplam Adet: ${orderList.reduce((sum, part) => sum + part.quantity, 0)}
-👤 Müşteri: ${user.firstName} ${user.lastName}
-📧 E-posta: ${user.email}
+👤 Müşteri: ${user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}
+📧 E-posta: ${user ? user.email : '-'}
 📅 Sipariş Tarihi: ${new Date().toLocaleDateString('tr-TR')}
 
 PDF dosyası ekte yer almaktadır.
@@ -376,7 +387,7 @@ PDF dosyası ekte yer almaktadır.
     <div className="panel slide-in">
       {/* Header - Başlık */}
       <div className="panel-header" style={{ paddingBottom: '16px', borderBottom: '2px solid #e5e7eb', marginBottom: '20px' }}>
-        <h2 className="panel-title" style={{ fontSize: '24px', marginBottom: '16px', textAlign: 'center' }}>
+        <h2 className="panel-title" style={{ fontSize: '18px', marginBottom: '16px', textAlign: 'center' }}>
           📋 Sipariş Listesi
         </h2>
         
@@ -608,7 +619,7 @@ PDF dosyası ekte yer almaktadır.
           >
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <h3 style={{ 
-                fontSize: '24px', 
+                fontSize: '18px', 
                 fontWeight: 'bold', 
                 color: '#2c3e50',
                 marginBottom: '8px'
@@ -734,14 +745,14 @@ PDF dosyası ekte yer almaktadır.
           >
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div style={{ 
-                fontSize: '48px', 
+                fontSize: '32px', 
                 marginBottom: '16px',
                 filter: 'drop-shadow(0 4px 8px rgba(231, 76, 60, 0.3))'
               }}>
                 ⚠️
               </div>
               <h3 style={{ 
-                fontSize: '24px', 
+                fontSize: '18px', 
                 fontWeight: 'bold', 
                 color: '#e74c3c',
                 marginBottom: '8px'

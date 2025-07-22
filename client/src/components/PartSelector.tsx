@@ -250,7 +250,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
           </div>
           
           <div className="panel-header" style={{ marginBottom: '16px' }}>
-            <h3 className="panel-title" style={{ fontSize: '1.3em' }}>{selectedPart.name}</h3>
+            <h3 className="panel-title" style={{ fontSize: '18px' }}>{selectedPart.name}</h3>
           </div>
 
           {/* Measurements */}
@@ -265,7 +265,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                     {measurement.directions.map((direction) => (
                       <div key={direction.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                         {/* Label */}
-                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#34495e', minWidth: '60px', textAlign: 'right' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#34495e', minWidth: '60px', textAlign: 'right' }}>
                           {direction.label}:
                         </label>
                         
@@ -280,7 +280,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             style={{ 
                               width: '60px',
                               textAlign: 'center',
-                              fontSize: '11px',
+                              fontSize: '14px',
                               padding: '4px',
                               borderRadius: '4px',
                               border: '1px solid #e3e8ed'
@@ -293,7 +293,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             )}
                           />
                           <span style={{ 
-                            fontSize: '10px',
+                            fontSize: '14px',
                             color: '#6c757d',
                             marginLeft: '2px'
                           }}>adet</span>
@@ -356,7 +356,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     {/* Label */}
                     <label style={{ 
-                      fontSize: '12px', 
+                      fontSize: '14px', 
                       fontWeight: 'bold', 
                       color: '#34495e', 
                       minWidth: '60px', 
@@ -368,32 +368,6 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                     }}>
                       {measurement.label}:
                     </label>
-                    
-                    {/* -5 Button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const currentValue = Number(measurements[measurement.key]) || 0;
-                        const newValue = Math.max(0, currentValue - 5);
-                        handleMeasurementChange(measurement.key, newValue.toString());
-                      }}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        background: '#ff6b6b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      −
-                    </button>
                     
                     {/* Slider */}
                     <div style={{ flex: '1', maxWidth: '100px' }}>
@@ -415,74 +389,105 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                       />
                     </div>
                     
-                    {/* Value Display + Input */}
-                    <div style={{ position: 'relative', minWidth: '60px' }}>
-                      <input
-                        type={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 'text' : 'number'}
-                        min={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "0"}
-                        max={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "200"}
-                        step={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "1"}
-                        className="focus-ring"
-                        placeholder={measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2' ? '0°' : '0'}
-                        style={{ 
-                          width: '60px',
-                          textAlign: 'center',
-                          fontSize: '11px',
-                          padding: '4px',
+                    {/* Input Container with +/- Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {/* +5 Button (Left) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentValue = Number(measurements[measurement.key]) || 0;
+                          const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
+                          const newValue = Math.min(maxValue, currentValue + 5);
+                          handleMeasurementChange(measurement.key, newValue.toString());
+                        }}
+                        style={{
+                          width: '30px',
+                          height: '24px',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          background: '#28a745',
+                          color: 'white',
+                          border: 'none',
                           borderRadius: '4px',
-                          border: '1px solid #e3e8ed'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          lineHeight: '1'
                         }}
-                        value={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 
-                          (measurements[measurement.key] !== undefined && measurements[measurement.key] !== '' ? measurements[measurement.key] + '°' : '') : 
-                          (measurements[measurement.key] || '')}
-                        onChange={(e) => {
-                          const inputValue = e.target.value.replace('°', '');
-                          if (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') {
-                            // Açı değerleri için sadece sayı girişi kontrol et
-                            const numericValue = inputValue.replace(/[^0-9]/g, '');
-                            const value = Math.min(180, Math.max(0, Number(numericValue) || 0));
-                            handleMeasurementChange(measurement.key, value.toString());
-                          } else {
-                            const value = Math.min(200, Math.max(0, Number(inputValue) || 0));
-                            handleMeasurementChange(measurement.key, value.toString());
-                          }
+                      >
+                        +5
+                      </button>
+                      
+                      {/* Value Display + Input */}
+                      <div style={{ position: 'relative', minWidth: '60px' }}>
+                        <input
+                          type={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 'text' : 'number'}
+                          min={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "0"}
+                          max={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "200"}
+                          step={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "1"}
+                          className="focus-ring"
+                          placeholder={measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2' ? '0°' : '0'}
+                          style={{ 
+                            width: '60px',
+                            textAlign: 'center',
+                            fontSize: '14px',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            border: '1px solid #e3e8ed'
+                          }}
+                          value={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 
+                            (measurements[measurement.key] !== undefined && measurements[measurement.key] !== '' ? measurements[measurement.key] + '°' : '') : 
+                            (measurements[measurement.key] || '')}
+                          onChange={(e) => {
+                            const inputValue = e.target.value.replace('°', '');
+                            if (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') {
+                              // Açı değerleri için sadece sayı girişi kontrol et
+                              const numericValue = inputValue.replace(/[^0-9]/g, '');
+                              const value = Math.min(180, Math.max(0, Number(numericValue) || 0));
+                              handleMeasurementChange(measurement.key, value.toString());
+                            } else {
+                              const value = Math.min(200, Math.max(0, Number(inputValue) || 0));
+                              handleMeasurementChange(measurement.key, value.toString());
+                            }
+                          }}
+                        />
+                        {!(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') && (
+                          <span style={{ 
+                            fontSize: '14px',
+                            color: '#6c757d',
+                            marginLeft: '2px'
+                          }}>cm</span>
+                        )}
+                      </div>
+                      
+                      {/* -5 Button (Right) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentValue = Number(measurements[measurement.key]) || 0;
+                          const newValue = Math.max(0, currentValue - 5);
+                          handleMeasurementChange(measurement.key, newValue.toString());
                         }}
-                      />
-                      {!(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') && (
-                        <span style={{ 
-                          fontSize: '10px',
-                          color: '#6c757d',
-                          marginLeft: '2px'
-                        }}>cm</span>
-                      )}
+                        style={{
+                          width: '30px',
+                          height: '24px',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          background: '#ff6b6b',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          lineHeight: '1'
+                        }}
+                      >
+                        -5
+                      </button>
                     </div>
-                    
-                    {/* +5 Button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const currentValue = Number(measurements[measurement.key]) || 0;
-                        const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
-                        const newValue = Math.min(maxValue, currentValue + 5);
-                        handleMeasurementChange(measurement.key, newValue.toString());
-                      }}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        background: '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      +
-                    </button>
                   </div>
                 )}
               </div>
@@ -490,7 +495,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               {/* Label */}
-              <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#34495e', minWidth: '40px', textAlign: 'right' }}>
+              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#34495e', minWidth: '40px', textAlign: 'right' }}>
                 Adet:
               </label>
               
@@ -503,7 +508,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                 style={{ 
                   width: '60px',
                   textAlign: 'center',
-                  fontSize: '11px',
+                  fontSize: '14px',
                   padding: '4px',
                   borderRadius: '4px',
                   border: '1px solid #e3e8ed'
@@ -560,7 +565,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
           {/* Checkboxes */}
           {selectedPart.checkboxes.length > 0 && (
             <div style={{ marginTop: '24px', marginBottom: '24px' }}>
-              <h4 style={{ marginBottom: '16px', fontWeight: 'bold', color: '#34495e', fontSize: '1.2em' }}>
+              <h4 style={{ marginBottom: '16px', fontWeight: 'bold', color: '#34495e', fontSize: '18px' }}>
                 Seçenekler:
               </h4>
               <div style={{ 
@@ -600,7 +605,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
 
           <div ref={notesRef} style={{ marginTop: '20px' }}>
             <div className="form-row">
-              <label htmlFor="notes" style={{ fontSize: '32px' }}>📝 Notlar:</label>
+              <label htmlFor="notes" style={{ fontSize: '18px' }}>📝 Notlar:</label>
               <textarea
                 id="notes"
                 value={notes}
@@ -608,9 +613,9 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                 placeholder="Bu parça için özel notlarınızı yazın..."
                 style={{
                   width: '100%',
-                  minHeight: '80px',
-                  padding: '12px',
-                  fontSize: '28px',
+                  minHeight: '50px',
+                  padding: '8px',
+                  fontSize: '14px',
                   border: '2px solid #e3e8ed',
                   borderRadius: '8px',
                   resize: 'vertical',

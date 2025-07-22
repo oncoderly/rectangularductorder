@@ -30,11 +30,13 @@ interface SelectedPart {
 }
 
 interface DashboardProps {
-  user: User;
+  user: User | null;
   onLogout: () => void;
+  onRequireAuth?: () => void;
+  isGuest?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, isGuest = false }) => {
   const [orderList, setOrderList] = useState<SelectedPart[]>([]);
 
   useEffect(() => {
@@ -92,20 +94,39 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="bg-gradient-to-r from-blue-100 to-indigo-100 px-2 sm:px-4 py-1 sm:py-2 rounded-lg">
-                <span className="text-blue-800 font-medium text-xs sm:text-sm">
-                  <span className="hidden sm:inline">Hoşgeldin, </span>
-                  <span className="font-bold">{user.firstName}</span>
-                  <span className="hidden sm:inline"> {user.lastName}!</span>
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 sm:px-6 py-1 sm:py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-xs sm:text-sm"
-              >
-                <span className="sm:hidden">Çıkış</span>
-                <span className="hidden sm:inline">Çıkış Yap</span>
-              </button>
+              {isGuest ? (
+                <div className="flex items-center space-x-2">
+                  <div className="bg-gradient-to-r from-orange-100 to-yellow-100 px-2 sm:px-4 py-1 sm:py-2 rounded-lg">
+                    <span className="text-orange-800 font-medium text-xs sm:text-sm">
+                      👤 Misafir Modu
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => onRequireAuth?.()}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 sm:px-6 py-1 sm:py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-xs sm:text-sm"
+                  >
+                    <span className="sm:hidden">Giriş</span>
+                    <span className="hidden sm:inline">Giriş Yap</span>
+                  </button>
+                </div>
+              ) : user ? (
+                <>
+                  <div className="bg-gradient-to-r from-blue-100 to-indigo-100 px-2 sm:px-4 py-1 sm:py-2 rounded-lg">
+                    <span className="text-blue-800 font-medium text-xs sm:text-sm">
+                      <span className="hidden sm:inline">Hoşgeldin, </span>
+                      <span className="font-bold">{user.firstName}</span>
+                      <span className="hidden sm:inline"> {user.lastName}!</span>
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 sm:px-6 py-1 sm:py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-xs sm:text-sm"
+                  >
+                    <span className="sm:hidden">Çıkış</span>
+                    <span className="hidden sm:inline">Çıkış Yap</span>
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
@@ -119,6 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             user={user} 
             onRemovePart={handleRemovePart} 
             onClearAll={handleClearAll}
+            onRequireAuth={onRequireAuth}
           />
         </div>
       </main>
