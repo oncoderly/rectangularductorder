@@ -1,5 +1,6 @@
 import React from 'react';
 import { pdf, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { parts } from '../data/parts';
 
 interface PartMeasurement {
   [key: string]: number | string;
@@ -48,7 +49,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
       const styles = StyleSheet.create({
         page: {
           fontFamily: 'Helvetica',
-          fontSize: 12,
+          fontSize: 6,
           paddingTop: 30,
           paddingLeft: 60,
           paddingRight: 60,
@@ -56,7 +57,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           backgroundColor: '#f5f7fa',
         },
         header: {
-          fontSize: 24,
+          fontSize: 12,
           fontWeight: 'bold',
           textAlign: 'center',
           marginBottom: 30,
@@ -76,7 +77,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
         },
         customerTitle: {
-          fontSize: 14,
+          fontSize: 7,
           fontWeight: 'bold',
           color: '#2c3e50',
           marginBottom: 10,
@@ -85,7 +86,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           borderBottomColor: '#e3e8ed',
         },
         customerText: {
-          fontSize: 12,
+          fontSize: 6,
           color: '#495057',
           marginBottom: 5,
         },
@@ -125,12 +126,12 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           borderBottomColor: '#f0f0f0',
         },
         partTitle: {
-          fontSize: 16,
+          fontSize: 8,
           fontWeight: 'bold',
           color: '#2c3e50',
         },
         partQuantity: {
-          fontSize: 12,
+          fontSize: 6,
           fontWeight: 'bold',
           backgroundColor: '#ff6b6b',
           color: '#ffffff',
@@ -149,7 +150,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           fontWeight: 'bold',
           marginBottom: 8,
           color: '#495057',
-          fontSize: 11,
+          fontSize: 5.5,
         },
         measurementRow: {
           flexDirection: 'column',
@@ -168,13 +169,13 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           alignItems: 'center',
         },
         measurementLabel: {
-          fontSize: 10,
+          fontSize: 5,
           fontWeight: 'bold',
           color: '#495057',
           marginBottom: 2,
         },
         measurementValue: {
-          fontSize: 12,
+          fontSize: 6,
           color: '#667eea',
           fontWeight: 'bold',
         },
@@ -190,12 +191,12 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           fontWeight: 'bold',
           marginBottom: 6,
           color: '#495057',
-          fontSize: 10,
+          fontSize: 5,
         },
         option: {
           color: '#28a745',
           marginBottom: 3,
-          fontSize: 10,
+          fontSize: 5,
         },
         notes: {
           backgroundColor: '#fef3c7',
@@ -207,12 +208,12 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
         notesTitle: {
           fontWeight: 'bold',
           color: '#92400e',
-          fontSize: 12,
+          fontSize: 6,
           marginBottom: 5,
         },
         notesContent: {
           color: '#78350f',
-          fontSize: 11,
+          fontSize: 5.5,
         },
         footer: {
           marginTop: 30,
@@ -222,13 +223,13 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
           textAlign: 'center',
         },
         footerStats: {
-          fontSize: 12,
+          fontSize: 6,
           fontWeight: 'bold',
           color: '#2c3e50',
           marginBottom: 8,
         },
         footerDate: {
-          fontSize: 10,
+          fontSize: 5,
           color: '#6b7280',
         },
       });
@@ -258,34 +259,59 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                     <Text style={styles.partQuantity}>📦 Adet: {part.quantity}</Text>
                   </View>
                   
-                  {Object.keys(part.measurements).length > 0 && (
-                    <View style={styles.measurementsContainer}>
-                      <Text style={styles.measurementsTitle}>📏 Ölçüler:</Text>
-                      <View style={styles.measurementRow}>
-                        {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
-                          <View key={key} style={styles.measurement}>
-                            <Text style={styles.measurementLabel}>{formatMeasurementLabel(key)}:</Text>
-                            <Text style={styles.measurementValue}>{value} cm</Text>
-                          </View>
-                        ))}
-                      </View>
-                      {part.directions && Object.entries(part.directions).filter(([, value]) => value > 0).map(([key, value]) => (
-                        <View key={key} style={styles.measurement}>
-                          <Text style={styles.measurementLabel}>{key.replace('_', ' ').toUpperCase()}:</Text>
-                          <Text style={styles.measurementValue}>{value} adet</Text>
+                  {(() => {
+                    const selectedPart = parts[part.partKey];
+                    if (!selectedPart) return null;
+                    
+                    return (
+                      <View style={styles.measurementsContainer}>
+                        <Text style={styles.measurementsTitle}>📏 Ölçüler:</Text>
+                        <View style={styles.measurementRow}>
+                          {selectedPart.measurements.map((measurement) => {
+                            if (measurement.directions) {
+                              return measurement.directions.map((direction) => {
+                                const directionKey = `${measurement.key}_${direction.key}`;
+                                const value = part.directions?.[directionKey] || 0;
+                                return (
+                                  <View key={directionKey} style={styles.measurement}>
+                                    <Text style={styles.measurementLabel}>{direction.label}:</Text>
+                                    <Text style={styles.measurementValue}>{value} adet</Text>
+                                  </View>
+                                );
+                              });
+                            } else {
+                              const value = part.measurements[measurement.key] || 0;
+                              return (
+                                <View key={measurement.key} style={styles.measurement}>
+                                  <Text style={styles.measurementLabel}>{measurement.label}:</Text>
+                                  <Text style={styles.measurementValue}>{value} cm</Text>
+                                </View>
+                              );
+                            }
+                          })}
                         </View>
-                      ))}
-                    </View>
-                  )}
+                      </View>
+                    );
+                  })()}
 
-                  {Object.keys(part.checkboxes).filter(key => part.checkboxes[key]).length > 0 && (
-                    <View style={styles.optionsContainer}>
-                      <Text style={styles.optionsTitle}>⚙️ Seçenekler:</Text>
-                      {Object.entries(part.checkboxes).filter(([, value]) => value).map(([key]) => (
-                        <Text key={key} style={styles.option}>✓ {formatCheckboxLabel(key)}</Text>
-                      ))}
-                    </View>
-                  )}
+                  {(() => {
+                    const selectedPart = parts[part.partKey];
+                    if (!selectedPart || selectedPart.checkboxes.length === 0) return null;
+                    
+                    return (
+                      <View style={styles.optionsContainer}>
+                        <Text style={styles.optionsTitle}>⚙️ Seçenekler:</Text>
+                        {selectedPart.checkboxes.map((checkbox) => {
+                          const isChecked = part.checkboxes[checkbox.key] || false;
+                          return (
+                            <Text key={checkbox.key} style={styles.option}>
+                              {isChecked ? '✓' : '☐'} {checkbox.label}
+                            </Text>
+                          );
+                        })}
+                      </View>
+                    );
+                  })()}
                   
                   {part.notes && (
                     <View style={styles.notes}>
@@ -414,7 +440,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart }) 
                   <div style={{ fontWeight: 'bold', marginBottom: '12px', color: '#495057' }}>
                     📏 Ölçüler:
                   </div>
-                  {Object.entries(part.measurements).filter(([, value]) => value !== undefined && value !== '').map(([key, value]) => (
+                  {Object.entries(part.measurements).map(([key, value]) => (
                     <div key={key}>
                       <span className="measurement-label">{formatMeasurementLabel(key)}:</span>
                       <span className="measurement-value">{value} cm</span>
