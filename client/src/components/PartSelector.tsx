@@ -424,7 +424,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                         <input
                           type={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 'text' : 'number'}
                           min={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "0"}
-                          max={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "200"}
+                          max={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : undefined}
                           step={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? undefined : "1"}
                           className="focus-ring"
                           placeholder={measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2' ? '0°' : '0'}
@@ -447,7 +447,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                               const value = Math.min(180, Math.max(0, Number(numericValue) || 0));
                               handleMeasurementChange(measurement.key, value.toString());
                             } else {
-                              const value = Math.min(200, Math.max(0, Number(inputValue) || 0));
+                              const value = Math.max(0, Number(inputValue) || 0);
                               handleMeasurementChange(measurement.key, value.toString());
                             }
                           }}
