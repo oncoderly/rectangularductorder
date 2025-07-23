@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './Auth.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+
 interface User {
   id: string;
   email: string;
@@ -36,7 +38,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('google_auth') === 'success') {
       // Check for user data from server
-      axios.get('http://localhost:5050/api/auth/google/success', { withCredentials: true })
+      axios.get(`${API_URL}/api/auth/google/success`, { withCredentials: true })
         .then(response => {
           onLogin(response.data.user);
           // Clean URL
@@ -76,7 +78,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
         if (phoneStep === 'phone') {
           endpoint = '/api/phone/send-otp';
           payload = { phone: formData.phone, isLogin };
-          await axios.post(`http://localhost:5050${endpoint}`, payload);
+          await axios.post(`${API_URL}${endpoint}`, payload);
           setPhoneStep('otp');
           setLoading(false);
           return;
@@ -91,7 +93,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
         }
       }
 
-      const response = await axios.post(`http://localhost:5050${endpoint}`, payload, {
+      const response = await axios.post(`${API_URL}${endpoint}`, payload, {
         withCredentials: true
       });
 
@@ -105,7 +107,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
 
   const handleGoogleLogin = async () => {
     try {
-      window.location.href = 'http://localhost:5050/api/auth/google';
+      window.location.href = `${API_URL}/api/auth/google`;
     } catch (error: any) {
       setError('Google ile giriş başarısız');
     }

@@ -23,6 +23,8 @@ const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'rectangularduct-secret-key';
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5050';
 
 // Twilio client
 let twilioClient;
@@ -41,7 +43,7 @@ try {
 const otpStorage = new Map();
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
+    origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
     credentials: true
 }));
 
@@ -72,7 +74,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: "http://localhost:5050/api/auth/google/callback"
+        callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
         const users = await loadUsers();
@@ -490,12 +492,12 @@ app.get('/api/auth/google', (req, res, next) => {
 
 app.get('/api/auth/google/callback',
     passport.authenticate('google', { 
-        failureRedirect: 'http://localhost:5173/?error=google_auth_failed' 
+        failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
     }),
     (req, res) => {
         // Successful authentication, redirect to client
         req.session.userId = req.user.id;
-        res.redirect('http://localhost:5173/?google_auth=success');
+        res.redirect(`${CLIENT_URL}/?google_auth=success`);
     }
 );
 

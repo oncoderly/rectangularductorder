@@ -4,6 +4,8 @@ import PartSelector from './PartSelector';
 import OrderList from './OrderList';
 import './Dashboard.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+
 interface User {
   id: string;
   email: string;
@@ -70,7 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:5050/api/logout', {}, {
+      await axios.post(`${API_URL}/api/logout`, {}, {
         withCredentials: true
       });
       localStorage.removeItem('rectangularDuctOrder');
