@@ -74,7 +74,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: `${SERVER_URL}/api/auth/google/callback`
+        callbackURL: "/api/auth/google/callback"
     }, async (accessToken, refreshToken, profile, done) => {
     try {
         const users = await loadUsers();
@@ -501,12 +501,12 @@ app.get('/api/auth/google', (req, res, next) => {
 
 app.get('/api/auth/google/callback',
     passport.authenticate('google', { 
-        failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
+        failureRedirect: "/?error=google_auth_failed" 
     }),
     (req, res) => {
         // Successful authentication, redirect to client
         req.session.userId = req.user.id;
-        res.redirect(`${CLIENT_URL}/?google_auth=success`);
+        res.redirect("/?google_auth=success");
     }
 );
 
@@ -547,12 +547,7 @@ process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
 
-// Serve React app for non-API routes in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('/app/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-  });
-}
+// Static file serving for production is handled by express.static above
 
 app.listen(PORT, () => {
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
