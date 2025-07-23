@@ -129,6 +129,11 @@ passport.deserializeUser(async (id, done) => {
 
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
+// Serve client static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+}
+
 console.log('🔧 Registering root route...');
 app.get('/', (req, res) => {
     res.json({ 
@@ -537,6 +542,17 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
+
+// Catch-all handler: send back React's index.html file for SPA routing
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API route not found' });
+    }
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 app.listen(PORT, () => {
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
