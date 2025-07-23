@@ -4,6 +4,8 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import './index.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+
 interface User {
   id: string;
   email: string;
@@ -23,7 +25,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get('http://localhost:5050/api/me', {
+      const response = await axios.get(`${API_URL}/api/me`, {
         withCredentials: true
       });
       setUser(response.data.user);
@@ -38,7 +40,7 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('google_auth') === 'success') {
       try {
-        const response = await axios.get('http://localhost:5050/api/auth/google/success', {
+        const response = await axios.get(`${API_URL}/api/auth/google/success`, {
           withCredentials: true
         });
         setUser(response.data.user);
