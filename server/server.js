@@ -136,15 +136,19 @@ if (process.env.NODE_ENV === 'production') {
 
 console.log('🔧 Registering root route...');
 app.get('/', (req, res) => {
-    res.json({ 
-        message: 'Rectangular Duct Order API', 
-        version: '2.0.0',
-        endpoints: [
-            '/api/register', '/api/login', '/api/me', '/api/logout',
-            '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
-            '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success'
-        ]
-    });
+    if (process.env.NODE_ENV === 'production') {
+        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+    } else {
+        res.json({ 
+            message: 'Rectangular Duct Order API', 
+            version: '2.0.0',
+            endpoints: [
+                '/api/register', '/api/login', '/api/me', '/api/logout',
+                '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
+                '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success'
+            ]
+        });
+    }
 });
 
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -543,13 +547,9 @@ process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
 
-// Catch-all handler: send back React's index.html file for SPA routing
+// Serve React app for non-API routes in production
 if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    // Don't serve index.html for API routes
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ error: 'API route not found' });
-    }
+  app.get('/app/*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 }
