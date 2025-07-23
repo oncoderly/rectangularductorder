@@ -23,7 +23,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/me', {
+      const response = await axios.get('http://localhost:5050/api/me', {
         withCredentials: true
       });
       setUser(response.data.user);
@@ -38,7 +38,7 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('google_auth') === 'success') {
       try {
-        const response = await axios.get('http://localhost:3000/api/auth/google/success', {
+        const response = await axios.get('http://localhost:5050/api/auth/google/success', {
           withCredentials: true
         });
         setUser(response.data.user);
@@ -80,47 +80,42 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <Dashboard 
-        user={user} 
-        onLogout={handleLogout} 
-        onRequireAuth={handleRequireAuth}
-        isGuest={!user}
-      />
+    <>
+      <div className="App">
+        <Dashboard 
+          user={user} 
+          onLogout={handleLogout} 
+          onRequireAuth={handleRequireAuth}
+          isGuest={!user}
+        />
+      </div>
       
-      {/* Auth Modal */}
+      {/* Floating Auth Modal Portal */}
       {showAuthModal && (
         <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 999999
           }}
           onClick={closeAuthModal}
         >
           <div 
-            style={{
-              background: 'white',
-              borderRadius: '16px',
-              maxWidth: '500px',
-              width: '90%',
-              maxHeight: '90vh',
-              overflow: 'auto'
-            }}
+            className="rounded-3xl max-w-md w-full max-h-[90vh] overflow-auto transform transition-all duration-300 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
+            style={{ zIndex: 1000000 }}
           >
             <Auth onLogin={handleLogin} isModal={true} onClose={closeAuthModal} />
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

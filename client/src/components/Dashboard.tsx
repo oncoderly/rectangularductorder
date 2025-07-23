@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PartSelector from './PartSelector';
 import OrderList from './OrderList';
+import './Dashboard.css';
 
 interface User {
   id: string;
@@ -82,37 +83,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-blue-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3">
-            <div className="flex items-center space-x-3">
-              <div>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">
-                  Rectangular Duct Order
-                </h1>
-                <p className="text-xs text-blue-600 font-medium hidden sm:block">Hava kanalı parça sipariş sistemi</p>
-              </div>
+      <header className="dashboard-header">
+        <div className="dashboard-header-container">
+          <div className="dashboard-header-content">
+            <div className="dashboard-title-section">
+              <h1 className="dashboard-main-title">
+                Kare Kanal Sipariş Uygulaması
+              </h1>
+              <p className="dashboard-subtitle">Hava kanalı parça sipariş sistemi</p>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="dashboard-auth-section">
               {isGuest ? (
-                <div className="flex items-center space-x-2">
-                  <div className="bg-gradient-to-r from-orange-100 to-yellow-100 px-2 sm:px-4 py-1 sm:py-2 rounded-lg">
-                    <span className="text-orange-800 font-medium text-xs sm:text-sm">
+                <>
+                  <div className="dashboard-guest-badge">
+                    <span className="dashboard-guest-text">
                       👤 Misafir Modu
                     </span>
                   </div>
                   <button
                     onClick={() => onRequireAuth?.()}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 sm:px-6 py-1 sm:py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-xs sm:text-sm"
+                    className="dashboard-login-btn"
                   >
-                    <span className="sm:hidden">Giriş</span>
-                    <span className="hidden sm:inline">Giriş Yap</span>
+                    🚀 Giriş Yap
                   </button>
-                </div>
+                </>
               ) : user ? (
                 <>
-                  <div className="bg-gradient-to-r from-blue-100 to-indigo-100 px-2 sm:px-4 py-1 sm:py-2 rounded-lg">
-                    <span className="text-blue-800 font-medium text-xs sm:text-sm">
+                  <div className="dashboard-user-section">
+                    <span className="dashboard-user-text">
                       <span className="hidden sm:inline">Hoşgeldin, </span>
                       <span className="font-bold">{user.firstName}</span>
                       <span className="hidden sm:inline"> {user.lastName}!</span>
@@ -120,10 +118,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 sm:px-6 py-1 sm:py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-xs sm:text-sm"
+                    className="dashboard-logout-btn"
                   >
-                    <span className="sm:hidden">Çıkış</span>
-                    <span className="hidden sm:inline">Çıkış Yap</span>
+                    Çıkış Yap
                   </button>
                 </>
               ) : null}

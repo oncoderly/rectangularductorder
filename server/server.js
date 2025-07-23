@@ -41,7 +41,7 @@ try {
 const otpStorage = new Map();
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
     credentials: true
 }));
 
@@ -72,7 +72,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: "http://localhost:3000/api/auth/google/callback"
+        callbackURL: "http://localhost:5050/api/auth/google/callback"
     }, async (accessToken, refreshToken, profile, done) => {
     try {
         const users = await loadUsers();
@@ -461,13 +461,28 @@ app.post('/api/phone/login', async (req, res) => {
     }
 });
 
+// Google Auth status check
+app.get('/api/auth/google/status', (req, res) => {
+    res.json({ 
+        configured: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET),
+        message: GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET ? 'Google OAuth is configured' : 'Google OAuth is not configured'
+    });
+});
+
 // Google Auth Endpoints
 console.log('🔧 Registering Google auth route...');
 app.get('/api/auth/google', (req, res, next) => {
     console.log('🔍 Google auth endpoint hit');
+    console.log('🔍 DEBUG - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'NOT FOUND');
+    console.log('🔍 DEBUG - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'NOT FOUND');
+    console.log('🔍 DEBUG - Type of CLIENT_ID:', typeof GOOGLE_CLIENT_ID);
+    console.log('🔍 DEBUG - Value CLIENT_ID:', GOOGLE_CLIENT_ID);
+    
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+        console.log('❌ DEBUG - Variables are falsy, returning error');
         return res.status(500).json({ error: 'Google OAuth not configured' });
     }
+    console.log('✅ DEBUG - Variables are truthy, proceeding with auth');
     passport.authenticate('google', { 
         scope: ['profile', 'email'] 
     })(req, res, next);

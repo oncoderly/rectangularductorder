@@ -14,7 +14,9 @@
       "Bash(npm run build:*)",
       "Bash(taskkill:*)",
       "Bash(timeout:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(npx vite:*)",
+      "Bash(\"taskkill\" \"/F\" \"/IM\" \"node.exe\")"
     ],
     "deny": []
   }
