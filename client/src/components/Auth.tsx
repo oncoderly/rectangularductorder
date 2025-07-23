@@ -53,7 +53,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
         if (phoneStep === 'phone') {
           endpoint = '/api/phone/send-otp';
           payload = { phone: formData.phone, isLogin };
-          const response = await axios.post(`http://localhost:3000${endpoint}`, payload);
+          await axios.post(`http://localhost:3000${endpoint}`, payload);
           setPhoneStep('otp');
           setLoading(false);
           return;
