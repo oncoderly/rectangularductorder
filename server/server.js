@@ -74,7 +74,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/auth/google/callback"
+        callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
         const users = await loadUsers();
@@ -129,26 +129,18 @@ passport.deserializeUser(async (id, done) => {
 
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
-// Serve client static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-}
 
 console.log('🔧 Registering root route...');
 app.get('/', (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
-        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-    } else {
-        res.json({ 
-            message: 'Rectangular Duct Order API', 
-            version: '2.0.0',
-            endpoints: [
-                '/api/register', '/api/login', '/api/me', '/api/logout',
-                '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
-                '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success'
-            ]
-        });
-    }
+    res.json({ 
+        message: 'Rectangular Duct Order API', 
+        version: '2.0.0',
+        endpoints: [
+            '/api/register', '/api/login', '/api/me', '/api/logout',
+            '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
+            '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success'
+        ]
+    });
 });
 
 const USERS_FILE = path.join(__dirname, 'users.json');
@@ -501,12 +493,12 @@ app.get('/api/auth/google', (req, res, next) => {
 
 app.get('/api/auth/google/callback',
     passport.authenticate('google', { 
-        failureRedirect: "/?error=google_auth_failed" 
+        failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
     }),
     (req, res) => {
         // Successful authentication, redirect to client
         req.session.userId = req.user.id;
-        res.redirect("/?google_auth=success");
+        res.redirect(`${CLIENT_URL}/?google_auth=success`);
     }
 );
 
@@ -547,7 +539,6 @@ process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
 
-// Static file serving for production is handled by express.static above
 
 app.listen(PORT, () => {
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
