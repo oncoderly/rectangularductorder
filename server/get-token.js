@@ -2,9 +2,9 @@
 const { google } = require('googleapis');
 
 // .env değerlerinizi buraya yazın
-const OAUTH2_CLIENT_ID = 'your-client-id-here';
-const OAUTH2_CLIENT_SECRET = 'your-client-secret-here';
-const AUTH_CODE = 'buraya-url-deki-code-parametresini-yapistirin';
+const OAUTH2_CLIENT_ID = '781991570845-o0a0radjv944bjo7utgmrfsca3ts78m2.apps.googleusercontent.com';
+const OAUTH2_CLIENT_SECRET = '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';
+const AUTH_CODE = 'BURAYA-ALDIGINIZ-KODU-YAPISTIRIN';
 
 async function getToken() {
     try {
