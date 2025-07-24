@@ -50,14 +50,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Check if running on HTTPS (production)
+const isProduction = process.env.NODE_ENV === 'production' || process.env.SERVER_URL?.startsWith('https://');
+
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
@@ -73,6 +76,12 @@ console.log('GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
 console.log('🔧 URL Config:');
 console.log('CLIENT_URL:', CLIENT_URL);
 console.log('SERVER_URL:', SERVER_URL);
+console.log('🔧 Environment Check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Is Production:', isProduction);
+console.log('🔧 Expected Production URLs:');
+console.log('Should be CLIENT_URL: https://rectangularductorder.onrender.com'); 
+console.log('Should be SERVER_URL: https://rectangularductorder.onrender.com');
 
 // Passport Google Strategy
 if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
@@ -483,31 +492,49 @@ app.get('/api/auth/google', (req, res, next) => {
     console.log('🔍 Google auth endpoint hit');
     console.log('🔍 DEBUG - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'NOT FOUND');
     console.log('🔍 DEBUG - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'NOT FOUND');
-    console.log('🔍 DEBUG - Type of CLIENT_ID:', typeof GOOGLE_CLIENT_ID);
-    console.log('🔍 DEBUG - Value CLIENT_ID:', GOOGLE_CLIENT_ID);
+    console.log('🔍 DEBUG - SERVER_URL:', SERVER_URL);
+    console.log('🔍 DEBUG - CLIENT_URL:', CLIENT_URL);
+    console.log('🔍 DEBUG - Callback URL will be:', `${SERVER_URL}/api/auth/google/callback`);
     
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
         console.log('❌ DEBUG - Variables are falsy, returning error');
         return res.status(500).json({ error: 'Google OAuth not configured' });
     }
     console.log('✅ DEBUG - Variables are truthy, proceeding with auth');
+    console.log('✅ DEBUG - Redirecting to Google OAuth...');
+    
     passport.authenticate('google', { 
         scope: ['profile', 'email'] 
     })(req, res, next);
 });
 
-app.get('/api/auth/google/callback',
+app.get('/api/auth/google/callback', (req, res, next) => {
+    console.log('🔍 OAuth Callback HIT - Query params:', req.query);
+    console.log('🔍 OAuth Callback - Full URL:', req.url);
+    console.log('🔍 OAuth Callback - Headers:', req.headers);
+    
     passport.authenticate('google', { 
         failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
-    }),
-    (req, res) => {
+    })(req, res, (err) => {
+        if (err) {
+            console.log('❌ Passport authentication error:', err);
+            return res.redirect(`${CLIENT_URL}/?error=passport_error`);
+        }
+        
+        if (!req.user) {
+            console.log('❌ No user found after authentication');
+            return res.redirect(`${CLIENT_URL}/?error=no_user`);
+        }
+        
         // Successful authentication, redirect to client  
-        console.log('🔍 OAuth Callback - User authenticated:', req.user?.email);
-        console.log('🔍 OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
+        console.log('✅ OAuth Callback - User authenticated:', req.user?.email);
+        console.log('✅ OAuth Callback - User object:', JSON.stringify(req.user, null, 2));
+        console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
+        
         req.session.userId = req.user.id;
         res.redirect(`${CLIENT_URL}/?google_auth=success`);
-    }
-);
+    });
+});
 
 // Google Auth success check endpoint
 app.get('/api/auth/google/success', async (req, res) => {
