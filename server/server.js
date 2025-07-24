@@ -125,12 +125,15 @@ app.get('/', (req, res) => {
 
 const USERS_FILE = path.join(__dirname, 'users.json');
 const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
+<<<<<<< Updated upstream
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
+=======
+>>>>>>> Stashed changes
 
 const loadUsers = async () => {
     try {
@@ -145,7 +148,10 @@ const saveUsers = async (users) => {
 };
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 // Analytics functions
 const loadAnalytics = async () => {
     try {
