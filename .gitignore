@@ -1,2 +1,31 @@
 rectanduct/
 /rectduct
+
+# Environment variables (GİZLİ BİLGİLER)
+.env
+server/.env
+client/.env
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build files
+client/dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
