@@ -23,6 +23,37 @@ function App() {
   
   console.log('📊 App: Current state - loading:', loading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
 
+  // Initialize app - useEffect MUST be before any conditional returns
+  useEffect(() => {
+    const initializeApp = async () => {
+      console.log('🚀 App: Starting initialization...');
+      try {
+        // Check URL for admin dashboard first
+        const path = window.location.pathname;
+        console.log('🔍 App: Current path:', path);
+        if (path === '/admin-dashboard' || path.includes('admin')) {
+          console.log('📊 App: Admin dashboard requested');
+          setShowAdminDashboard(true);
+        }
+        
+        // Check Google auth first (faster)
+        console.log('🔍 App: Checking Google auth...');
+        await checkGoogleAuth();
+        
+        // Then check regular auth
+        console.log('🔍 App: Checking regular auth...');
+        await checkAuth();
+        
+        console.log('✅ App: Initialization completed');
+      } catch (error) {
+        console.error('❌ App: Initialization failed:', error);
+        setLoading(false); // Ensure loading is set to false even on error
+      }
+    };
+    
+    initializeApp();
+  }, []);
+
   const checkAuth = async () => {
     try {
       console.log('🔍 checkAuth: API_URL =', API_URL);
@@ -100,37 +131,6 @@ function App() {
   }
   
   console.log('✅ App: Loading complete, rendering main app...');
-
-  // Initialize app
-  useEffect(() => {
-    const initializeApp = async () => {
-      console.log('🚀 App: Starting initialization...');
-      try {
-        // Check URL for admin dashboard first
-        const path = window.location.pathname;
-        console.log('🔍 App: Current path:', path);
-        if (path === '/admin-dashboard' || path.includes('admin')) {
-          console.log('📊 App: Admin dashboard requested');
-          setShowAdminDashboard(true);
-        }
-        
-        // Check Google auth first (faster)
-        console.log('🔍 App: Checking Google auth...');
-        await checkGoogleAuth();
-        
-        // Then check regular auth
-        console.log('🔍 App: Checking regular auth...');
-        await checkAuth();
-        
-        console.log('✅ App: Initialization completed');
-      } catch (error) {
-        console.error('❌ App: Initialization failed:', error);
-        setLoading(false); // Ensure loading is set to false even on error
-      }
-    };
-    
-    initializeApp();
-  }, []);
 
   console.log('🎨 App: About to render with showAdminDashboard:', showAdminDashboard, 'user:', !!user);
   
