@@ -647,7 +647,7 @@ process.on('unhandledRejection', (err) => {
 
 
 // Handle client-side routing - catch-all route (must be last!)
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
     // Skip API routes
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: 'API endpoint not found' });
