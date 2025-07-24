@@ -17,7 +17,8 @@
       "Bash(cmd /c:*)",
       "Bash(npx vite:*)",
       "Bash(\"taskkill\" \"/F\" \"/IM\" \"node.exe\")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

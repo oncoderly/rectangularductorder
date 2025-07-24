@@ -155,12 +155,16 @@ app.get('/api/status', (req, res) => {
         endpoints: [
             '/api/register', '/api/login', '/api/me', '/api/logout',
             '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
-            '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success'
+            '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success',
+            '/api/track', '/api/admin/analytics'
         ]
     });
 });
 
 const USERS_FILE = path.join(__dirname, 'users.json');
+
+// Import analytics module
+const { trackSession, getAnalyticsSummary } = require('./analytics');
 
 const loadUsers = async () => {
     try {
@@ -237,6 +241,12 @@ app.post('/api/register', async (req, res) => {
         
         req.session.userId = newUser.id;
         
+        // Track user registration
+        await trackSession(newUser.id, 'user_register', {
+            method: 'email',
+            email: newUser.email
+        });
+        
         res.json({ 
             message: 'Kayıt başarılı', 
             user: { 
@@ -268,6 +278,12 @@ app.post('/api/login', async (req, res) => {
         }
         
         req.session.userId = user.id;
+        
+        // Track user login
+        await trackSession(user.id, 'user_login', {
+            method: 'email',
+            email: user.email
+        });
         
         res.json({ 
             message: 'Giriş başarılı', 
@@ -416,6 +432,12 @@ app.post('/api/phone/register', async (req, res) => {
         
         req.session.userId = newUser.id;
         
+        // Track phone registration
+        await trackSession(newUser.id, 'user_register', {
+            method: 'phone',
+            phone: newUser.phone
+        });
+        
         res.json({ 
             message: 'Kayıt başarılı', 
             user: { 
@@ -464,6 +486,12 @@ app.post('/api/phone/login', async (req, res) => {
         
         otpStorage.delete(formattedPhone);
         req.session.userId = user.id;
+        
+        // Track phone login
+        await trackSession(user.id, 'user_login', {
+            method: 'phone',
+            phone: user.phone
+        });
         
         res.json({ 
             message: 'Giriş başarılı', 
@@ -535,6 +563,13 @@ app.get('/api/auth/google/callback', (req, res, next) => {
         console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
         
         req.session.userId = req.user.id;
+        
+        // Track Google OAuth login
+        trackSession(req.user.id, 'user_login', {
+            method: 'google',
+            email: req.user.email
+        }).catch(err => console.error('Analytics tracking error:', err));
+        
         res.redirect(`${CLIENT_URL}/?google_auth=success`);
     });
 });
@@ -564,6 +599,40 @@ app.get('/api/auth/google/success', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
+
+// Analytics tracking endpoint
+app.post('/api/track', async (req, res) => {
+    try {
+        const { action, data } = req.body;
+        const userId = req.session.userId || 'guest';
+        
+        if (!action) {
+            return res.status(400).json({ error: 'Action is required' });
+        }
+        
+        await trackSession(userId, action, data || {});
+        res.json({ message: 'Tracking successful' });
+    } catch (error) {
+        console.error('Analytics tracking error:', error);
+        res.status(500).json({ error: 'Tracking failed' });
+    }
+});
+
+// Admin analytics endpoint
+app.get('/api/admin/analytics', async (req, res) => {
+    try {
+        // Check if user is authenticated (basic check)
+        if (!req.session.userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        
+        const summary = await getAnalyticsSummary();
+        res.json(summary);
+    } catch (error) {
+        console.error('Analytics summary error:', error);
+        res.status(500).json({ error: 'Failed to get analytics' });
     }
 });
 
