@@ -18,7 +18,13 @@
       "Bash(npx vite:*)",
       "Bash(\"taskkill\" \"/F\" \"/IM\" \"node.exe\")",
       "Bash(ls:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(rm:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
