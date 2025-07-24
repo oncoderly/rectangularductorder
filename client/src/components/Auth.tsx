@@ -67,6 +67,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     setLoading(true);
     setError('');
 
+    console.log('🔐 Auth: Starting authentication process...');
+    console.log('🔐 Auth: Method:', authMethod, 'Is Login:', isLogin);
+
     try {
       let endpoint = '';
       let payload = {};
@@ -74,10 +77,13 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
       if (authMethod === 'email') {
         endpoint = isLogin ? '/api/login' : '/api/register';
         payload = formData;
+        console.log('✉️ Auth: Email auth - endpoint:', endpoint);
+        console.log('✉️ Auth: Email payload:', { ...payload, password: '***' });
       } else if (authMethod === 'phone') {
         if (phoneStep === 'phone') {
           endpoint = '/api/phone/send-otp';
           payload = { phone: formData.phone, isLogin };
+          console.log('📱 Auth: Phone OTP - endpoint:', endpoint);
           await axios.post(`${API_URL}${endpoint}`, payload);
           setPhoneStep('otp');
           setLoading(false);
@@ -90,17 +96,28 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
             firstName: formData.firstName,
             lastName: formData.lastName
           };
+          console.log('📱 Auth: Phone login - endpoint:', endpoint);
         }
       }
+
+      console.log('🌐 Auth: Making request to:', `${API_URL}${endpoint}`);
+      console.log('🍪 Auth: With credentials:', true);
 
       const response = await axios.post(`${API_URL}${endpoint}`, payload, {
         withCredentials: true
       });
 
+      console.log('✅ Auth: Success response:', response.data);
+      console.log('✅ Auth: User data:', response.data.user);
+
       onLogin(response.data.user);
     } catch (error: any) {
+      console.error('❌ Auth: Error occurred:', error);
+      console.error('❌ Auth: Error response:', error.response?.data);
+      console.error('❌ Auth: Error status:', error.response?.status);
       setError(error.response?.data?.error || 'Bir hata oluştu');
     } finally {
+      console.log('🏁 Auth: Authentication process finished');
       setLoading(false);
     }
   };
