@@ -10,7 +10,7 @@ interface User {
   firstName: string;
   lastName: string;
 }
-//push check
+
 interface AuthProps {
   onLogin: (user: User) => void;
   onGuestMode?: () => void;

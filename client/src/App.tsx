@@ -20,11 +20,6 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
-  useEffect(() => {
-    checkAuth();
-    checkGoogleAuth();
-  }, []);
-
   const checkAuth = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/me`, {
@@ -93,8 +88,12 @@ function App() {
     );
   }
 
-  // Check URL for admin dashboard
+  // Check URL for admin dashboard - moved to useEffect with checkAuth
   useEffect(() => {
+    checkAuth();
+    checkGoogleAuth();
+    
+    // Check URL for admin dashboard
     const path = window.location.pathname;
     if (path === '/admin-dashboard' || path.includes('admin')) {
       setShowAdminDashboard(true);
