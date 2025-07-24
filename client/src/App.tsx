@@ -22,40 +22,47 @@ function App() {
 
   const checkAuth = async () => {
     try {
+      console.log('🔍 checkAuth: API_URL =', API_URL);
+      console.log('🔍 checkAuth: Checking /api/me...');
       const response = await axios.get(`${API_URL}/api/me`, {
         withCredentials: true
       });
+      console.log('✅ checkAuth: User authenticated', response.data.user);
       setUser(response.data.user);
-    } catch (error) {
+    } catch (error: any) {
+      console.log('❌ checkAuth: User not authenticated', error.response?.status, error.response?.data);
       // User not authenticated - misafir modu zaten açık
     } finally {
+      console.log('🏁 checkAuth: Setting loading to false');
       setLoading(false);
     }
   };
 
   const checkGoogleAuth = async () => {
     const urlParams = new URLSearchParams(window.location.search);
-    console.log('🔍 Checking URL params:', window.location.search);
-    console.log('🔍 google_auth param:', urlParams.get('google_auth'));
+    console.log('🔍 checkGoogleAuth: URL params:', window.location.search);
+    console.log('🔍 checkGoogleAuth: google_auth param:', urlParams.get('google_auth'));
     
     if (urlParams.get('google_auth') === 'success') {
-      console.log('✅ Google auth success detected, calling success endpoint');
+      console.log('✅ checkGoogleAuth: Google auth success detected, calling success endpoint');
       try {
         const response = await axios.get(`${API_URL}/api/auth/google/success`, {
           withCredentials: true
         });
-        console.log('✅ User data received:', response.data.user);
+        console.log('✅ checkGoogleAuth: User data received:', response.data.user);
         setUser(response.data.user);
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (error) {
-        console.error('❌ Google auth check failed:', error);
+        console.error('❌ checkGoogleAuth: Google auth check failed:', error);
       }
     } else if (urlParams.get('error') === 'google_auth_failed') {
-      console.log('❌ Google auth failed');
+      console.log('❌ checkGoogleAuth: Google auth failed');
       alert('Google ile giriş başarısız oldu');
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      console.log('ℹ️ checkGoogleAuth: No Google auth params, continuing normally');
     }
   };
 
@@ -88,16 +95,35 @@ function App() {
     );
   }
 
-  // Check URL for admin dashboard - moved to useEffect with checkAuth
+  // Initialize app
   useEffect(() => {
-    checkAuth();
-    checkGoogleAuth();
+    const initializeApp = async () => {
+      console.log('🚀 App: Starting initialization...');
+      try {
+        // Check URL for admin dashboard first
+        const path = window.location.pathname;
+        console.log('🔍 App: Current path:', path);
+        if (path === '/admin-dashboard' || path.includes('admin')) {
+          console.log('📊 App: Admin dashboard requested');
+          setShowAdminDashboard(true);
+        }
+        
+        // Check Google auth first (faster)
+        console.log('🔍 App: Checking Google auth...');
+        await checkGoogleAuth();
+        
+        // Then check regular auth
+        console.log('🔍 App: Checking regular auth...');
+        await checkAuth();
+        
+        console.log('✅ App: Initialization completed');
+      } catch (error) {
+        console.error('❌ App: Initialization failed:', error);
+        setLoading(false); // Ensure loading is set to false even on error
+      }
+    };
     
-    // Check URL for admin dashboard
-    const path = window.location.pathname;
-    if (path === '/admin-dashboard' || path.includes('admin')) {
-      setShowAdminDashboard(true);
-    }
+    initializeApp();
   }, []);
 
   return (
