@@ -578,12 +578,15 @@ process.on('unhandledRejection', (err) => {
 
 
 // Handle client-side routing - catch-all route (must be last!)
-app.get('*', (req, res) => {
-    // Skip API routes
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
+// Fallback for any other non-API routes
+app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: 'API endpoint not found' });
     }
-    // Serve React app for all non-API routes
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
