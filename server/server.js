@@ -12,6 +12,9 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const twilio = require('twilio');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+const { google } = require('googleapis');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -27,6 +30,18 @@ const DEMO_MODE = process.env.DEMO_MODE === 'true';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5050';
 
+// Email configuration
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const EMAIL_FROM = process.env.EMAIL_FROM || EMAIL_USER;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const EMAIL_SERVICE = process.env.EMAIL_SERVICE || 'gmail'; // gmail, sendgrid, outlook, oauth2
+
+// OAuth2 Configuration
+const OAUTH2_CLIENT_ID = process.env.OAUTH2_CLIENT_ID;
+const OAUTH2_CLIENT_SECRET = process.env.OAUTH2_CLIENT_SECRET;
+const OAUTH2_REFRESH_TOKEN = process.env.OAUTH2_REFRESH_TOKEN;
+
 // Twilio client
 let twilioClient;
 try {
@@ -38,6 +53,83 @@ try {
     }
 } catch (error) {
     console.warn('⚠️ Twilio kurulumu basarisiz (demo mode):', error.message);
+}
+
+// OAuth2 Gmail Configuration
+let oauth2Client;
+let emailTransporter;
+let emailService = 'demo';
+
+try {
+    if (!DEMO_MODE) {
+        if (EMAIL_SERVICE === 'oauth2' && OAUTH2_CLIENT_ID && OAUTH2_CLIENT_SECRET && OAUTH2_REFRESH_TOKEN) {
+            // OAuth2 Gmail configuration
+            oauth2Client = new google.auth.OAuth2(
+                OAUTH2_CLIENT_ID,
+                OAUTH2_CLIENT_SECRET,
+                'http://localhost:5050/auth/google/callback'
+            );
+            
+            oauth2Client.setCredentials({
+                refresh_token: OAUTH2_REFRESH_TOKEN
+            });
+            
+            emailService = 'oauth2';
+            console.log('✅ OAuth2 Gmail e-posta servisi aktif');
+            
+        } else if (EMAIL_SERVICE === 'sendgrid' && SENDGRID_API_KEY) {
+            // SendGrid configuration
+            sgMail.setApiKey(SENDGRID_API_KEY);
+            emailService = 'sendgrid';
+            console.log('✅ SendGrid e-posta servisi aktif');
+            
+        } else if (EMAIL_SERVICE === 'outlook' && EMAIL_USER && EMAIL_PASS) {
+            // Outlook configuration
+            emailTransporter = nodemailer.createTransporter({
+                host: 'smtp.office365.com',
+                port: 587,
+                secure: false,
+                auth: {
+                    user: EMAIL_USER,
+                    pass: EMAIL_PASS
+                }
+            });
+            emailService = 'outlook';
+            console.log('✅ Outlook e-posta servisi aktif');
+            
+        } else if (EMAIL_SERVICE === 'gmail' && EMAIL_USER && EMAIL_PASS) {
+            // Gmail configuration (if app password available)
+            emailTransporter = nodemailer.createTransporter({
+                service: 'gmail',
+                auth: {
+                    user: EMAIL_USER,
+                    pass: EMAIL_PASS
+                }
+            });
+            emailService = 'gmail';
+            console.log('✅ Gmail e-posta servisi aktif');
+        }
+        
+        // Test connection for nodemailer services
+        if (emailTransporter) {
+            emailTransporter.verify((error, success) => {
+                if (error) {
+                    console.warn('⚠️ E-posta servisi bağlantı hatası:', error.message);
+                    emailTransporter = null;
+                    emailService = 'demo';
+                } else {
+                    console.log('✅ E-posta servisi bağlantısı doğrulandı');
+                }
+            });
+        }
+    }
+    
+    if (emailService === 'demo') {
+        console.log('🎯 Demo mode: E-postalar konsola yazdirilacak');
+    }
+} catch (error) {
+    console.warn('⚠️ E-posta servisi kurulumu basarisiz (demo mode):', error.message);
+    emailService = 'demo';
 }
 
 // OTP storage (in production, use Redis or database)
@@ -677,10 +769,115 @@ app.post('/api/forgot-password', async (req, res) => {
             expires: resetTokenExpiry
         });
         
-        // In a real app, you would send an email here
-        // For demo purposes, we'll log the reset link
+        // Send password reset email
         const resetLink = `${CLIENT_URL}/reset-password?token=${resetToken}`;
-        console.log(`🔑 Password reset link for ${email}: ${resetLink}`);
+        
+        const emailTemplate = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #667eea; margin-bottom: 10px;">🏭 Hava Kanalı Sipariş Sistemi</h1>
+                    <h2 style="color: #2c3e50; margin-bottom: 30px;">Şifre Sıfırlama</h2>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 25px;">
+                    <p style="color: #2c3e50; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                        Merhaba,<br><br>
+                        Hesabınız için şifre sıfırlama talebinde bulunuldu. Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:
+                    </p>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetLink}" 
+                           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                  color: white; 
+                                  text-decoration: none; 
+                                  padding: 15px 30px; 
+                                  border-radius: 8px; 
+                                  font-weight: bold; 
+                                  font-size: 16px;
+                                  display: inline-block;">
+                            🔑 Şifremi Sıfırla
+                        </a>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+                        Bu link 1 saat geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.
+                    </p>
+                    
+                    <div style="border-top: 1px solid #e9ecef; padding-top: 15px; margin-top: 20px;">
+                        <p style="color: #666; font-size: 12px; margin: 0;">
+                            Buton çalışmıyorsa, aşağıdaki linki kopyalayıp tarayıcınıza yapıştırın:<br>
+                            <span style="word-break: break-all; color: #667eea;">${resetLink}</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; color: #666; font-size: 12px;">
+                    <p>Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.</p>
+                    <p>© 2024 Hava Kanalı Sipariş Sistemi</p>
+                </div>
+            </div>
+        `;
+        
+        try {
+            if (emailService === 'oauth2') {
+                // OAuth2 Gmail email
+                const accessToken = await oauth2Client.getAccessToken();
+                
+                const transporter = nodemailer.createTransporter({
+                    service: 'gmail',
+                    auth: {
+                        type: 'OAuth2',
+                        user: EMAIL_FROM,
+                        clientId: OAUTH2_CLIENT_ID,
+                        clientSecret: OAUTH2_CLIENT_SECRET,
+                        refreshToken: OAUTH2_REFRESH_TOKEN,
+                        accessToken: accessToken.token,
+                    },
+                });
+                
+                const mailOptions = {
+                    from: EMAIL_FROM,
+                    to: email,
+                    subject: 'Şifre Sıfırlama - Hava Kanalı Sipariş Sistemi',
+                    html: emailTemplate
+                };
+                
+                await transporter.sendMail(mailOptions);
+                console.log(`✅ OAuth2 Gmail password reset email sent to ${email}`);
+                
+            } else if (emailService === 'sendgrid') {
+                // SendGrid email
+                const msg = {
+                    to: email,
+                    from: EMAIL_FROM,
+                    subject: 'Şifre Sıfırlama - Hava Kanalı Sipariş Sistemi',
+                    html: emailTemplate,
+                };
+                
+                await sgMail.send(msg);
+                console.log(`✅ SendGrid password reset email sent to ${email}`);
+                
+            } else if (emailTransporter) {
+                // Nodemailer (Gmail/Outlook)
+                const mailOptions = {
+                    from: EMAIL_FROM,
+                    to: email,
+                    subject: 'Şifre Sıfırlama - Hava Kanalı Sipariş Sistemi',
+                    html: emailTemplate
+                };
+                
+                await emailTransporter.sendMail(mailOptions);
+                console.log(`✅ ${emailService} password reset email sent to ${email}`);
+                
+            } else {
+                // Demo mode - log the reset link
+                console.log(`🔑 Password reset link for ${email}: ${resetLink}`);
+            }
+        } catch (emailError) {
+            console.error('❌ Email sending failed:', emailError);
+            // Fallback to console log if email fails
+            console.log(`🔑 Password reset link for ${email}: ${resetLink}`);
+        }
         
         // Track password reset request
         await trackSession(user.id, 'password_reset_request', {
@@ -742,6 +939,51 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
+// OAuth2 callback for getting refresh token
+app.get('/auth/google/callback', async (req, res) => {
+    const { code } = req.query;
+    
+    if (!code) {
+        return res.send(`
+            <h2>❌ OAuth2 Kurulum Hatası</h2>
+            <p>Authorization code bulunamadı.</p>
+            <a href="/">Ana sayfaya dön</a>
+        `);
+    }
+    
+    try {
+        const oauth2Setup = new google.auth.OAuth2(
+            OAUTH2_CLIENT_ID, 
+            OAUTH2_CLIENT_SECRET, 
+            'http://localhost:5050/auth/google/callback'
+        );
+        
+        const { tokens } = await oauth2Setup.getToken(code);
+        
+        res.send(`
+            <h2>✅ OAuth2 Kurulum Başarılı!</h2>
+            <p>.env dosyanıza aşağıdaki satırı ekleyin:</p>
+            <pre style="background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto;">
+OAUTH2_REFRESH_TOKEN=${tokens.refresh_token}
+            </pre>
+            <p><strong>Sunucuyu yeniden başlatın!</strong></p>
+            <a href="/">Ana sayfaya dön</a>
+        `);
+        
+        console.log('\n🎉 OAuth2 Refresh Token alındı!');
+        console.log('📝 .env dosyanıza ekleyin:');
+        console.log(`OAUTH2_REFRESH_TOKEN=${tokens.refresh_token}`);
+        
+    } catch (error) {
+        console.error('OAuth2 token exchange failed:', error);
+        res.send(`
+            <h2>❌ OAuth2 Token Hatası</h2>
+            <p>Token alınırken hata oluştu: ${error.message}</p>
+            <a href="/">Ana sayfaya dön</a>
+        `);
+    }
+});
+
 // Handle client-side routing - catch-all route (must be last!)
 app.use((req, res, next) => {
     // Skip API routes
@@ -755,6 +997,21 @@ app.use((req, res, next) => {
 
 app.listen(PORT, () => {
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
+    
+    // OAuth2 setup helper
+    if (EMAIL_SERVICE === 'oauth2' && !OAUTH2_REFRESH_TOKEN && OAUTH2_CLIENT_ID) {
+        console.log('\n📧 OAuth2 Kurulumu Gerekli!');
+        console.log('🔗 Bu URL\'ye git:');
+        const oauth2Setup = new google.auth.OAuth2(OAUTH2_CLIENT_ID, OAUTH2_CLIENT_SECRET, 'http://localhost:5050/auth/google/callback');
+        const authUrl = oauth2Setup.generateAuthUrl({
+            access_type: 'offline',
+            scope: ['https://www.googleapis.com/auth/gmail.send'],
+            prompt: 'consent'
+        });
+        console.log(authUrl);
+        console.log('\n✅ Onayladıktan sonra /auth/google/callback sayfasından kodu alın');
+    }
+    
     console.log('🔍 Testing Google Auth endpoint internally...');
     
     // Test if the route exists

@@ -54,34 +54,34 @@
 
 .measurements-section-title {
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   color: #495057;
 }
 
 .quantity-badge {
   background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
   color: white;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
   font-weight: bold;
   font-size: 0.9em;
-  margin-top: 16px;
+  margin-top: 8px;
   display: inline-block;
 }
 
 .options-section {
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .options-title {
   font-weight: bold;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #495057;
 }
 
 .option-item {
   color: #28a745;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .remove-button-container {
