@@ -145,7 +145,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     setForgotPasswordMessage('');
 
     try {
-      const response = await axios.post(`${API_URL}/api/forgot-password`, {
+      await axios.post(`${API_URL}/api/forgot-password`, {
         email: forgotPasswordEmail
       });
       
