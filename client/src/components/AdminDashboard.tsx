@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
 
@@ -82,10 +83,13 @@ const AdminDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Analytics verisi yükleniyor...</p>
+      <div className="admin-dashboard">
+        <div className="admin-loading fade-in">
+          <div className="admin-spinner"></div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '10px' }}>
+            Analytics Yükleniyor...
+          </h2>
+          <p style={{ opacity: 0.8 }}>Veriler hazırlanıyor, lütfen bekleyin</p>
         </div>
       </div>
     );
@@ -93,17 +97,22 @@ const AdminDashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Hata</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchAnalytics}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Tekrar Dene
-          </button>
+      <div className="admin-dashboard">
+        <div className="admin-container">
+          <div className="admin-error fade-in">
+            <div className="admin-error-icon">⚠️</div>
+            <h2 className="admin-error-title">Bir Sorun Oluştu</h2>
+            <p style={{ marginBottom: '10px' }}>{error}</p>
+            <p style={{ fontSize: '0.9rem', opacity: '0.8' }}>
+              Veriler yüklenirken bir hata meydana geldi
+            </p>
+            <button 
+              onClick={fetchAnalytics}
+              className="admin-error-button"
+            >
+              🔄 Tekrar Dene
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -111,103 +120,114 @@ const AdminDashboard: React.FC = () => {
 
   if (!analyticsData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Analytics verisi bulunamadı</p>
+      <div className="admin-dashboard">
+        <div className="admin-container">
+          <div className="admin-error fade-in">
+            <div className="admin-error-icon">📊</div>
+            <h2 className="admin-error-title">Veri Bulunamadı</h2>
+            <p>Analytics verisi henüz mevcut değil</p>
+            <button 
+              onClick={fetchAnalytics}
+              className="admin-error-button"
+            >
+              🔄 Yenile
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">📊 Analytics Dashboard</h1>
-          <p className="text-gray-600 mt-2">Kullanıcı aktiviteleri ve site istatistikleri</p>
+    <div className="admin-dashboard">
+      <div className="admin-container">
+        {/* Header */}
+        <div className="admin-header fade-in">
+          <h1 className="admin-title">📊 Analytics Dashboard</h1>
+          <p className="admin-subtitle">
+            Kullanıcı aktiviteleri ve detaylı site istatistikleri
+          </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl">👥</div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Toplam Kullanıcı</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.summary.totalUsers}</p>
+        <div className="summary-grid slide-in-left">
+          <div className="summary-card hover-scale">
+            <div className="card-header">
+              <div className="card-icon">👥</div>
+              <div className="card-content">
+                <h3>Toplam Kullanıcı</h3>
+                <p className="card-value">{analyticsData.summary.totalUsers}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl">📊</div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Toplam Oturum</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.summary.totalSessions}</p>
+          <div className="summary-card hover-scale">
+            <div className="card-header">
+              <div className="card-icon">📊</div>
+              <div className="card-content">
+                <h3>Toplam Oturum</h3>
+                <p className="card-value">{analyticsData.summary.totalSessions}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl">📄</div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">PDF İndirme</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.summary.totalPDFDownloads}</p>
+          <div className="summary-card hover-scale">
+            <div className="card-header">
+              <div className="card-icon">📄</div>
+              <div className="card-content">
+                <h3>PDF İndirme</h3>
+                <p className="card-value">{analyticsData.summary.totalPDFDownloads}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl">🖱️</div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Düğme Tıklama</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.summary.totalButtonClicks}</p>
+          <div className="summary-card hover-scale">
+            <div className="card-header">
+              <div className="card-icon">🖱️</div>
+              <div className="card-content">
+                <h3>Düğme Tıklama</h3>
+                <p className="card-value">{analyticsData.summary.totalButtonClicks}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="text-3xl">⏱️</div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Ortalama Süre</p>
-                <p className="text-2xl font-bold text-gray-900">{analyticsData.summary.averageSessionDuration}dk</p>
+          <div className="summary-card hover-scale">
+            <div className="card-header">
+              <div className="card-icon">⏱️</div>
+              <div className="card-content">
+                <h3>Ortalama Süre</h3>
+                <p className="card-value">{analyticsData.summary.averageSessionDuration}dk</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="analytics-grid">
           {/* Recent Activities */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Son Aktiviteler</h2>
+          <div className="analytics-panel slide-in-left">
+            <div className="panel-header">
+              <h2 className="panel-title">Son Aktiviteler</h2>
             </div>
-            <div className="p-6">
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {analyticsData.recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">
-                          {getActionText(activity.action)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(activity.timestamp)}
-                        </p>
+            <div className="panel-content">
+              <div className="activity-list">
+                {analyticsData.recentActivities.map((activity, index) => (
+                  <div key={activity.id} className="activity-item" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <div className="activity-header">
+                      <div className="activity-action">
+                        {getActionText(activity.action)}
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Kullanıcı: {activity.userId === 'guest' ? 'Misafir' : activity.userId}
-                      </p>
-                      {activity.data && Object.keys(activity.data).length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {JSON.stringify(activity.data, null, 2)}
-                        </p>
-                      )}
+                      <div className="activity-time">
+                        {formatDate(activity.timestamp)}
+                      </div>
                     </div>
+                    <div className="activity-user">
+                      👤 {activity.userId === 'guest' ? 'Misafir Kullanıcı' : `Kullanıcı: ${activity.userId}`}
+                    </div>
+                    {activity.data && Object.keys(activity.data).length > 0 && (
+                      <div className="activity-data">
+                        {JSON.stringify(activity.data, null, 2)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -215,34 +235,34 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           {/* User Activities */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Kullanıcı Aktiviteleri</h2>
+          <div className="analytics-panel slide-in-right">
+            <div className="panel-header">
+              <h2 className="panel-title">Kullanıcı İstatistikleri</h2>
             </div>
-            <div className="p-6">
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {analyticsData.userActivities.map((user) => (
-                  <div key={user.userId} className="p-4 bg-gray-50 rounded">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-900">
-                        {user.userId === 'guest' ? '👤 Misafir' : `👤 ${user.userId}`}
-                      </h3>
-                      <p className="text-xs text-gray-500">
+            <div className="panel-content">
+              <div className="user-list">
+                {analyticsData.userActivities.map((user, index) => (
+                  <div key={user.userId} className="user-item" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <div className="user-header">
+                      <div className="user-name">
+                        {user.userId === 'guest' ? 'Misafir Kullanıcı' : user.userId}
+                      </div>
+                      <div className="user-last-activity">
                         Son: {formatDate(user.lastActivity)}
-                      </p>
+                      </div>
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Toplam Aktivite</p>
-                        <p className="font-semibold">{user.totalActivities}</p>
+                    <div className="user-stats">
+                      <div className="stat-item">
+                        <div className="stat-label">Toplam Aktivite</div>
+                        <div className="stat-value">{user.totalActivities}</div>
                       </div>
-                      <div>
-                        <p className="text-gray-600">PDF İndirme</p>
-                        <p className="font-semibold">{user.pdfDownloads}</p>
+                      <div className="stat-item">
+                        <div className="stat-label">PDF İndirme</div>
+                        <div className="stat-value">{user.pdfDownloads}</div>
                       </div>
-                      <div>
-                        <p className="text-gray-600">Düğme Tıklama</p>
-                        <p className="font-semibold">{user.buttonClicks}</p>
+                      <div className="stat-item">
+                        <div className="stat-label">Düğme Tıklama</div>
+                        <div className="stat-value">{user.buttonClicks}</div>
                       </div>
                     </div>
                   </div>
@@ -253,10 +273,10 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Refresh Button */}
-        <div className="mt-8 text-center">
+        <div className="refresh-section fade-in">
           <button
             onClick={fetchAnalytics}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="refresh-button"
           >
             🔄 Verileri Yenile
           </button>
