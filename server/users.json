@@ -7,5 +7,13 @@
     "lastName": "OSMANLI",
     "createdAt": "2025-07-22T12:32:36.983Z",
     "googleId": "102677748453567147401"
+  },
+  {
+    "id": "1753360820390",
+    "email": "Salihamz3101@gmail.com",
+    "password": "$2b$10$XyHV1EiySTRJlTsZg8WTgeLUCcrcKllnEwPgvOdLdX0qRWierzDcC",
+    "firstName": "www",
+    "lastName": "www",
+    "createdAt": "2025-07-24T12:40:20.390Z"
   }
 ]

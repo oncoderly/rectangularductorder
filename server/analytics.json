@@ -1,0 +1,37 @@
+{
+  "sessions": [
+    {
+      "id": "1753364863593",
+      "userId": "guest",
+      "action": "session_start",
+      "timestamp": "2025-07-24T13:47:43.593Z",
+      "data": {}
+    },
+    {
+      "id": "1753364870618",
+      "userId": "guest",
+      "action": "button_click",
+      "timestamp": "2025-07-24T13:47:50.618Z",
+      "data": {
+        "buttonName": "login_button",
+        "location": "dashboard_header"
+      }
+    },
+    {
+      "id": "1753364897434",
+      "userId": "1753187556983",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-24T13:48:17.434Z",
+      "data": {
+        "email": "salihosmanli34@gmail.com"
+      }
+    }
+  ],
+  "summary": {
+    "totalUsers": 2,
+    "totalSessions": 3,
+    "totalPDFDownloads": 0,
+    "totalButtonClicks": 1,
+    "averageSessionDuration": 0
+  }
+}
