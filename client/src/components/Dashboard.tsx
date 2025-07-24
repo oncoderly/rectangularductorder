@@ -47,16 +47,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
   console.log('🏠 Dashboard: orderList length:', orderList.length);
 
   useEffect(() => {
-    const savedOrder = localStorage.getItem('rectangularDuctOrder');
+    // Her kullanıcı için ayrı sipariş listesi veya misafir modu için genel liste
+    const storageKey = user ? `rectangularDuctOrder_${user.id}` : 'rectangularDuctOrder_guest';
+    const savedOrder = localStorage.getItem(storageKey);
     if (savedOrder) {
       try {
         setOrderList(JSON.parse(savedOrder));
       } catch (error) {
         console.error('Saved order parsing error:', error);
-        localStorage.removeItem('rectangularDuctOrder');
+        localStorage.removeItem(storageKey);
       }
+    } else {
+      // İlk giriş - sipariş listesini boşalt
+      setOrderList([]);
     }
-  }, []);
+  }, [user]); // user değiştiğinde çalışsın
 
   useEffect(() => {
     // Track page view and session start only once
@@ -65,8 +70,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
   }, []); // Empty dependency array to run only once
 
   useEffect(() => {
-    localStorage.setItem('rectangularDuctOrder', JSON.stringify(orderList));
-  }, [orderList]);
+    // Her kullanıcı için ayrı sipariş listesi kaydet
+    const storageKey = user ? `rectangularDuctOrder_${user.id}` : 'rectangularDuctOrder_guest';
+    localStorage.setItem(storageKey, JSON.stringify(orderList));
+  }, [orderList, user]);
 
   const handleAddPart = (part: SelectedPart) => {
     setOrderList(prev => [...prev, part]);
@@ -85,7 +92,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
       await axios.post(`${API_URL}/api/logout`, {}, {
         withCredentials: true
       });
-      localStorage.removeItem('rectangularDuctOrder');
+      // Kullanıcı çıkış yaparken kendi sipariş listesini temizlemiyoruz - saklanır
+      // localStorage.removeItem(`rectangularDuctOrder_${user?.id}`);
       onLogout();
     } catch (error) {
       console.error('Çıkış hatası:', error);
