@@ -58,9 +58,9 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: isProduction,
+        secure: false, // HTTPS'de bile false yapıyoruz çünkü same-origin
         httpOnly: true,
-        sameSite: isProduction ? 'none' : 'lax',
+        sameSite: 'lax', // same-origin olduğu için 'lax' yeterli
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
