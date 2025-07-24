@@ -16,33 +16,38 @@ export const useAnalytics = () => {
       }, {
         withCredentials: true
       });
-    } catch (error) {
-      console.error('Analytics tracking failed:', error);
+    } catch (error: any) {
+      // Silently fail for analytics - don't break the app
+      if (error.response?.status === 401) {
+        console.log('Analytics: User not authenticated, tracking as guest');
+      } else {
+        console.error('Analytics tracking failed:', error);
+      }
     }
   }, []);
 
   const trackPageView = useCallback((page: string) => {
-    track('page_view', { page });
+    track('page_view', { page }).catch(() => {}); // Silently fail
   }, [track]);
 
   const trackPDFDownload = useCallback((filename: string, userId?: string) => {
-    track('pdf_download', { filename, userId });
+    track('pdf_download', { filename, userId }).catch(() => {}); // Silently fail
   }, [track]);
 
   const trackButtonClick = useCallback((buttonName: string, location?: string) => {
-    track('button_click', { buttonName, location });
+    track('button_click', { buttonName, location }).catch(() => {}); // Silently fail
   }, [track]);
 
   const trackFeatureUse = useCallback((feature: string, details?: AnalyticsData) => {
-    track('feature_use', { feature, ...details });
+    track('feature_use', { feature, ...details }).catch(() => {}); // Silently fail
   }, [track]);
 
   const trackSessionStart = useCallback(() => {
-    track('session_start');
+    track('session_start').catch(() => {}); // Silently fail
   }, [track]);
 
   const trackSessionEnd = useCallback(() => {
-    track('session_end');
+    track('session_end').catch(() => {}); // Silently fail
   }, [track]);
 
   return {

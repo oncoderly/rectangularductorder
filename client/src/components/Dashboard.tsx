@@ -54,11 +54,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
         localStorage.removeItem('rectangularDuctOrder');
       }
     }
-    
-    // Track page view and session start
+  }, []);
+
+  useEffect(() => {
+    // Track page view and session start only once
     trackPageView('dashboard');
     trackSessionStart();
-  }, [trackPageView, trackSessionStart]);
+  }, []); // Empty dependency array to run only once
 
   useEffect(() => {
     localStorage.setItem('rectangularDuctOrder', JSON.stringify(orderList));
