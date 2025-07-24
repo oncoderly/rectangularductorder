@@ -129,6 +129,9 @@ const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
 
+// Import analytics module
+const { trackSession, getAnalyticsSummary } = require('./analytics');
+
 const loadUsers = async () => {
     try {
         return await fs.readJson(USERS_FILE);
