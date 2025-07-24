@@ -15,10 +15,13 @@ interface User {
 }
 
 function App() {
+  console.log('🏁 App: Component initializing...');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+  
+  console.log('📊 App: Current state - loading:', loading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
 
   const checkAuth = async () => {
     try {
@@ -88,12 +91,15 @@ function App() {
   };
 
   if (loading) {
+    console.log('⏳ App: Still loading, showing loading screen...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Yükleniyor...</div>
       </div>
     );
   }
+  
+  console.log('✅ App: Loading complete, rendering main app...');
 
   // Initialize app
   useEffect(() => {
@@ -126,18 +132,26 @@ function App() {
     initializeApp();
   }, []);
 
+  console.log('🎨 App: About to render with showAdminDashboard:', showAdminDashboard, 'user:', !!user);
+  
   return (
     <>
       <div className="App">
         {showAdminDashboard ? (
-          <AdminDashboard />
+          <>
+            {console.log('📊 App: Rendering AdminDashboard')}
+            <AdminDashboard />
+          </>
         ) : (
-          <Dashboard 
-            user={user} 
-            onLogout={handleLogout} 
-            onRequireAuth={handleRequireAuth}
-            isGuest={!user}
-          />
+          <>
+            {console.log('🏠 App: Rendering Dashboard')}
+            <Dashboard 
+              user={user} 
+              onLogout={handleLogout} 
+              onRequireAuth={handleRequireAuth}
+              isGuest={!user}
+            />
+          </>
         )}
         
         {/* Admin Dashboard Toggle Button - Only for authenticated users */}

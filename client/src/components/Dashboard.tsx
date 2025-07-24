@@ -41,8 +41,10 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, isGuest = false }) => {
+  console.log('🏠 Dashboard: Component initializing with props - user:', !!user, 'isGuest:', isGuest);
   const [orderList, setOrderList] = useState<SelectedPart[]>([]);
   const { trackPageView, trackButtonClick, trackSessionStart } = useAnalytics();
+  console.log('🏠 Dashboard: orderList length:', orderList.length);
 
   useEffect(() => {
     const savedOrder = localStorage.getItem('rectangularDuctOrder');
@@ -91,6 +93,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
     }
   };
 
+  console.log('🎨 Dashboard: About to render Dashboard component');
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <header className="dashboard-header">
