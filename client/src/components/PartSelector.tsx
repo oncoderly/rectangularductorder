@@ -391,13 +391,12 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                     
                     {/* Input Container with +/- Buttons */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      {/* +5 Button (Left) */}
+                      {/* -5 Button (Left) */}
                       <button
                         type="button"
                         onClick={() => {
                           const currentValue = Number(measurements[measurement.key]) || 0;
-                          const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
-                          const newValue = Math.min(maxValue, currentValue + 5);
+                          const newValue = Math.max(0, currentValue - 5);
                           handleMeasurementChange(measurement.key, newValue.toString());
                         }}
                         style={{
@@ -405,7 +404,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                           height: '24px',
                           fontSize: '16px',
                           fontWeight: 'bold',
-                          background: '#28a745',
+                          background: '#ff6b6b',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
@@ -416,7 +415,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                           lineHeight: '1'
                         }}
                       >
-                        +5
+                        -5
                       </button>
                       
                       {/* Value Display + Input */}
@@ -461,12 +460,13 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                         )}
                       </div>
                       
-                      {/* -5 Button (Right) */}
+                      {/* +5 Button (Right) */}
                       <button
                         type="button"
                         onClick={() => {
                           const currentValue = Number(measurements[measurement.key]) || 0;
-                          const newValue = Math.max(0, currentValue - 5);
+                          const maxValue = (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 180 : 200;
+                          const newValue = Math.min(maxValue, currentValue + 5);
                           handleMeasurementChange(measurement.key, newValue.toString());
                         }}
                         style={{
@@ -474,7 +474,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                           height: '24px',
                           fontSize: '16px',
                           fontWeight: 'bold',
-                          background: '#ff6b6b',
+                          background: '#28a745',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
@@ -485,7 +485,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                           lineHeight: '1'
                         }}
                       >
-                        -5
+                        +5
                       </button>
                     </div>
                   </div>

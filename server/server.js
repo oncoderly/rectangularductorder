@@ -157,7 +157,7 @@ app.use(session({
         secure: false, // HTTPS'de bile false yapıyoruz çünkü same-origin
         httpOnly: true,
         sameSite: 'lax', // same-origin olduğu için 'lax' yeterli
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: null
     }
 }));
 
