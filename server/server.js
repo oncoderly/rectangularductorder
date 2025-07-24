@@ -143,9 +143,12 @@ passport.deserializeUser(async (id, done) => {
 
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
+// Serve static files from client/dist
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
 console.log('🔧 Registering root route...');
-app.get('/', (req, res) => {
+// API status endpoint
+app.get('/api/status', (req, res) => {
     res.json({ 
         message: 'Rectangular Duct Order API', 
         version: '2.0.0',
@@ -573,6 +576,16 @@ process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
 
+
+// Handle client-side routing - catch-all route (must be last!)
+app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    // Serve React app for all non-API routes
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 app.listen(PORT, () => {
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);

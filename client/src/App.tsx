@@ -4,7 +4,7 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import './index.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
 
 interface User {
   id: string;
