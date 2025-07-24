@@ -143,20 +143,6 @@ passport.deserializeUser(async (id, done) => {
 
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
-// Serve static files from client/dist in production
-if (process.env.NODE_ENV === 'production' || process.env.SERVER_URL?.startsWith('https://')) {
-    app.use(express.static(path.join(__dirname, '../client/dist')));
-    
-    // Handle client-side routing
-    app.get('*', (req, res, next) => {
-        // Skip API routes
-        if (req.path.startsWith('/api/')) {
-            return next();
-        }
-        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-    });
-}
-
 
 console.log('🔧 Registering root route...');
 app.get('/', (req, res) => {
