@@ -32,6 +32,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
   const [error, setError] = useState('');
   const [phoneStep, setPhoneStep] = useState<'phone' | 'otp'>('phone');
   const [otp, setOtp] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
 
   // Handle Google OAuth callback
   React.useEffect(() => {
@@ -133,6 +136,33 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
   const resetPhoneStep = () => {
     setPhoneStep('phone');
     setOtp('');
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setForgotPasswordMessage('');
+
+    try {
+      const response = await axios.post(`${API_URL}/api/forgot-password`, {
+        email: forgotPasswordEmail
+      });
+      
+      setForgotPasswordMessage('Şifre sıfırlama linki e-posta adresinize gönderildi.');
+      setForgotPasswordEmail('');
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Şifre sıfırlama e-postası gönderilemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false);
+    setForgotPasswordEmail('');
+    setForgotPasswordMessage('');
+    setError('');
   };
 
   return (
@@ -259,6 +289,27 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                   value={formData.password}
                   onChange={handleChange}
                 />
+                
+                {/* Şifremi Unuttum Butonu */}
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="auth-forgot-password-btn"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#6366f1',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      textAlign: 'right',
+                      padding: '4px 0',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    Şifremi unuttum
+                  </button>
+                )}
               </div>
             )}
 
@@ -401,6 +452,162 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
           </form>
         </div>
       </div>
+
+      {/* Şifremi Unuttum Modal */}
+      {showForgotPassword && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000
+          }}
+          onClick={closeForgotPassword}
+        >
+          <div 
+            style={{
+              background: 'white',
+              padding: '32px',
+              borderRadius: '16px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              maxWidth: '400px',
+              width: '90%',
+              animation: 'slideIn 0.3s ease-out'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ 
+                fontSize: '32px', 
+                marginBottom: '16px'
+              }}>
+                🔑
+              </div>
+              <h3 style={{ 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                color: '#2c3e50',
+                marginBottom: '8px'
+              }}>
+                Şifrenizi mi unuttunuz?
+              </h3>
+              <p style={{ 
+                color: '#7f8c8d', 
+                fontSize: '14px',
+                lineHeight: '1.5'
+              }}>
+                E-posta adresinizi girin, şifre sıfırlama linki gönderelim
+              </p>
+            </div>
+
+            <form onSubmit={handleForgotPassword}>
+              <input
+                type="email"
+                placeholder="E-posta adresiniz"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  marginBottom: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+
+              {forgotPasswordMessage && (
+                <div style={{
+                  background: '#d1fae5',
+                  color: '#065f46',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  marginBottom: '16px',
+                  border: '1px solid #a7f3d0'
+                }}>
+                  ✅ {forgotPasswordMessage}
+                </div>
+              )}
+
+              {error && (
+                <div style={{
+                  background: '#fee2e2',
+                  color: '#991b1b',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  marginBottom: '16px',
+                  border: '1px solid #fecaca'
+                }}>
+                  ❌ {error}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={closeForgotPassword}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    background: 'transparent',
+                    color: '#7f8c8d',
+                    border: '2px solid #ecf0f1',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = '#bdc3c7';
+                    e.currentTarget.style.color = '#2c3e50';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = '#ecf0f1';
+                    e.currentTarget.style.color = '#7f8c8d';
+                  }}
+                >
+                  İptal
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    background: loading ? '#9ca3af' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => !loading && (e.currentTarget.style.transform = 'translateY(-1px)')}
+                  onMouseOut={(e) => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
+                >
+                  {loading ? 'Gönderiliyor...' : 'Gönder'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

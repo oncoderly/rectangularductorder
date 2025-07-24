@@ -11,6 +11,7 @@ const path = require('path');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const twilio = require('twilio');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -41,6 +42,9 @@ try {
 
 // OTP storage (in production, use Redis or database)
 const otpStorage = new Map();
+
+// Password reset token storage (in production, use Redis or database)
+const resetTokenStorage = new Map();
 
 app.use(cors({
     origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
@@ -645,6 +649,98 @@ process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
 
+// Forgot Password endpoint
+app.post('/api/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'E-posta adresi gerekli' });
+        }
+        
+        const users = await loadUsers();
+        const user = users.find(u => u.email === email);
+        
+        if (!user) {
+            // Security: Don't reveal if email exists or not
+            return res.json({ message: 'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama linki gönderildi.' });
+        }
+        
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = Date.now() + (60 * 60 * 1000); // 1 hour
+        
+        // Store reset token (in production, save to database)
+        resetTokenStorage.set(resetToken, {
+            userId: user.id,
+            email: user.email,
+            expires: resetTokenExpiry
+        });
+        
+        // In a real app, you would send an email here
+        // For demo purposes, we'll log the reset link
+        const resetLink = `${CLIENT_URL}/reset-password?token=${resetToken}`;
+        console.log(`🔑 Password reset link for ${email}: ${resetLink}`);
+        
+        // Track password reset request
+        await trackSession(user.id, 'password_reset_request', {
+            email: user.email
+        });
+        
+        res.json({ message: 'Şifre sıfırlama linki e-posta adresinize gönderildi.' });
+        
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
+
+// Reset Password endpoint
+app.post('/api/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        
+        if (!token || !newPassword) {
+            return res.status(400).json({ error: 'Token ve yeni şifre gerekli' });
+        }
+        
+        // Check if token exists and not expired
+        const tokenData = resetTokenStorage.get(token);
+        if (!tokenData || tokenData.expires < Date.now()) {
+            return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş token' });
+        }
+        
+        // Get user and update password
+        const users = await loadUsers();
+        const userIndex = users.findIndex(u => u.id === tokenData.userId);
+        
+        if (userIndex === -1) {
+            return res.status(400).json({ error: 'Kullanıcı bulunamadı' });
+        }
+        
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        users[userIndex].password = hashedPassword;
+        users[userIndex].updatedAt = new Date().toISOString();
+        
+        // Save users
+        await saveUsers(users);
+        
+        // Remove used token
+        resetTokenStorage.delete(token);
+        
+        // Track password reset completion
+        await trackSession(tokenData.userId, 'password_reset_complete', {
+            email: tokenData.email
+        });
+        
+        res.json({ message: 'Şifreniz başarıyla güncellendi' });
+        
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
 
 // Handle client-side routing - catch-all route (must be last!)
 app.use((req, res, next) => {
