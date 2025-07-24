@@ -38,6 +38,7 @@ app.get('/', (req, res) => {
 });
 
 const USERS_FILE = path.join(__dirname, 'users.json');
+const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
 
 const loadUsers = async () => {
     try {
@@ -51,6 +52,86 @@ const saveUsers = async (users) => {
     await fs.writeJson(USERS_FILE, users, { spaces: 2 });
 };
 
+<<<<<<< Updated upstream
+=======
+// Analytics functions
+const loadAnalytics = async () => {
+    try {
+        return await fs.readJson(ANALYTICS_FILE);
+    } catch (error) {
+        return { sessions: [], activities: [] };
+    }
+};
+
+const saveAnalytics = async (analytics) => {
+    await fs.writeJson(ANALYTICS_FILE, analytics, { spaces: 2 });
+};
+
+// Track user session
+const trackSession = async (userId, action, data = {}) => {
+    try {
+        const analytics = await loadAnalytics();
+        const sessionData = {
+            id: Date.now().toString(),
+            userId: userId || 'guest',
+            action, // 'login', 'logout', 'activity'
+            timestamp: new Date().toISOString(),
+            data
+        };
+        
+        if (action === 'login') {
+            analytics.sessions.push({
+                ...sessionData,
+                sessionStart: new Date().toISOString()
+            });
+        } else if (action === 'activity') {
+            analytics.activities.push(sessionData);
+        }
+        
+        await saveAnalytics(analytics);
+    } catch (error) {
+        console.error('Analytics tracking error:', error);
+    }
+};
+
+// Helper functions for SMS
+const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const formatPhoneNumber = (phone) => {
+    // Turkish phone number formatting
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('90')) {
+        cleaned = cleaned.substring(2);
+    }
+    if (cleaned.startsWith('0')) {
+        cleaned = cleaned.substring(1);
+    }
+    return '+90' + cleaned;
+};
+
+const sendSMS = async (phone, message) => {
+    if (!twilioClient) {
+        // Demo mode - log to console
+        console.log(`🎯 DEMO SMS to ${phone}: ${message}`);
+        return { success: true, demo: true };
+    }
+    
+    try {
+        const result = await twilioClient.messages.create({
+            body: message,
+            from: TWILIO_PHONE_NUMBER,
+            to: formatPhoneNumber(phone)
+        });
+        return { success: true, sid: result.sid };
+    } catch (error) {
+        console.error('SMS gönderme hatası:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+>>>>>>> Stashed changes
 app.post('/api/register', async (req, res) => {
     try {
         const { email, password, firstName, lastName } = req.body;
