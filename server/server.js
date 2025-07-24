@@ -55,7 +55,9 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
@@ -68,6 +70,9 @@ app.use(passport.session());
 console.log('🔧 Google OAuth Config:');
 console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET');
 console.log('GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
+console.log('🔧 URL Config:');
+console.log('CLIENT_URL:', CLIENT_URL);
+console.log('SERVER_URL:', SERVER_URL);
 
 // Passport Google Strategy
 if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
@@ -496,7 +501,9 @@ app.get('/api/auth/google/callback',
         failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
     }),
     (req, res) => {
-        // Successful authentication, redirect to client
+        // Successful authentication, redirect to client  
+        console.log('🔍 OAuth Callback - User authenticated:', req.user?.email);
+        console.log('🔍 OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
         req.session.userId = req.user.id;
         res.redirect(`${CLIENT_URL}/?google_auth=success`);
     }
