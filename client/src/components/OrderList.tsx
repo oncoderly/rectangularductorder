@@ -60,7 +60,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showClearModal, setShowClearModal] = React.useState(false);
   const [pdfBlob, setPdfBlob] = React.useState<Blob | null>(null);
-  const { trackPDFDownload, trackButtonClick } = useAnalytics();
+  const { trackPDFDownload } = useAnalytics();
 
   const generatePDF = async () => {
     if (orderList.length === 0) {
