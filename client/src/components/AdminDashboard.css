@@ -509,6 +509,249 @@
   transform: scale(1.02);
 }
 
+/* User Details Table */
+.user-details-section {
+  margin-top: 40px;
+}
+
+.user-table-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.user-table-header {
+  padding: 25px 30px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+}
+
+.user-table-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.user-table-title::before {
+  content: '👥';
+  margin-right: 12px;
+  font-size: 1.5rem;
+}
+
+.user-table-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table-content {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.table-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table-header th {
+  padding: 20px 15px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-header th:last-child {
+  border-right: none;
+}
+
+.table-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.table-row:hover {
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.table-cell {
+  padding: 18px 15px;
+  font-size: 0.9rem;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.table-cell:last-child {
+  border-right: none;
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.user-type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-registered {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+}
+
+.badge-guest {
+  background: linear-gradient(135deg, #64748b, #94a3b8);
+  color: white;
+}
+
+.stat-number {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.last-seen {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.recent-badge {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-online {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.status-offline {
+  background: #64748b;
+}
+
+/* Table Responsive */
+@media (max-width: 768px) {
+  .user-table-content {
+    max-height: 400px;
+  }
+  
+  .table-header th,
+  .table-cell {
+    padding: 12px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .user-avatar {
+    gap: 8px;
+  }
+  
+  .avatar-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  
+  .user-table-title {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-table {
+    font-size: 0.75rem;
+  }
+  
+  .table-header th,
+  .table-cell {
+    padding: 10px 6px;
+  }
+  
+  .user-avatar {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+  }
+  
+  .stat-number {
+    font-size: 1rem;
+  }
+}
+
 /* Glassmorphism Effects */
 .glass {
   background: rgba(255, 255, 255, 0.25);

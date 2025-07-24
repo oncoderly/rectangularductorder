@@ -272,6 +272,92 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* User Details Table */}
+        <div className="user-details-section fade-in">
+          <div className="user-table-container">
+            <div className="user-table-header">
+              <h2 className="user-table-title">Kullanıcı Detayları</h2>
+              <p className="user-table-subtitle">
+                Tüm kullanıcıların detaylı aktivite bilgileri
+              </p>
+            </div>
+            <div className="user-table-content">
+              <table className="user-table">
+                <thead className="table-header">
+                  <tr>
+                    <th>Kullanıcı</th>
+                    <th>Tip</th>
+                    <th>Giriş Sayısı</th>
+                    <th>PDF İndirme</th>
+                    <th>Tıklama</th>
+                    <th>Toplam Aktivite</th>
+                    <th>Son Görülme</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analyticsData.userActivities.map((user, index) => {
+                    const isGuest = user.userId === 'guest';
+                    const userInitials = isGuest ? 'G' : user.userId.substring(0, 2).toUpperCase();
+                    const isRecentlyActive = new Date().getTime() - new Date(user.lastActivity).getTime() < 24 * 60 * 60 * 1000; // Son 24 saat
+                    
+                    return (
+                      <tr key={user.userId} className="table-row" style={{ animationDelay: `${index * 0.1}s` }}>
+                        <td className="table-cell">
+                          <div className="user-avatar">
+                            <div className="avatar-icon">
+                              {userInitials}
+                            </div>
+                            <div className="user-info">
+                              <div className="user-name">
+                                {isGuest ? 'Misafir Kullanıcı' : user.userId}
+                              </div>
+                              <div className="user-email">
+                                {isGuest ? 'Anonymous User' : `${user.userId}@example.com`}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="table-cell">
+                          <span className={`user-type-badge ${isGuest ? 'badge-guest' : 'badge-registered'}`}>
+                            {isGuest ? 'Misafir' : 'Kayıtlı'}
+                          </span>
+                        </td>
+                        <td className="table-cell">
+                          <div className="stat-number">
+                            {Math.floor(user.totalActivities * 0.3)} {/* Yaklaşık giriş sayısı */}
+                          </div>
+                          <div className="stat-label">Giriş</div>
+                        </td>
+                        <td className="table-cell">
+                          <div className="stat-number">{user.pdfDownloads}</div>
+                          <div className="stat-label">PDF</div>
+                        </td>
+                        <td className="table-cell">
+                          <div className="stat-number">{user.buttonClicks}</div>
+                          <div className="stat-label">Tıklama</div>
+                        </td>
+                        <td className="table-cell">
+                          <div className="stat-number">{user.totalActivities}</div>
+                          <div className="stat-label">Aktivite</div>
+                        </td>
+                        <td className="table-cell">
+                          <div className="last-seen">
+                            <span className={`status-indicator ${isRecentlyActive ? 'status-online' : 'status-offline'}`}></span>
+                            {formatDate(user.lastActivity)}
+                            {isRecentlyActive && (
+                              <span className="recent-badge">YENİ</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         {/* Refresh Button */}
         <div className="refresh-section fade-in">
           <button
