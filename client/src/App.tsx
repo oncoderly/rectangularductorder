@@ -38,18 +38,24 @@ function App() {
 
   const checkGoogleAuth = async () => {
     const urlParams = new URLSearchParams(window.location.search);
+    console.log('🔍 Checking URL params:', window.location.search);
+    console.log('🔍 google_auth param:', urlParams.get('google_auth'));
+    
     if (urlParams.get('google_auth') === 'success') {
+      console.log('✅ Google auth success detected, calling success endpoint');
       try {
         const response = await axios.get(`${API_URL}/api/auth/google/success`, {
           withCredentials: true
         });
+        console.log('✅ User data received:', response.data.user);
         setUser(response.data.user);
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (error) {
-        console.error('Google auth check failed:', error);
+        console.error('❌ Google auth check failed:', error);
       }
     } else if (urlParams.get('error') === 'google_auth_failed') {
+      console.log('❌ Google auth failed');
       alert('Google ile giriş başarısız oldu');
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
