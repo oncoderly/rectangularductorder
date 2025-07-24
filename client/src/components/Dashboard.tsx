@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PartSelector from './PartSelector';
 import OrderList from './OrderList';
+import { useAnalytics } from '../hooks/useAnalytics';
 import './Dashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
@@ -41,6 +42,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, isGuest = false }) => {
   const [orderList, setOrderList] = useState<SelectedPart[]>([]);
+  const { trackPageView, trackButtonClick, trackSessionStart } = useAnalytics();
 
   useEffect(() => {
     const savedOrder = localStorage.getItem('rectangularDuctOrder');
@@ -52,7 +54,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
         localStorage.removeItem('rectangularDuctOrder');
       }
     }
-  }, []);
+    
+    // Track page view and session start
+    trackPageView('dashboard');
+    trackSessionStart();
+  }, [trackPageView, trackSessionStart]);
 
   useEffect(() => {
     localStorage.setItem('rectangularDuctOrder', JSON.stringify(orderList));
@@ -103,7 +109,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
                     </span>
                   </div>
                   <button
-                    onClick={() => onRequireAuth?.()}
+                    onClick={() => {
+                      trackButtonClick('login_button', 'dashboard_header');
+                      onRequireAuth?.();
+                    }}
                     className="dashboard-login-btn"
                   >
                     🚀 Giriş Yap

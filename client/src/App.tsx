@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
 import './index.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
@@ -17,6 +18,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -79,6 +81,10 @@ function App() {
     setShowAuthModal(false);
   };
 
+  const toggleAdminDashboard = () => {
+    setShowAdminDashboard(!showAdminDashboard);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -87,15 +93,49 @@ function App() {
     );
   }
 
+  // Check URL for admin dashboard
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/admin-dashboard' || path.includes('admin')) {
+      setShowAdminDashboard(true);
+    }
+  }, []);
+
   return (
     <>
       <div className="App">
-        <Dashboard 
-          user={user} 
-          onLogout={handleLogout} 
-          onRequireAuth={handleRequireAuth}
-          isGuest={!user}
-        />
+        {showAdminDashboard ? (
+          <AdminDashboard />
+        ) : (
+          <Dashboard 
+            user={user} 
+            onLogout={handleLogout} 
+            onRequireAuth={handleRequireAuth}
+            isGuest={!user}
+          />
+        )}
+        
+        {/* Admin Dashboard Toggle Button - Only for authenticated users */}
+        {user && !showAdminDashboard && (
+          <button
+            onClick={toggleAdminDashboard}
+            className="fixed bottom-4 right-4 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-50"
+            title="Analytics Dashboard"
+          >
+            📊
+          </button>
+        )}
+        
+        {/* Back to Main Dashboard Button */}
+        {showAdminDashboard && (
+          <button
+            onClick={toggleAdminDashboard}
+            className="fixed bottom-4 right-4 bg-gray-600 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors z-50"
+            title="Ana Dashboard'a Dön"
+          >
+            🏠
+          </button>
+        )}
       </div>
       
       {/* Floating Auth Modal Portal */}

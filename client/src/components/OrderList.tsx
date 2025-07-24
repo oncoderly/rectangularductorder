@@ -2,6 +2,7 @@ import React from 'react';
 import { pdf, Document, Page, Text, View, Image, Font } from '@react-pdf/renderer';
 import { parts } from '../data/parts';
 import { pdfStyles } from '../styles/pdfStyles';
+import { useAnalytics } from '../hooks/useAnalytics';
 import '../styles/OrderList.css';
 
 // Türkçe karakter desteği için font kaydı
@@ -59,6 +60,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showClearModal, setShowClearModal] = React.useState(false);
   const [pdfBlob, setPdfBlob] = React.useState<Blob | null>(null);
+  const { trackPDFDownload, trackButtonClick } = useAnalytics();
 
   const generatePDF = async () => {
     if (orderList.length === 0) {
@@ -171,14 +173,18 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
       );
 
       const generatedPdfBlob = await pdf(<PDFDocument />).toBlob();
+      const filename = `siparis_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
       const url = URL.createObjectURL(generatedPdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `siparis_${new Date().toISOString().split('T')[0]}_${Date.now()}.pdf`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Track PDF download
+      trackPDFDownload(filename, user?.id);
 
     } catch (error: any) {
       console.error('PDF oluşturma hatası:', error);
