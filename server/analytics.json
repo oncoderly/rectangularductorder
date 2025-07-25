@@ -79,11 +79,47 @@
       "data": {
         "email": "test1753455560753@example.com"
       }
+    },
+    {
+      "id": "1753456167984",
+      "userId": "1753187556983",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T15:09:27.984Z",
+      "data": {
+        "email": "salihosmanli34@gmail.com"
+      }
+    },
+    {
+      "id": "1753456336381",
+      "userId": "1753455560820",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T15:12:16.381Z",
+      "data": {
+        "email": "test1753455560753@example.com"
+      }
+    },
+    {
+      "id": "1753456338687",
+      "userId": "1753360820390",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T15:12:18.687Z",
+      "data": {
+        "email": "Salihamz3101@gmail.com"
+      }
+    },
+    {
+      "id": "1753456340872",
+      "userId": "1753187556983",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T15:12:20.872Z",
+      "data": {
+        "email": "salihosmanli34@gmail.com"
+      }
     }
   ],
   "summary": {
-    "totalUsers": 3,
-    "totalSessions": 9,
+    "totalUsers": 4,
+    "totalSessions": 13,
     "totalPDFDownloads": 0,
     "totalButtonClicks": 1,
     "averageSessionDuration": 0

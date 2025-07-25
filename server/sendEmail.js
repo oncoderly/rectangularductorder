@@ -2,27 +2,33 @@ const sgMail = require('@sendgrid/mail');
 require('dotenv').config(); // .env dosyasını yükle
 
 // SendGrid API Key'i .env dosyasından alın
-console.log('🔧 SendGrid API Key loading...');
-console.log('🔑 API Key exists:', !!process.env.SENDGRID_API_KEY);
-console.log('🔑 API Key starts with SG:', process.env.SENDGRID_API_KEY?.startsWith('SG.'));
+// API key'i lazy olarak set et (fonksiyon çağrıldığında)
+let isApiKeySet = false;
 
-if (!process.env.SENDGRID_API_KEY) {
-    console.error('❌ SENDGRID_API_KEY not found in environment variables!');
-    console.error('🔍 Available env vars:', Object.keys(process.env).filter(k => k.includes('SEND')));
-    console.error('🔍 NODE_ENV:', process.env.NODE_ENV);
-    
-    // Production'da da hata dönder
-    return { 
-        success: false, 
-        message: 'Email konfigürasyonu eksik - admin ile iletişime geçin',
-        error: 'SENDGRID_API_KEY not configured' 
-    };
+function ensureApiKey() {
+    if (!isApiKeySet) {
+        console.log('🔧 SendGrid API Key loading...');
+        console.log('🔑 API Key exists:', !!process.env.SENDGRID_API_KEY);
+        console.log('🔑 API Key starts with SG:', process.env.SENDGRID_API_KEY?.startsWith('SG.'));
+        
+        if (!process.env.SENDGRID_API_KEY) {
+            console.error('❌ SENDGRID_API_KEY not found in environment variables!');
+            console.error('🔍 Available env vars:', Object.keys(process.env).filter(k => k.includes('SEND')));
+            console.error('🔍 NODE_ENV:', process.env.NODE_ENV);
+            throw new Error('SENDGRID_API_KEY not configured');
+        }
+        
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        isApiKeySet = true;
+        console.log('✅ SendGrid API Key configured successfully');
+    }
 }
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendPasswordResetEmail = async (toEmail, resetToken, userName = '') => {
   try {
+    // API key'i kontrol et ve set et
+    ensureApiKey();
+    
     // Debug bilgileri
     console.log('🔧 SendGrid Debug Info:');
     console.log('📧 To Email:', toEmail);
@@ -153,6 +159,8 @@ const sendPasswordResetEmail = async (toEmail, resetToken, userName = '') => {
 
 const sendWelcomeEmail = async (toEmail, firstName) => {
   try {
+    // API key'i kontrol et ve set et
+    ensureApiKey();
     const msg = {
       to: toEmail,
       from: process.env.SENDGRID_FROM_EMAIL || 'noreply@yourdomain.com',
