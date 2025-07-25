@@ -15,6 +15,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('./sendEmail');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -342,6 +343,14 @@ app.post('/api/register', async (req, res) => {
             method: 'email',
             email: newUser.email
         });
+        
+        // Send welcome email with SendGrid (non-blocking)
+        if (emailService === 'sendgrid') {
+            sendWelcomeEmail(newUser.email, newUser.firstName).catch(error => {
+                console.error('❌ Welcome email failed:', error);
+                // Don't block registration if email fails
+            });
+        }
         
         res.json({ 
             message: 'Kayıt başarılı', 
@@ -846,19 +855,13 @@ app.post('/api/forgot-password', async (req, res) => {
                 console.log(`✅ OAuth2 Gmail password reset email sent to ${email}`);
                 
             } else if (emailService === 'sendgrid') {
-                // SendGrid Dynamic Template
-                const msg = {
-                    to: email,
-                    from: EMAIL_FROM,
-                    templateId: 'd-YOUR_TEMPLATE_ID_HERE', // SendGrid Dynamic Template ID
-                    dynamicTemplateData: {
-                        name: user.name || 'Kullanıcı',
-                        reset_link: resetLink
-                    }
-                };
-                
-                await sgMail.send(msg);
-                console.log(`✅ SendGrid dynamic template email sent to ${email}`);
+                // SendGrid with custom HTML template
+                const emailResult = await sendPasswordResetEmail(email, resetToken);
+                if (emailResult.success) {
+                    console.log(`✅ SendGrid password reset email sent to ${email}`);
+                } else {
+                    throw new Error(emailResult.message);
+                }
                 
             } else if (emailTransporter) {
                 // Nodemailer (Gmail/Outlook)
