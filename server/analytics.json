@@ -50,11 +50,40 @@
       "data": {
         "email": "salihosmanli34@gmail.com"
       }
+    },
+    {
+      "id": "1753455560821",
+      "userId": "1753455560820",
+      "action": "user_register",
+      "timestamp": "2025-07-25T14:59:20.821Z",
+      "data": {
+        "method": "email",
+        "email": "test1753455560753@example.com"
+      }
+    },
+    {
+      "id": "1753455560876",
+      "userId": "1753455560820",
+      "action": "user_login",
+      "timestamp": "2025-07-25T14:59:20.876Z",
+      "data": {
+        "method": "email",
+        "email": "test1753455560753@example.com"
+      }
+    },
+    {
+      "id": "1753455561352",
+      "userId": "1753455560820",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T14:59:21.352Z",
+      "data": {
+        "email": "test1753455560753@example.com"
+      }
     }
   ],
   "summary": {
-    "totalUsers": 2,
-    "totalSessions": 6,
+    "totalUsers": 3,
+    "totalSessions": 9,
     "totalPDFDownloads": 0,
     "totalButtonClicks": 1,
     "averageSessionDuration": 0

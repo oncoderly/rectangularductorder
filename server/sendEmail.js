@@ -8,7 +8,15 @@ console.log('🔑 API Key starts with SG:', process.env.SENDGRID_API_KEY?.starts
 
 if (!process.env.SENDGRID_API_KEY) {
     console.error('❌ SENDGRID_API_KEY not found in environment variables!');
-    throw new Error('SENDGRID_API_KEY is required');
+    console.error('🔍 Available env vars:', Object.keys(process.env).filter(k => k.includes('SEND')));
+    console.error('🔍 NODE_ENV:', process.env.NODE_ENV);
+    
+    // Production'da da hata dönder
+    return { 
+        success: false, 
+        message: 'Email konfigürasyonu eksik - admin ile iletişime geçin',
+        error: 'SENDGRID_API_KEY not configured' 
+    };
 }
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -29,7 +37,12 @@ const sendPasswordResetEmail = async (toEmail, resetToken, userName = '') => {
     const msg = {
       to: toEmail,
       from: process.env.SENDGRID_FROM_EMAIL || 'noreply@yourdomain.com', // doğruladığınız adres
-      subject: 'Şifre Sıfırlama Talebi - Hava Kanalı Sipariş Sistemi',
+      subject: '[Hava Kanalı Sistemi] Şifre Sıfırlama Talebi',
+      headers: {
+        'List-Unsubscribe': '<mailto:karekanalsiparisuygulamasi@yaani.com>',
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High'
+      },
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9fa;">
           <div style="background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
@@ -102,7 +115,10 @@ const sendPasswordResetEmail = async (toEmail, resetToken, userName = '') => {
             <!-- Footer -->
             <div style="border-top: 2px solid #e9ecef; padding-top: 25px; text-align: center;">
               <p style="color: #999; font-size: 13px; line-height: 1.4; margin: 0 0 10px 0;">
-                📧 Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayın.
+                📧 Bu e-posta karekanalsiparisuygulamasi@yaani.com adresinden güvenli olarak gönderilmiştir.
+              </p>
+              <p style="color: #999; font-size: 12px; margin: 0 0 10px 0;">
+                Bu e-postayı istemiyorsanız: karekanalsiparisuygulamasi@yaani.com
               </p>
               <p style="color: #999; font-size: 12px; margin: 0;">
                 © 2024 Hava Kanalı Sipariş Sistemi | Güvenli ve Hızlı Sipariş Yönetimi

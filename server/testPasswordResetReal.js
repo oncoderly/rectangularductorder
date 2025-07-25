@@ -5,7 +5,7 @@ require('dotenv').config();
 async function testPasswordReset() {
     console.log('🧪 Testing actual password reset function...');
     
-    const testEmail = 'salihosmanli34@gmail.com';
+    const testEmail = 'salihamz3101@gmail.com'; // users.json'daki diğer email
     const testToken = 'test-token-123456789';
     const testUserName = 'SALİH';
     

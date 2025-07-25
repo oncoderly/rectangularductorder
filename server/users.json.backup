@@ -15,13 +15,5 @@
     "firstName": "www",
     "lastName": "www",
     "createdAt": "2025-07-24T12:40:20.390Z"
-  },
-  {
-    "id": "1753455560820",
-    "email": "test1753455560753@example.com",
-    "password": "$2b$10$lvqOhE0XkNX.OkPCLCEhjOiTHqQPFuBScuAz8Tb9.yisbEoLe2i2e",
-    "firstName": "Test",
-    "lastName": "User",
-    "createdAt": "2025-07-25T14:59:20.820Z"
   }
 ]

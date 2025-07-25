@@ -136,8 +136,7 @@ try {
 // OTP storage (in production, use Redis or database)
 const otpStorage = new Map();
 
-// Password reset token storage (in production, use Redis or database)
-const resetTokenStorage = new Map();
+// Password reset tokens now stored in database
 
 app.use(cors({
     origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
@@ -188,18 +187,19 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
-        const users = await loadUsers();
-        let user = users.find(u => u.googleId === profile.id);
+        // Find user by Google ID first
+        let user = userDB.getAllUsers().find(u => u.googleId === profile.id);
         
         if (!user) {
             // Check if user exists with same email
-            user = users.find(u => u.email === profile.emails[0].value);
+            user = userDB.getUserByEmail(profile.emails[0].value);
             if (user) {
                 // Link Google account to existing user
-                user.googleId = profile.id;
+                userDB.updateUser(user.id, { googleId: profile.id });
+                user.googleId = profile.id; // Update local object
             } else {
                 // Create new user
-                user = {
+                const newUser = {
                     id: Date.now().toString(),
                     googleId: profile.id,
                     email: profile.emails[0].value,
@@ -207,9 +207,14 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                     lastName: profile.name.familyName,
                     createdAt: new Date().toISOString()
                 };
-                users.push(user);
+                
+                const created = userDB.createUser(newUser);
+                if (created) {
+                    user = newUser;
+                } else {
+                    return done(new Error('Failed to create user'), null);
+                }
             }
-            await saveUsers(users);
         }
         
         return done(null, user);
@@ -230,8 +235,7 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
     try {
-        const users = await loadUsers();
-        const user = users.find(u => u.id === id);
+        const user = userDB.getUserById(id);
         done(null, user);
     } catch (error) {
         done(error, null);
@@ -258,21 +262,27 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-const USERS_FILE = path.join(__dirname, 'users.json');
+// Import database module
+const { userDB, tokenDB } = require('./database');
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
 
 const loadUsers = async () => {
     try {
-        return await fs.readJson(USERS_FILE);
+        const users = userDB.getAllUsers();
+        console.log(`📊 Loaded ${users.length} users from database`);
+        return users;
     } catch (error) {
+        console.error('❌ Error loading users from database:', error);
         return [];
     }
 };
 
 const saveUsers = async (users) => {
-    await fs.writeJson(USERS_FILE, users, { spaces: 2 });
+    // Bu fonksiyon artık gereksiz, ancak eski kod için uyumluluk
+    console.log('⚠️ saveUsers called - using database instead');
+    return true;
 };
 
 // Helper functions for SMS
@@ -316,8 +326,8 @@ app.post('/api/register', async (req, res) => {
     try {
         const { email, password, firstName, lastName } = req.body;
         
-        const users = await loadUsers();
-        const existingUser = users.find(u => u.email === email);
+        // Check if user already exists
+        const existingUser = userDB.getUserByEmail(email);
         
         if (existingUser) {
             return res.status(400).json({ error: 'Bu e-posta adresi zaten kayıtlı' });
@@ -333,8 +343,12 @@ app.post('/api/register', async (req, res) => {
             createdAt: new Date().toISOString()
         };
         
-        users.push(newUser);
-        await saveUsers(users);
+        // Save to database
+        const created = userDB.createUser(newUser);
+        
+        if (!created) {
+            return res.status(500).json({ error: 'Kullanıcı oluşturulamadı' });
+        }
         
         req.session.userId = newUser.id;
         
@@ -370,10 +384,16 @@ app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        const users = await loadUsers();
-        const user = users.find(u => u.email === email);
+        console.log('🔐 Login attempt:', { email, passwordProvided: !!password });
+        
+        console.log('👥 Total users in database:', userDB.getUserCount());
+        console.log('📧 Looking for user with email:', email);
+        
+        const user = userDB.getUserByEmail(email);
+        console.log('🔍 User found:', !!user);
         
         if (!user) {
+            console.log('❌ No user found with email:', email);
             return res.status(400).json({ error: 'Geçersiz e-posta veya şifre' });
         }
         
@@ -759,8 +779,7 @@ app.post('/api/forgot-password', async (req, res) => {
             return res.status(400).json({ error: 'E-posta adresi gerekli' });
         }
         
-        const users = await loadUsers();
-        const user = users.find(u => u.email === email);
+        const user = userDB.getUserByEmail(email);
         
         if (!user) {
             // Security: Don't reveal if email exists or not
@@ -771,12 +790,13 @@ app.post('/api/forgot-password', async (req, res) => {
         const resetToken = crypto.randomBytes(32).toString('hex');
         const resetTokenExpiry = Date.now() + (30 * 60 * 1000); // 30 minutes
         
-        // Store reset token (in production, save to database)
-        resetTokenStorage.set(resetToken, {
-            userId: user.id,
-            email: user.email,
-            expires: resetTokenExpiry
-        });
+        // Store reset token in database
+        const tokenSaved = tokenDB.saveResetToken(resetToken, user.id, user.email, resetTokenExpiry);
+        
+        if (!tokenSaved) {
+            console.error('❌ Failed to save reset token');
+            return res.status(500).json({ error: 'Şifre sıfırlama işlemi başlatılamadı' });
+        }
         
         // Send password reset email
         const resetLink = `${CLIENT_URL}/reset-password?token=${resetToken}`;
@@ -909,29 +929,33 @@ app.post('/api/reset-password', async (req, res) => {
         }
         
         // Check if token exists and not expired
-        const tokenData = resetTokenStorage.get(token);
+        const tokenData = tokenDB.getResetToken(token);
         if (!tokenData || tokenData.expires < Date.now()) {
             return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş token' });
         }
         
         // Get user and update password
-        const users = await loadUsers();
-        const userIndex = users.findIndex(u => u.id === tokenData.userId);
+        const user = userDB.getUserById(tokenData.userId);
         
-        if (userIndex === -1) {
+        if (!user) {
             return res.status(400).json({ error: 'Kullanıcı bulunamadı' });
         }
         
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        users[userIndex].password = hashedPassword;
-        users[userIndex].updatedAt = new Date().toISOString();
         
-        // Save users
-        await saveUsers(users);
+        // Update user password in database
+        const updated = userDB.updateUser(user.id, { 
+            password: hashedPassword,
+            updatedAt: new Date().toISOString()
+        });
+        
+        if (!updated) {
+            return res.status(500).json({ error: 'Şifre güncellenemedi' });
+        }
         
         // Remove used token
-        resetTokenStorage.delete(token);
+        tokenDB.deleteResetToken(token);
         
         // Track password reset completion
         await trackSession(tokenData.userId, 'password_reset_complete', {
