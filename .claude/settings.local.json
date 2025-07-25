@@ -25,7 +25,8 @@
       "Bash(rm:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(start node server.js)"
     ],
     "deny": []
   }

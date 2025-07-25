@@ -32,11 +32,29 @@
         "buttonName": "login_button",
         "location": "dashboard_header"
       }
+    },
+    {
+      "id": "1753453728786",
+      "userId": "1753187556983",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T14:28:48.786Z",
+      "data": {
+        "email": "salihosmanli34@gmail.com"
+      }
+    },
+    {
+      "id": "1753453831168",
+      "userId": "1753187556983",
+      "action": "password_reset_request",
+      "timestamp": "2025-07-25T14:30:31.168Z",
+      "data": {
+        "email": "salihosmanli34@gmail.com"
+      }
     }
   ],
   "summary": {
     "totalUsers": 2,
-    "totalSessions": 4,
+    "totalSessions": 6,
     "totalPDFDownloads": 0,
     "totalButtonClicks": 1,
     "averageSessionDuration": 0

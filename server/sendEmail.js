@@ -1,12 +1,30 @@
 const sgMail = require('@sendgrid/mail');
+require('dotenv').config(); // .env dosyasını yükle
 
 // SendGrid API Key'i .env dosyasından alın
+console.log('🔧 SendGrid API Key loading...');
+console.log('🔑 API Key exists:', !!process.env.SENDGRID_API_KEY);
+console.log('🔑 API Key starts with SG:', process.env.SENDGRID_API_KEY?.startsWith('SG.'));
+
+if (!process.env.SENDGRID_API_KEY) {
+    console.error('❌ SENDGRID_API_KEY not found in environment variables!');
+    throw new Error('SENDGRID_API_KEY is required');
+}
+
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendPasswordResetEmail = async (toEmail, resetToken, userName = '') => {
   try {
+    // Debug bilgileri
+    console.log('🔧 SendGrid Debug Info:');
+    console.log('📧 To Email:', toEmail);
+    console.log('🔑 API Key exists:', !!process.env.SENDGRID_API_KEY);
+    console.log('📤 From Email:', process.env.SENDGRID_FROM_EMAIL);
+    console.log('🌐 Client URL:', process.env.CLIENT_URL);
+    
     // Reset link'i oluştur
     const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+    console.log('🔗 Reset Link:', resetLink);
 
     const msg = {
       to: toEmail,
