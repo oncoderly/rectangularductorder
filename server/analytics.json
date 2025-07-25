@@ -1,37 +1,20 @@
 {
   "sessions": [
     {
-      "id": "1753364863593",
-      "userId": "guest",
-      "action": "session_start",
-      "timestamp": "2025-07-24T13:47:43.593Z",
-      "data": {}
-    },
-    {
-      "id": "1753364870618",
-      "userId": "guest",
-      "action": "button_click",
-      "timestamp": "2025-07-24T13:47:50.618Z",
-      "data": {
-        "buttonName": "login_button",
-        "location": "dashboard_header"
-      }
-    },
-    {
-      "id": "1753364897434",
+      "id": "1753444427994",
       "userId": "1753187556983",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-24T13:48:17.434Z",
+      "action": "page_view",
+      "timestamp": "2025-07-25T11:53:47.994Z",
       "data": {
-        "email": "salihosmanli34@gmail.com"
+        "page": "dashboard"
       }
     }
   ],
   "summary": {
-    "totalUsers": 2,
-    "totalSessions": 3,
+    "totalUsers": 1,
+    "totalSessions": 1,
     "totalPDFDownloads": 0,
-    "totalButtonClicks": 1,
+    "totalButtonClicks": 0,
     "averageSessionDuration": 0
   }
 }

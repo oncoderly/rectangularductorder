@@ -36,6 +36,8 @@ interface SelectedPart {
   measurements: PartMeasurement;
   checkboxes: PartCheckbox;
   directions?: { [key: string]: number };
+  diameters?: { [key: string]: number };
+  materialType: string;
   quantity: number;
   notes?: string;
 }
@@ -101,6 +103,23 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                     <Text style={pdfStyles.partQuantity}>Adet: {part.quantity}</Text>
                   </View>
                   
+                  <View style={{
+                    backgroundColor: '#f8f9fa',
+                    padding: 8,
+                    borderRadius: 6,
+                    borderWidth: 1,
+                    borderColor: '#e3e8ed',
+                    marginBottom: 10
+                  }}>
+                    <Text style={{
+                      fontSize: 11,
+                      fontWeight: 'bold',
+                      color: '#2c3e50'
+                    }}>
+                      🔧 Malzeme: {part.materialType}
+                    </Text>
+                  </View>
+                  
                   {(() => {
                     const selectedPart = parts[part.partKey];
                     if (!selectedPart) return null;
@@ -114,10 +133,11 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                               return measurement.directions.map((direction) => {
                                 const directionKey = `${measurement.key}_${direction.key}`;
                                 const value = part.directions?.[directionKey] || 0;
+                                const diameter = part.diameters?.[directionKey] || 0;
                                 return (
                                   <View key={directionKey} style={pdfStyles.measurement}>
                                     <Text style={pdfStyles.measurementLabel}>{direction.label}:</Text>
-                                    <Text style={pdfStyles.measurementValue}>{value} adet</Text>
+                                    <Text style={pdfStyles.measurementValue}>Ø{diameter} - {value} adet</Text>
                                   </View>
                                 );
                               });
@@ -232,6 +252,23 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                     <Text style={pdfStyles.partQuantity}>Adet: {part.quantity}</Text>
                   </View>
                   
+                  <View style={{
+                    backgroundColor: '#f8f9fa',
+                    padding: 8,
+                    borderRadius: 6,
+                    borderWidth: 1,
+                    borderColor: '#e3e8ed',
+                    marginBottom: 10
+                  }}>
+                    <Text style={{
+                      fontSize: 11,
+                      fontWeight: 'bold',
+                      color: '#2c3e50'
+                    }}>
+                      🔧 Malzeme: {part.materialType}
+                    </Text>
+                  </View>
+                  
                   {(() => {
                     const selectedPart = parts[part.partKey];
                     if (!selectedPart) return null;
@@ -245,10 +282,11 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                               return measurement.directions.map((direction) => {
                                 const directionKey = `${measurement.key}_${direction.key}`;
                                 const value = part.directions?.[directionKey] || 0;
+                                const diameter = part.diameters?.[directionKey] || 0;
                                 return (
                                   <View key={directionKey} style={pdfStyles.measurement}>
                                     <Text style={pdfStyles.measurementLabel}>{direction.label}:</Text>
-                                    <Text style={pdfStyles.measurementValue}>{value} adet</Text>
+                                    <Text style={pdfStyles.measurementValue}>Ø{diameter} - {value} adet</Text>
                                   </View>
                                 );
                               });
@@ -528,6 +566,20 @@ PDF dosyası ekte yer almaktadır.
                   #{index + 1} - {part.name}
                 </div>
                 
+                <div className="material-type" style={{ marginBottom: '12px' }}>
+                  <div style={{ 
+                    fontSize: '14px', 
+                    fontWeight: 'bold', 
+                    color: '#2c3e50',
+                    backgroundColor: '#f8f9fa',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #e3e8ed'
+                  }}>
+                    🔧 Malzeme: {part.materialType}
+                  </div>
+                </div>
+                
                 <div className="order-measurements">
                   <div className="measurements-section-title">
                     📏 Ölçüler:
@@ -541,10 +593,11 @@ PDF dosyası ekte yer almaktadır.
                         return measurement.directions.map((direction) => {
                           const directionKey = `${measurement.key}_${direction.key}`;
                           const value = part.directions?.[directionKey] || 0;
+                          const diameter = part.diameters?.[directionKey] || 0;
                           return (
                             <div key={directionKey}>
                               <span className="measurement-label">{direction.label}:</span>
-                              <span className="measurement-value">{value} adet</span>
+                              <span className="measurement-value">Ø{diameter} - {value} adet</span>
                             </div>
                           );
                         });

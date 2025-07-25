@@ -760,7 +760,7 @@ app.post('/api/forgot-password', async (req, res) => {
         
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const resetTokenExpiry = Date.now() + (60 * 60 * 1000); // 1 hour
+        const resetTokenExpiry = Date.now() + (30 * 60 * 1000); // 30 minutes
         
         // Store reset token (in production, save to database)
         resetTokenStorage.set(resetToken, {
@@ -800,7 +800,7 @@ app.post('/api/forgot-password', async (req, res) => {
                     </div>
                     
                     <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
-                        Bu link 1 saat geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.
+                        Bu link 30 dakika geçerlidir. Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.
                     </p>
                     
                     <div style="border-top: 1px solid #e9ecef; padding-top: 15px; margin-top: 20px;">
@@ -846,16 +846,19 @@ app.post('/api/forgot-password', async (req, res) => {
                 console.log(`✅ OAuth2 Gmail password reset email sent to ${email}`);
                 
             } else if (emailService === 'sendgrid') {
-                // SendGrid email
+                // SendGrid Dynamic Template
                 const msg = {
                     to: email,
                     from: EMAIL_FROM,
-                    subject: 'Şifre Sıfırlama - Hava Kanalı Sipariş Sistemi',
-                    html: emailTemplate,
+                    templateId: 'd-YOUR_TEMPLATE_ID_HERE', // SendGrid Dynamic Template ID
+                    dynamicTemplateData: {
+                        name: user.name || 'Kullanıcı',
+                        reset_link: resetLink
+                    }
                 };
                 
                 await sgMail.send(msg);
-                console.log(`✅ SendGrid password reset email sent to ${email}`);
+                console.log(`✅ SendGrid dynamic template email sent to ${email}`);
                 
             } else if (emailTransporter) {
                 // Nodemailer (Gmail/Outlook)

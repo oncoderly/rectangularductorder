@@ -162,14 +162,12 @@ export const parts: PartData = {
         checkboxes: [
             { key: "alt1_duz", label: "Alt-1 Düz" },
             { key: "ust1_duz", label: "Üst-1 Düz" },
-            { key: "ortali1", label: "Ortali-1" },
             { key: "alt2_duz", label: "Alt-2 Düz" },
-            { key: "ust2_duz", label: "Üst-2 Düz" },
-            { key: "ortali2", label: "Ortali-2" }
+            { key: "ust2_duz", label: "Üst-2 Düz" }
         ]
     },
     "lineer-menfez-kutusu.png": {
-        name: "Lineer Menfez Kutusu",
+        name: "Lineer Menfez & Fancoil & Vrv kutusu",
         image: "images/LİNEER MENFEZ KUTUSU.png",
         measurements: [
             { key: "w1", label: "W1" },
@@ -177,7 +175,7 @@ export const parts: PartData = {
             { key: "l", label: "L", default: 40 },
             {
                 key: "o",
-                label: "Ø",
+                label: "Ø MANŞON YÖNÜ VE ADETİ",
                 directions: [
                     { key: "sag", label: "Sağ" },
                     { key: "sol", label: "Sol" },
@@ -186,17 +184,6 @@ export const parts: PartData = {
                     { key: "ust", label: "Üst" }
                 ]
             }
-        ],
-        checkboxes: []
-    },
-    "fancoil-vrv-ic-unite-kutusu.png": {
-        name: "Fancoil - VRV İç Ünite Kutusu",
-        image: "images/FANCOIL - VRV İÇ ÜNİTE KUTUSU.png",
-        measurements: [
-            { key: "w1", label: "W1" },
-            { key: "h1", label: "H1" },
-            { key: "l", label: "L", default: 40 },
-            { key: "o", label: "Ø" }
         ],
         checkboxes: []
     },

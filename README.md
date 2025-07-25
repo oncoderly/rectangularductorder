@@ -57,7 +57,6 @@ npm run dev
 - s-parcasi.png
 - y-parcasi.png
 - lineer-menfez-kutusu.png
-- fancoil-vrv-ic-unite-kutusu.png
 - plenum-box-kutu.png
 - tel-kafes.png
 - manson.png

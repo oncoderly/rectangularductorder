@@ -3,6 +3,7 @@ import axios from 'axios';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
+import ResetPassword from './components/ResetPassword';
 import './index.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
@@ -28,7 +29,7 @@ function App() {
     const initializeApp = async () => {
       console.log('🚀 App: Starting initialization...');
       try {
-        // Check URL for admin dashboard first
+        // Check URL for different routes
         const path = window.location.pathname;
         console.log('🔍 App: Current path:', path);
         if (path === '/admin-dashboard' || path.includes('admin')) {
@@ -133,6 +134,12 @@ function App() {
   console.log('✅ App: Loading complete, rendering main app...');
 
   console.log('🎨 App: About to render with showAdminDashboard:', showAdminDashboard, 'user:', !!user);
+  
+  // Check if this is a reset password page
+  const path = window.location.pathname;
+  if (path === '/reset-password') {
+    return <ResetPassword />;
+  }
   
   return (
     <>

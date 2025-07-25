@@ -17,6 +17,8 @@ interface SelectedPart {
   measurements: PartMeasurement;
   checkboxes: PartCheckbox;
   directions?: { [key: string]: number };
+  diameters?: { [key: string]: number };
+  materialType: string;
   quantity: number;
   notes?: string;
 }
@@ -30,6 +32,9 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   const [measurements, setMeasurements] = useState<PartMeasurement>({});
   const [checkboxes, setCheckboxes] = useState<PartCheckbox>({});
   const [directions, setDirections] = useState<{ [key: string]: number }>({});
+  const [diameters, setDiameters] = useState<{ [key: string]: number }>({});
+  const [materialType, setMaterialType] = useState<string>('galvaniz');
+  const [customMaterial, setCustomMaterial] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
   const [imageScrollUp, setImageScrollUp] = useState<boolean>(false);
@@ -161,6 +166,46 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
           [key]: false
         }));
       }
+    } 
+    // Y Parçası için Üst-Alt çiftleri birbirini iptal etsin (sadece biri seçilebilir)
+    else if (selectedPartKey === 'y-parcasi.png') {
+      if (checked) {
+        if (key === 'ust1_duz') {
+          // Üst-1 seçilirse Alt-1 iptal olur
+          setCheckboxes(prev => ({
+            ...prev,
+            ust1_duz: true,
+            alt1_duz: false
+          }));
+        } else if (key === 'alt1_duz') {
+          // Alt-1 seçilirse Üst-1 iptal olur
+          setCheckboxes(prev => ({
+            ...prev,
+            alt1_duz: true,
+            ust1_duz: false
+          }));
+        } else if (key === 'ust2_duz') {
+          // Üst-2 seçilirse Alt-2 iptal olur
+          setCheckboxes(prev => ({
+            ...prev,
+            ust2_duz: true,
+            alt2_duz: false
+          }));
+        } else if (key === 'alt2_duz') {
+          // Alt-2 seçilirse Üst-2 iptal olur
+          setCheckboxes(prev => ({
+            ...prev,
+            alt2_duz: true,
+            ust2_duz: false
+          }));
+        }
+      } else {
+        // Checkbox kapatıldığında sadece kendini kapat
+        setCheckboxes(prev => ({
+          ...prev,
+          [key]: false
+        }));
+      }
     } else {
       // Diğer parçalar için normal davranış
       setCheckboxes(prev => ({
@@ -177,6 +222,13 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     }));
   };
 
+  const handleDiameterChange = (measurementKey: string, directionKey: string, value: number) => {
+    setDiameters(prev => ({
+      ...prev,
+      [`${measurementKey}_${directionKey}`]: value
+    }));
+  };
+
   const handleAddPart = () => {
     if (!selectedPart || !selectedPartKey) return;
 
@@ -188,6 +240,8 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
       measurements: { ...measurements },
       checkboxes: { ...checkboxes },
       directions: { ...directions },
+      diameters: { ...diameters },
+      materialType: materialType === 'custom' ? customMaterial : materialType,
       quantity,
       notes: notes.trim() || undefined
     };
@@ -206,6 +260,9 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     }
     setCheckboxes({});
     setDirections({});
+    setDiameters({});
+    setMaterialType('galvaniz');
+    setCustomMaterial('');
     setQuantity(1);
     setNotes('');
   };
@@ -258,19 +315,65 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
             {selectedPart.measurements.map((measurement) => (
               <div key={measurement.key}>
                 {measurement.directions ? (
-                  <div style={{ marginBottom: '20px' }}>
-                    <h4 style={{ marginBottom: '12px', fontWeight: 'bold', color: '#34495e' }}>
+                  <div style={{ 
+                    marginBottom: '20px',
+                    padding: '16px',
+                    border: '2px solid #e3e8ed',
+                    borderRadius: '8px',
+                    backgroundColor: '#f8f9fa'
+                  }}>
+                    <h4 style={{ marginBottom: '16px', fontWeight: 'bold', color: '#34495e', textAlign: 'center' }}>
                       {measurement.label}
                     </h4>
                     {measurement.directions.map((direction) => (
-                      <div key={direction.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        {/* Label */}
-                        <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#34495e', minWidth: '60px', textAlign: 'right' }}>
+                      <div key={direction.key} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '12px', 
+                        marginBottom: '12px',
+                        padding: '8px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '6px',
+                        border: '1px solid #e3e8ed'
+                      }}>
+                        {/* Direction Label */}
+                        <label style={{ 
+                          fontSize: '14px', 
+                          fontWeight: 'bold', 
+                          color: '#34495e', 
+                          minWidth: '50px'
+                        }}>
                           {direction.label}:
                         </label>
                         
-                        {/* Input */}
-                        <div style={{ position: 'relative', minWidth: '60px' }}>
+                        {/* Diameter Section */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34495e' }}>Ø</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1000"
+                            className="focus-ring"
+                            placeholder="0"
+                            style={{ 
+                              width: '70px',
+                              textAlign: 'center',
+                              fontSize: '13px',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              border: '1px solid #e3e8ed'
+                            }}
+                            value={diameters[`${measurement.key}_${direction.key}`] || ''}
+                            onChange={(e) => handleDiameterChange(
+                              measurement.key, 
+                              direction.key, 
+                              Number(e.target.value) || 0
+                            )}
+                          />
+                        </div>
+                        
+                        {/* Count Section */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <input
                             type="number"
                             min="0"
@@ -280,7 +383,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             style={{ 
                               width: '60px',
                               textAlign: 'center',
-                              fontSize: '14px',
+                              fontSize: '13px',
                               padding: '4px',
                               borderRadius: '4px',
                               border: '1px solid #e3e8ed'
@@ -293,62 +396,64 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             )}
                           />
                           <span style={{ 
-                            fontSize: '14px',
+                            fontSize: '13px',
                             color: '#6c757d',
-                            marginLeft: '2px'
+                            minWidth: '30px'
                           }}>adet</span>
                         </div>
                         
                         {/* -/+ Buttons */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
-                            const newValue = Math.max(0, currentValue - 1);
-                            handleDirectionChange(measurement.key, direction.key, newValue);
-                          }}
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          −
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
-                            const newValue = Math.min(50, currentValue + 1);
-                            handleDirectionChange(measurement.key, direction.key, newValue);
-                          }}
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            background: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          +
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
+                              const newValue = Math.max(0, currentValue - 1);
+                              handleDirectionChange(measurement.key, direction.key, newValue);
+                            }}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            −
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
+                              const newValue = Math.min(50, currentValue + 1);
+                              handleDirectionChange(measurement.key, direction.key, newValue);
+                            }}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              background: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -492,6 +597,50 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                 )}
               </div>
             ))}
+            
+            {/* Material Type Selection */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#34495e', minWidth: '100px', textAlign: 'right' }}>
+                Malzeme Cinsi:
+              </label>
+              
+              <select
+                className="focus-ring"
+                value={materialType}
+                onChange={(e) => setMaterialType(e.target.value)}
+                style={{ 
+                  minWidth: '120px',
+                  fontSize: '14px',
+                  padding: '6px',
+                  borderRadius: '4px',
+                  border: '1px solid #e3e8ed',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <option value="galvaniz">Galvaniz</option>
+                <option value="paslanmaz">Paslanmaz</option>
+                <option value="dkp">DKP</option>
+                <option value="custom">Diğer (Özel Giriş)</option>
+              </select>
+              
+              {materialType === 'custom' && (
+                <input
+                  type="text"
+                  className="focus-ring"
+                  placeholder="Malzeme cinsi girin..."
+                  value={customMaterial}
+                  onChange={(e) => setCustomMaterial(e.target.value)}
+                  style={{ 
+                    minWidth: '150px',
+                    fontSize: '14px',
+                    padding: '6px',
+                    borderRadius: '4px',
+                    border: '1px solid #e3e8ed',
+                    marginLeft: '8px'
+                  }}
+                />
+              )}
+            </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               {/* Label */}
