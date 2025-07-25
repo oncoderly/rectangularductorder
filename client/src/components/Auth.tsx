@@ -20,18 +20,15 @@ interface AuthProps {
 
 const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
+  const [authMethod, setAuthMethod] = useState<'email' | 'google'>('email');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     firstName: '',
-    lastName: '',
-    phone: ''
+    lastName: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [phoneStep, setPhoneStep] = useState<'phone' | 'otp'>('phone');
-  const [otp, setOtp] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
@@ -82,25 +79,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
         payload = formData;
         console.log('✉️ Auth: Email auth - endpoint:', endpoint);
         console.log('✉️ Auth: Email payload:', { ...payload, password: '***' });
-      } else if (authMethod === 'phone') {
-        if (phoneStep === 'phone') {
-          endpoint = '/api/phone/send-otp';
-          payload = { phone: formData.phone, isLogin };
-          console.log('📱 Auth: Phone OTP - endpoint:', endpoint);
-          await axios.post(`${API_URL}${endpoint}`, payload);
-          setPhoneStep('otp');
-          setLoading(false);
-          return;
-        } else {
-          endpoint = isLogin ? '/api/phone/login' : '/api/phone/register';
-          payload = { 
-            phone: formData.phone, 
-            otp,
-            firstName: formData.firstName,
-            lastName: formData.lastName
-          };
-          console.log('📱 Auth: Phone login - endpoint:', endpoint);
-        }
       }
 
       console.log('🌐 Auth: Making request to:', `${API_URL}${endpoint}`);
@@ -131,11 +109,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     } catch (error: any) {
       setError('Google ile giriş başarısız');
     }
-  };
-
-  const resetPhoneStep = () => {
-    setPhoneStep('phone');
-    setOtp('');
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -220,21 +193,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
             {/* Email Login Button */}
             <button
               type="button"
-              onClick={() => { setAuthMethod('email'); resetPhoneStep(); }}
+              onClick={() => setAuthMethod('email')}
               className={`auth-btn auth-btn-email ${authMethod === 'email' ? '' : 'inactive'}`}
             >
               <div className="auth-btn-icon">✉️</div>
               <span>E-posta ile {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</span>
-            </button>
-
-            {/* Phone Login Button */}
-            <button
-              type="button"
-              onClick={() => { setAuthMethod('phone'); resetPhoneStep(); }}
-              className={`auth-btn auth-btn-phone ${authMethod === 'phone' ? '' : 'inactive'}`}
-            >
-              <div className="auth-btn-icon">📱</div>
-              <span>Telefon ile {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</span>
             </button>
           </div>
 
@@ -313,81 +276,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
               </div>
             )}
 
-            {/* Phone Auth Form */}
-            {authMethod === 'phone' && (
-              <div className="auth-form-card phone-mode">
-                <div className="auth-form-header">
-                  <div className="auth-form-icon phone-mode">📱</div>
-                  <div>
-                    <h5 className="auth-form-title">Telefon ile {isLogin ? 'Giriş' : 'Kayıt'}</h5>
-                    <p className="auth-form-subtitle">{phoneStep === 'phone' ? 'Telefon numaranızı girin' : 'Doğrulama kodunu girin'}</p>
-                  </div>
-                </div>
-                {!isLogin && phoneStep === 'phone' && (
-                  <div className="auth-input-grid">
-                    <input
-                      name="firstName"
-                      type="text"
-                      required
-                      className="auth-input phone-mode"
-                      placeholder="Ad"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                    />
-                    <input
-                      name="lastName"
-                      type="text"
-                      required
-                      className="auth-input phone-mode"
-                      placeholder="Soyad"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                )}
-                
-                {phoneStep === 'phone' ? (
-                  <input
-                    name="phone"
-                    type="tel"
-                    required
-                    className="auth-input phone-mode"
-                    placeholder="Telefon numarası (05xx xxx xx xx)"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                ) : (
-                  <div className="auth-otp-container">
-                    <div className="auth-otp-info">
-                      <div className="auth-otp-header">
-                        <div className="auth-otp-icon">📨</div>
-                        <div>
-                          <p className="auth-otp-phone">{formData.phone}</p>
-                          <p className="auth-otp-desc">numarasına gönderilen 6 haneli kodu girin</p>
-                        </div>
-                      </div>
-                    </div>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      required
-                      className="auth-input auth-otp-input phone-mode"
-                      placeholder="000000"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    />
-                    <button
-                      type="button"
-                      onClick={resetPhoneStep}
-                      className="auth-otp-reset"
-                    >
-                      <span>🔄</span>
-                      Telefon numarasını değiştir
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Error Display */}
             {error && (
@@ -406,7 +294,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
             <button
               type="submit"
               disabled={loading}
-              className={`auth-btn auth-btn-submit ${authMethod === 'phone' ? 'phone-mode' : ''}`}
+              className="auth-btn auth-btn-submit"
             >
               {loading ? (
                 <div className="auth-loading">
@@ -416,14 +304,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
               ) : (
                 <>
                   <div className="auth-btn-icon">
-                    {authMethod === 'phone' && phoneStep === 'phone' ? '📲' :
-                     authMethod === 'phone' && phoneStep === 'otp' ? '✅' :
-                     isLogin ? '🚀' : '✨'}
+                    {isLogin ? '🚀' : '✨'}
                   </div>
                   <span>
-                    {authMethod === 'phone' && phoneStep === 'phone' ? 'SMS Kodu Gönder' :
-                     authMethod === 'phone' && phoneStep === 'otp' ? 'Kodu Doğrula' :
-                     isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
+                    {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
                   </span>
                 </>
               )}
@@ -432,7 +316,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
             {/* Toggle Login/Register */}
             <button
               type="button"
-              onClick={() => { setIsLogin(!isLogin); resetPhoneStep(); }}
+              onClick={() => setIsLogin(!isLogin)}
               className="auth-btn auth-btn-toggle"
             >
               {isLogin ? '✨ Hesabınız yok mu? Kayıt olun' : '🔑 Hesabınız var mı? Giriş yapın'}

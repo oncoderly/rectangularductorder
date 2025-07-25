@@ -856,7 +856,8 @@ app.post('/api/forgot-password', async (req, res) => {
                 
             } else if (emailService === 'sendgrid') {
                 // SendGrid with custom HTML template
-                const emailResult = await sendPasswordResetEmail(email, resetToken);
+                const userName = user.firstName || user.email.split('@')[0];
+                const emailResult = await sendPasswordResetEmail(email, resetToken, userName);
                 if (emailResult.success) {
                     console.log(`✅ SendGrid password reset email sent to ${email}`);
                 } else {

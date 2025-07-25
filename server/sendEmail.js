@@ -3,7 +3,7 @@ const sgMail = require('@sendgrid/mail');
 // SendGrid API Key'i .env dosyasından alın
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const sendPasswordResetEmail = async (toEmail, resetToken) => {
+const sendPasswordResetEmail = async (toEmail, resetToken, userName = '') => {
   try {
     // Reset link'i oluştur
     const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
@@ -11,55 +11,86 @@ const sendPasswordResetEmail = async (toEmail, resetToken) => {
     const msg = {
       to: toEmail,
       from: process.env.SENDGRID_FROM_EMAIL || 'noreply@yourdomain.com', // doğruladığınız adres
-      subject: 'Şifre Sıfırlama Talebi',
+      subject: 'Şifre Sıfırlama Talebi - Hava Kanalı Sipariş Sistemi',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9fa;">
+          <div style="background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <h1 style="color: #667eea; margin: 0; font-size: 28px; font-weight: bold;">
+                🏭 Hava Kanalı Sipariş Sistemi
+              </h1>
+              <div style="width: 60px; height: 4px; background: linear-gradient(90deg, #667eea, #764ba2); margin: 15px auto; border-radius: 2px;"></div>
+            </div>
+            
+            <!-- Title -->
+            <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 22px;">
               🔐 Şifre Sıfırlama Talebi
             </h2>
             
-            <p style="color: #555; font-size: 16px; line-height: 1.6;">
-              Merhaba,
-            </p>
-            
-            <p style="color: #555; font-size: 16px; line-height: 1.6;">
-              Hava Kanalı Sipariş Sistemi hesabınız için şifre sıfırlama talebinde bulundunuz. 
-              Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetLink}" 
-                 style="background-color: #3498db; color: white; padding: 15px 30px; 
-                        text-decoration: none; border-radius: 5px; font-weight: bold; 
-                        display: inline-block; font-size: 16px;">
-                ŞİFREMİ SIFIRLA
-              </a>
+            <!-- Content -->
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid #667eea;">
+              <p style="color: #2c3e50; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Merhaba${userName ? ' ' + userName : ''},
+              </p>
+              
+              <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+                Hava Kanalı Sipariş Sistemi hesabınız için şifre sıfırlama talebinde bulundunuz. 
+                Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:
+              </p>
+              
+              <!-- Reset Button -->
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetLink}" 
+                   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                          color: white; 
+                          padding: 18px 40px; 
+                          text-decoration: none; 
+                          border-radius: 8px; 
+                          font-weight: bold; 
+                          display: inline-block; 
+                          font-size: 16px;
+                          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                          transition: all 0.3s ease;">
+                  🔑 ŞİFREMİ SIFIRLA
+                </a>
+              </div>
+              
+              <!-- Alternative Link -->
+              <p style="color: #666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0;">
+                Eğer buton çalışmıyorsa, aşağıdaki bağlantıyı kopyalayıp tarayıcınıza yapıştırabilirsiniz:
+              </p>
+              
+              <div style="background-color: #e9ecef; padding: 15px; border-radius: 6px; margin-top: 10px; border: 1px dashed #ced4da;">
+                <p style="color: #667eea; font-size: 13px; word-break: break-all; margin: 0; font-family: monospace;">
+                  ${resetLink}
+                </p>
+              </div>
             </div>
             
-            <p style="color: #555; font-size: 14px; line-height: 1.6;">
-              Eğer buton çalışmıyorsa, aşağıdaki linki kopyalayıp tarayıcınıza yapıştırabilirsiniz:
-            </p>
+            <!-- Important Notes -->
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+              <h4 style="color: #856404; margin: 0 0 15px 0; font-size: 16px;">
+                ⚠️ Önemli Güvenlik Bilgileri:
+              </h4>
+              <ul style="color: #856404; font-size: 14px; line-height: 1.5; margin: 0; padding-left: 20px;">
+                <li>Bu bağlantı güvenlik nedeniyle <strong>30 dakika</strong> içinde geçerliliğini yitirecektir.</li>
+                <li>Bağlantı sadece bir kez kullanılabilir.</li>
+                <li>Bu talebi siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz.</li>
+              </ul>
+            </div>
             
-            <p style="color: #3498db; font-size: 14px; word-break: break-all; 
-                      background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
-              ${resetLink}
-            </p>
-            
-            <div style="border-top: 1px solid #eee; margin-top: 30px; padding-top: 20px;">
-              <p style="color: #999; font-size: 12px; line-height: 1.4;">
-                ⚠️ <strong>Önemli:</strong> Bu bağlantı güvenlik nedeniyle <strong>30 dakika</strong> içinde geçerliliğini yitirecektir.
-              </p>
-              
-              <p style="color: #999; font-size: 12px; line-height: 1.4;">
-                Eğer bu talebi siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz. 
-                Hesabınız güvende kalacaktır.
-              </p>
-              
-              <p style="color: #999; font-size: 12px; line-height: 1.4; margin-top: 20px; text-align: center;">
+            <!-- Footer -->
+            <div style="border-top: 2px solid #e9ecef; padding-top: 25px; text-align: center;">
+              <p style="color: #999; font-size: 13px; line-height: 1.4; margin: 0 0 10px 0;">
                 📧 Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayın.
               </p>
+              <p style="color: #999; font-size: 12px; margin: 0;">
+                © 2024 Hava Kanalı Sipariş Sistemi | Güvenli ve Hızlı Sipariş Yönetimi
+              </p>
             </div>
+            
           </div>
         </div>
       `,

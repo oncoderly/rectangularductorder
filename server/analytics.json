@@ -8,13 +8,37 @@
       "data": {
         "page": "dashboard"
       }
+    },
+    {
+      "id": "1753452809945",
+      "userId": "1753187556983",
+      "action": "session_start",
+      "timestamp": "2025-07-25T14:13:29.945Z",
+      "data": {}
+    },
+    {
+      "id": "1753452809947",
+      "userId": "1753187556983",
+      "action": "session_start",
+      "timestamp": "2025-07-25T14:13:29.947Z",
+      "data": {}
+    },
+    {
+      "id": "1753452813501",
+      "userId": "guest",
+      "action": "button_click",
+      "timestamp": "2025-07-25T14:13:33.501Z",
+      "data": {
+        "buttonName": "login_button",
+        "location": "dashboard_header"
+      }
     }
   ],
   "summary": {
-    "totalUsers": 1,
-    "totalSessions": 1,
+    "totalUsers": 2,
+    "totalSessions": 4,
     "totalPDFDownloads": 0,
-    "totalButtonClicks": 0,
+    "totalButtonClicks": 1,
     "averageSessionDuration": 0
   }
 }
