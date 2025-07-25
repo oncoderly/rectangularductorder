@@ -30,7 +30,10 @@ interface SelectedPart {
   measurements: PartMeasurement;
   checkboxes: PartCheckbox;
   directions?: { [key: string]: number };
+  diameters?: { [key: string]: number };
+  materialType: string;
   quantity: number;
+  notes?: string;
 }
 
 interface DashboardProps {
