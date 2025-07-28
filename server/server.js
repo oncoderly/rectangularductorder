@@ -17,6 +17,17 @@ const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('./sendEmail');
 
+// Security middleware import
+const {
+    rateLimiters,
+    validationRules,
+    handleValidationErrors,
+    securityHeaders,
+    sanitizeInput,
+    errorHandler,
+    requestLogger
+} = require('./middleware/security');
+
 const app = express();
 const PORT = process.env.PORT || 5050;
 
@@ -138,13 +149,25 @@ const otpStorage = new Map();
 
 // Password reset tokens now stored in database
 
+// Security headers - en üstte olmalı
+app.use(securityHeaders);
+
+// Request logging
+app.use(requestLogger);
+
+// General rate limiting - tüm istekler için
+app.use(rateLimiters.general);
+
 app.use(cors({
     origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
     credentials: true
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // JSON payload limit
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Input sanitization - JSON parse'dan sonra
+app.use(sanitizeInput);
 
 // Check if running on HTTPS (production)
 const isProduction = process.env.NODE_ENV === 'production' || process.env.SERVER_URL?.startsWith('https://');
@@ -153,12 +176,14 @@ app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    name: 'sessionId', // Default session name değiştir
     cookie: { 
-        secure: false, // HTTPS'de bile false yapıyoruz çünkü same-origin
+        secure: isProduction, // Production'da HTTPS zorunlu
         httpOnly: true,
-        sameSite: 'lax', // same-origin olduğu için 'lax' yeterli
-        maxAge: null
-    }
+        sameSite: isProduction ? 'strict' : 'lax', // Production'da daha sıkı
+        maxAge: 24 * 60 * 60 * 1000 // 24 saat
+    },
+    rolling: true // Her istekte session süresi yenilensin
 }));
 
 // Passport initialization
@@ -322,7 +347,11 @@ const sendSMS = async (phone, message) => {
     }
 };
 
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', 
+    rateLimiters.auth, 
+    validationRules.register, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { email, password, firstName, lastName } = req.body;
         
@@ -380,7 +409,11 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', 
+    rateLimiters.auth, 
+    validationRules.login, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { email, password } = req.body;
         
@@ -460,7 +493,11 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Phone Auth Endpoints
-app.post('/api/phone/send-otp', async (req, res) => {
+app.post('/api/phone/send-otp', 
+    rateLimiters.sms, 
+    validationRules.phoneAuth, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { phone, isLogin } = req.body;
         
@@ -512,7 +549,11 @@ app.post('/api/phone/send-otp', async (req, res) => {
     }
 });
 
-app.post('/api/phone/register', async (req, res) => {
+app.post('/api/phone/register', 
+    rateLimiters.auth, 
+    validationRules.phoneAuth, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { phone, otp, firstName, lastName } = req.body;
         
@@ -578,7 +619,11 @@ app.post('/api/phone/register', async (req, res) => {
     }
 });
 
-app.post('/api/phone/login', async (req, res) => {
+app.post('/api/phone/login', 
+    rateLimiters.auth, 
+    validationRules.phoneAuth, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { phone, otp } = req.body;
         
@@ -728,7 +773,11 @@ app.get('/api/auth/google/success', async (req, res) => {
 });
 
 // Analytics tracking endpoint
-app.post('/api/track', async (req, res) => {
+app.post('/api/track', 
+    rateLimiters.analytics, 
+    validationRules.analytics, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { action, data } = req.body;
         const userId = req.session.userId || 'guest';
@@ -771,7 +820,11 @@ process.on('unhandledRejection', (err) => {
 });
 
 // Forgot Password endpoint
-app.post('/api/forgot-password', async (req, res) => {
+app.post('/api/forgot-password', 
+    rateLimiters.passwordReset, 
+    validationRules.forgotPassword, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { email } = req.body;
         
@@ -920,7 +973,11 @@ app.post('/api/forgot-password', async (req, res) => {
 });
 
 // Reset Password endpoint
-app.post('/api/reset-password', async (req, res) => {
+app.post('/api/reset-password', 
+    rateLimiters.passwordReset, 
+    validationRules.resetPassword, 
+    handleValidationErrors, 
+    async (req, res) => {
     try {
         const { token, newPassword } = req.body;
         
@@ -1025,6 +1082,9 @@ app.use((req, res, next) => {
     console.log('📄 Serving index.html for path:', req.path);
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
+
+// Error handler - en son middleware olmalı
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);

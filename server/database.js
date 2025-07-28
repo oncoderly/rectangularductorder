@@ -12,10 +12,22 @@ let db;
 
 function initDatabase() {
     try {
-        // Database'i aç (yoksa oluştur)
-        db = new Database(DB_PATH);
+        // Database'i aç (yoksa oluştur) - production optimizasyonları ile
+        db = new Database(DB_PATH, {
+            verbose: process.env.NODE_ENV !== 'production' ? console.log : null,
+            fileMustExist: false,
+            timeout: 5000,
+            readonly: false
+        });
         
-        console.log('📊 Database connected successfully');
+        // Performance optimizations
+        db.pragma('journal_mode = WAL'); // Write-Ahead Logging for better concurrency
+        db.pragma('synchronous = NORMAL'); // Faster writes
+        db.pragma('cache_size = 1000'); // Cache 1000 pages
+        db.pragma('temp_store = memory'); // Store temp tables in memory
+        db.pragma('mmap_size = 268435456'); // 256MB memory-mapped I/O
+        
+        console.log('📊 Database connected successfully with optimizations');
         
         // Users tablosunu oluştur
         db.exec(`
@@ -41,6 +53,15 @@ function initDatabase() {
                 createdAt TEXT NOT NULL,
                 FOREIGN KEY (userId) REFERENCES users (id)
             )
+        `);
+        
+        // Performance indexes
+        db.exec(`
+            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+            CREATE INDEX IF NOT EXISTS idx_users_googleId ON users(googleId);
+            CREATE INDEX IF NOT EXISTS idx_users_createdAt ON users(createdAt);
+            CREATE INDEX IF NOT EXISTS idx_reset_tokens_userId ON reset_tokens(userId);
+            CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON reset_tokens(expires);
         `);
         
         console.log('✅ Database tables created/verified');
@@ -100,13 +121,49 @@ function migrateFromJSON() {
     }
 }
 
+// Prepared statements - performance için cache'lenir
+const preparedStatements = {
+    getAllUsers: null,
+    getUserByEmail: null,
+    getUserById: null,
+    createUser: null,
+    updateUser: null,
+    deleteUser: null,
+    getUserCount: null,
+    saveResetToken: null,
+    getResetToken: null,
+    deleteResetToken: null,
+    cleanupExpiredTokens: null
+};
+
+// Prepared statements'ları initialize et
+function initPreparedStatements() {
+    preparedStatements.getAllUsers = db.prepare('SELECT * FROM users ORDER BY createdAt DESC');
+    preparedStatements.getUserByEmail = db.prepare('SELECT * FROM users WHERE email = ?');
+    preparedStatements.getUserById = db.prepare('SELECT * FROM users WHERE id = ?');
+    preparedStatements.createUser = db.prepare(`
+        INSERT INTO users (id, email, password, firstName, lastName, googleId, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    preparedStatements.getUserCount = db.prepare('SELECT COUNT(*) as count FROM users');
+    preparedStatements.deleteUser = db.prepare('DELETE FROM users WHERE id = ?');
+    
+    // Reset token statements
+    preparedStatements.saveResetToken = db.prepare(`
+        INSERT OR REPLACE INTO reset_tokens (token, userId, email, expires, createdAt)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+    preparedStatements.getResetToken = db.prepare('SELECT * FROM reset_tokens WHERE token = ?');
+    preparedStatements.deleteResetToken = db.prepare('DELETE FROM reset_tokens WHERE token = ?');
+    preparedStatements.cleanupExpiredTokens = db.prepare('DELETE FROM reset_tokens WHERE expires < ?');
+}
+
 // User CRUD operations
 const userDB = {
     // Tüm kullanıcıları getir
     getAllUsers: () => {
         try {
-            const stmt = db.prepare('SELECT * FROM users ORDER BY createdAt DESC');
-            return stmt.all();
+            return preparedStatements.getAllUsers.all();
         } catch (error) {
             console.error('❌ Error getting all users:', error);
             return [];
@@ -116,8 +173,7 @@ const userDB = {
     // Email ile kullanıcı bul
     getUserByEmail: (email) => {
         try {
-            const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-            return stmt.get(email);
+            return preparedStatements.getUserByEmail.get(email);
         } catch (error) {
             console.error('❌ Error getting user by email:', error);
             return null;
@@ -127,8 +183,7 @@ const userDB = {
     // ID ile kullanıcı bul
     getUserById: (id) => {
         try {
-            const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-            return stmt.get(id);
+            return preparedStatements.getUserById.get(id);
         } catch (error) {
             console.error('❌ Error getting user by ID:', error);
             return null;
@@ -138,12 +193,7 @@ const userDB = {
     // Yeni kullanıcı oluştur
     createUser: (userData) => {
         try {
-            const stmt = db.prepare(`
-                INSERT INTO users (id, email, password, firstName, lastName, googleId, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `);
-            
-            const result = stmt.run(
+            const result = preparedStatements.createUser.run(
                 userData.id,
                 userData.email,
                 userData.password,
@@ -197,8 +247,7 @@ const userDB = {
     // Kullanıcı sil
     deleteUser: (id) => {
         try {
-            const stmt = db.prepare('DELETE FROM users WHERE id = ?');
-            const result = stmt.run(id);
+            const result = preparedStatements.deleteUser.run(id);
             console.log('🗑️ User deleted:', id);
             return result.changes > 0;
         } catch (error) {
@@ -210,8 +259,7 @@ const userDB = {
     // Kullanıcı sayısı
     getUserCount: () => {
         try {
-            const stmt = db.prepare('SELECT COUNT(*) as count FROM users');
-            return stmt.get().count;
+            return preparedStatements.getUserCount.get().count;
         } catch (error) {
             console.error('❌ Error getting user count:', error);
             return 0;
@@ -224,12 +272,9 @@ const tokenDB = {
     // Token kaydet
     saveResetToken: (token, userId, email, expires) => {
         try {
-            const stmt = db.prepare(`
-                INSERT OR REPLACE INTO reset_tokens (token, userId, email, expires, createdAt)
-                VALUES (?, ?, ?, ?, ?)
-            `);
-            
-            const result = stmt.run(token, userId, email, expires, new Date().toISOString());
+            const result = preparedStatements.saveResetToken.run(
+                token, userId, email, expires, new Date().toISOString()
+            );
             return result.changes > 0;
         } catch (error) {
             console.error('❌ Error saving reset token:', error);
@@ -240,8 +285,7 @@ const tokenDB = {
     // Token getir
     getResetToken: (token) => {
         try {
-            const stmt = db.prepare('SELECT * FROM reset_tokens WHERE token = ?');
-            return stmt.get(token);
+            return preparedStatements.getResetToken.get(token);
         } catch (error) {
             console.error('❌ Error getting reset token:', error);
             return null;
@@ -251,8 +295,7 @@ const tokenDB = {
     // Token sil
     deleteResetToken: (token) => {
         try {
-            const stmt = db.prepare('DELETE FROM reset_tokens WHERE token = ?');
-            const result = stmt.run(token);
+            const result = preparedStatements.deleteResetToken.run(token);
             return result.changes > 0;
         } catch (error) {
             console.error('❌ Error deleting reset token:', error);
@@ -264,8 +307,7 @@ const tokenDB = {
     cleanupExpiredTokens: () => {
         try {
             const now = Date.now();
-            const stmt = db.prepare('DELETE FROM reset_tokens WHERE expires < ?');
-            const result = stmt.run(now);
+            const result = preparedStatements.cleanupExpiredTokens.run(now);
             if (result.changes > 0) {
                 console.log(`🧹 Cleaned up ${result.changes} expired tokens`);
             }
@@ -279,6 +321,9 @@ const tokenDB = {
 
 // Database'i başlat
 initDatabase();
+
+// Prepared statements'ları initialize et
+initPreparedStatements();
 
 // Expired tokenları düzenli temizle
 setInterval(() => {
