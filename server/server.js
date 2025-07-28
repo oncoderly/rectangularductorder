@@ -291,9 +291,7 @@ app.get('/api/status', (req, res) => {
 });
 
 // Import database module
-const { userDB, tokenDB, analyticsDB, isPostgreSQL } = require('./database-selector');
-
-console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
+const { userDB, tokenDB, analyticsDB, isPostgreSQL, waitForInit } = require('./database-selector');
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
@@ -1195,4 +1193,10 @@ app.listen(PORT, () => {
     setTimeout(() => {
         console.log('Available routes test will be done via external call');
     }, 1000);
+    
+    // Wait for database initialization
+    console.log('⏳ Waiting for database initialization...');
+    await waitForInit();
+    console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
+    console.log('✅ Database ready - Server fully initialized');
 });

@@ -4,6 +4,7 @@ const USE_POSTGRESQL = process.env.USE_POSTGRESQL === 'true' || !!DATABASE_URL;
 
 // Test PostgreSQL connection before using it
 let postgresAvailable = false;
+let isInitialized = false;
 
 console.log('🔍 Database selection...');
 console.log('📍 DATABASE_URL:', DATABASE_URL ? 'Set' : 'Not set');
@@ -79,17 +80,74 @@ async function initializeDatabase() {
             getRecentActivities: async () => []
         };
     }
+    
+    isInitialized = true;
+    console.log('✅ Database initialization completed');
 }
 
 // Initialize immediately
-initializeDatabase().catch(console.error);
+initializeDatabase().catch(error => {
+    console.error('❌ Database initialization failed:', error);
+    // Force SQLite fallback
+    console.log('🔄 Forcing SQLite fallback...');
+    const sqlite = require('./database');
+    db = sqlite.db;
+    userDB = sqlite.userDB;
+    tokenDB = sqlite.tokenDB;
+    analyticsDB = null;
+    
+    // Convert to async
+    const originalUserDB = { ...userDB };
+    userDB.getAllUsers = async (...args) => originalUserDB.getAllUsers(...args);
+    userDB.getUserByEmail = async (...args) => originalUserDB.getUserByEmail(...args);
+    userDB.getUserById = async (...args) => originalUserDB.getUserById(...args);
+    userDB.createUser = async (...args) => originalUserDB.createUser(...args);
+    userDB.updateUser = async (...args) => originalUserDB.updateUser(...args);
+    userDB.deleteUser = async (...args) => originalUserDB.deleteUser(...args);
+    userDB.getUserCount = async (...args) => originalUserDB.getUserCount(...args);
 
-console.log('✅ Database selector initialized');
+    const originalTokenDB = { ...tokenDB };
+    tokenDB.saveResetToken = async (...args) => originalTokenDB.saveResetToken(...args);
+    tokenDB.getResetToken = async (...args) => originalTokenDB.getResetToken(...args);
+    tokenDB.deleteResetToken = async (...args) => originalTokenDB.deleteResetToken(...args);
+    tokenDB.cleanupExpiredTokens = async (...args) => originalTokenDB.cleanupExpiredTokens(...args);
+
+    analyticsDB = {
+        saveAnalytics: async () => true,
+        getAnalyticsSummary: async () => ({
+            total_users: await userDB.getUserCount(),
+            total_sessions: 0,
+            total_pdf_downloads: 0,
+            total_button_clicks: 0
+        }),
+        getRecentActivities: async () => []
+    };
+    
+    isInitialized = true;
+    console.log('✅ SQLite fallback initialized');
+});
+
+console.log('🔄 Database selector loading...');
+
+// Wait for initialization wrapper
+function waitForInit() {
+    return new Promise((resolve) => {
+        const checkInit = () => {
+            if (isInitialized) {
+                resolve();
+            } else {
+                setTimeout(checkInit, 100);
+            }
+        };
+        checkInit();
+    });
+}
 
 module.exports = {
     get db() { return db; },
     get userDB() { return userDB; },
     get tokenDB() { return tokenDB; },
     get analyticsDB() { return analyticsDB; },
-    get isPostgreSQL() { return postgresAvailable; }
+    get isPostgreSQL() { return postgresAvailable; },
+    waitForInit
 };
