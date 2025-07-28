@@ -213,11 +213,13 @@ const userDB = {
     // Create user
     createUser: async (userData) => {
         try {
+            console.log('📥 DEBUG - createUser called with:', userData); // <-- Ekledik
+
             const result = await pool.query(`
-                INSERT INTO users (id, email, password, firstname, lastname, googleid, createdat)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING *
-            `, [
+            INSERT INTO users (id, email, password, firstname, lastname, googleid, createdat)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *
+        `, [
                 userData.id,
                 userData.email,
                 userData.password,
@@ -226,7 +228,7 @@ const userDB = {
                 userData.googleId || null,
                 userData.createdAt
             ]);
-            
+
             console.log('✅ User created in PostgreSQL:', userData.email);
             return result.rowCount > 0;
         } catch (error) {
@@ -235,8 +237,8 @@ const userDB = {
             if (error.stack) console.error('🧠 Stack trace:', error.stack);
             return false;
         }
+    }
 
-    },
 
     // Update user
     updateUser: async (id, updates) => {
