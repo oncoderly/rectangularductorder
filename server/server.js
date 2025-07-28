@@ -17,6 +17,8 @@ const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('./sendEmail');
 
+
+
 // Security middleware import
 const {
     rateLimiters,
@@ -296,7 +298,7 @@ console.log('🔍 ENV DEBUG - DATABASE_URL first 30 chars:', process.env.DATABAS
 console.log('🔍 ENV DEBUG - NODE_ENV:', process.env.NODE_ENV);
 
 // Import database module  
-const { userDB, tokenDB, analyticsDB, isPostgreSQL } = require('./database-selector');
+const { db, userDB, tokenDB, analyticsDB, waitForInit, isPostgreSQL } = require('./database-selector');
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
