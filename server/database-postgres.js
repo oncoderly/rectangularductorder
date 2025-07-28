@@ -230,9 +230,12 @@ const userDB = {
             console.log('✅ User created in PostgreSQL:', userData.email);
             return result.rowCount > 0;
         } catch (error) {
-            console.error('❌ Error creating user:', error);
+            console.error('❌ Error creating user:', error.message);
+            console.error('📦 userData:', userData);
+            if (error.stack) console.error('🧠 Stack trace:', error.stack);
             return false;
         }
+
     },
 
     // Update user
