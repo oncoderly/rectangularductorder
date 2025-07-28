@@ -1196,7 +1196,10 @@ app.listen(PORT, () => {
     
     // Wait for database initialization
     console.log('⏳ Waiting for database initialization...');
-    await waitForInit();
-    console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
-    console.log('✅ Database ready - Server fully initialized');
+    waitForInit().then(() => {
+        console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
+        console.log('✅ Database ready - Server fully initialized');
+    }).catch(error => {
+        console.error('❌ Database initialization failed:', error);
+    });
 });
