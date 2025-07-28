@@ -215,15 +215,18 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         // Find user by Google ID first
-        let user = userDB.getAllUsers().find(u => u.googleId === profile.id);
+        let user = (await userDB.getAllUsers()).find(u => u.googleId === profile.id);
         
         if (!user) {
             // Check if user exists with same email
-            user = userDB.getUserByEmail(profile.emails[0].value);
+            user = await userDB.getUserByEmail(profile.emails[0].value);
             if (user) {
                 // Link Google account to existing user
-                userDB.updateUser(user.id, { googleId: profile.id });
+                await userDB.updateUser(user.id, { googleId: profile.id });
                 user.googleId = profile.id; // Update local object
             } else {
                 // Create new user
@@ -236,7 +239,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                     createdAt: new Date().toISOString()
                 };
                 
-                const created = userDB.createUser(newUser);
+                const created = await userDB.createUser(newUser);
                 if (created) {
                     user = newUser;
                 } else {
@@ -298,7 +301,8 @@ const { trackSession, getAnalyticsSummary } = require('./analytics');
 
 const loadUsers = async () => {
     try {
-        const users = userDB.getAllUsers();
+        await waitForInit();
+        const users = await userDB.getAllUsers();
         console.log(`📊 Loaded ${users.length} users from database`);
         return users;
     } catch (error) {
