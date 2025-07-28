@@ -937,6 +937,28 @@ app.post('/api/forgot-password',
                     throw new Error(emailResult.message);
                 }
                 
+            } else if (emailService === 'gmail') {
+                // Gmail with App Password (Ücretsiz)
+                const { sendPasswordResetEmailGmail } = require('./sendEmailGmail');
+                const userName = user.firstName || user.email.split('@')[0];
+                const emailResult = await sendPasswordResetEmailGmail(email, resetToken, userName);
+                if (emailResult.success) {
+                    console.log(`✅ Gmail password reset email sent to ${email}`);
+                } else {
+                    throw new Error(emailResult.message);
+                }
+                
+            } else if (emailService === 'yaani') {
+                // Yaani.com SMTP (Kendi Mail Altyapınız - Tamamen Ücretsiz)
+                const { sendPasswordResetEmailYaani } = require('./sendEmailYaani');
+                const userName = user.firstName || user.email.split('@')[0];
+                const emailResult = await sendPasswordResetEmailYaani(email, resetToken, userName);
+                if (emailResult.success) {
+                    console.log(`✅ Yaani.com password reset email sent to ${email}`);
+                } else {
+                    throw new Error(emailResult.message);
+                }
+                
             } else if (emailTransporter) {
                 // Nodemailer (Gmail/Outlook)
                 const mailOptions = {
