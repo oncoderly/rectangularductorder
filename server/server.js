@@ -730,17 +730,27 @@ app.get('/api/auth/google/callback', (req, res, next) => {
         // Successful authentication, redirect to client  
         console.log('✅ OAuth Callback - User authenticated:', req.user?.email);
         console.log('✅ OAuth Callback - User object:', JSON.stringify(req.user, null, 2));
-        console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
         
         req.session.userId = req.user.id;
         
-        // Track Google OAuth login
-        trackSession(req.user.id, 'user_login', {
-            method: 'google',
-            email: req.user.email
-        }).catch(err => console.error('Analytics tracking error:', err));
-        
-        res.redirect(`${CLIENT_URL}/?google_auth=success`);
+        // Session'ı kaydet (ÇÖZÜM!)
+        req.session.save((err) => {
+            if (err) {
+                console.error('❌ Session save error:', err);
+                return res.redirect(`${CLIENT_URL}/?error=session_save_failed`);
+            }
+            
+            console.log('✅ Session saved successfully for user:', req.user.id);
+            console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
+            
+            // Track Google OAuth login
+            trackSession(req.user.id, 'user_login', {
+                method: 'google',
+                email: req.user.email
+            }).catch(err => console.error('Analytics tracking error:', err));
+            
+            res.redirect(`${CLIENT_URL}/?google_auth=success`);
+        });
     });
 });
 
@@ -807,6 +817,48 @@ app.get('/api/admin/analytics', async (req, res) => {
     } catch (error) {
         console.error('Analytics summary error:', error);
         res.status(500).json({ error: 'Failed to get analytics' });
+    }
+});
+
+// Admin users list endpoint
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        // Check if user is authenticated (basic check)
+        if (!req.session.userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        
+        console.log('🔍 Admin users list requested by user:', req.session.userId);
+        
+        // Get all users from database
+        const users = userDB.getAllUsers();
+        
+        // Remove sensitive info and format the data
+        const safeUsers = users.map(user => ({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName || 'N/A',
+            lastName: user.lastName || 'N/A',
+            googleId: user.googleId || null,
+            createdAt: user.createdAt,
+            isGoogleUser: !!user.googleId,
+            displayName: `${user.firstName || 'Anonim'} ${user.lastName || 'Kullanıcı'}`.trim()
+        }));
+        
+        // Sort by creation date (newest first)
+        safeUsers.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        console.log(`✅ Returning ${safeUsers.length} users to admin`);
+        
+        res.json({
+            success: true,
+            users: safeUsers,
+            totalCount: safeUsers.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Admin users list error:', error);
+        res.status(500).json({ error: 'Failed to get users list' });
     }
 });
 
