@@ -549,20 +549,10 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                           value={(measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') ? 
                             (measurements[measurement.key] !== undefined && measurements[measurement.key] !== '' ? measurements[measurement.key] + '°' : '') : 
                             (measurements[measurement.key] || '')}
-                          onFocus={(e) => {
-                            // Default değer varsa veya 0/boş ise temizle
-                            const defaultValue = selectedPart?.measurements.find(m => m.key === measurement.key)?.default;
-                            const currentValue = measurements[measurement.key];
-                            const isDefaultOrEmpty = (
-                              currentValue === '' || 
-                              currentValue === '0' ||
-                              currentValue === '0°' ||
-                              (defaultValue !== undefined && currentValue === defaultValue.toString())
-                            );
-                            if (isDefaultOrEmpty) {
-                              e.target.select();
-                            }
-                          }}
+                          onFocus={createNumericFocusHandler(
+                            Number(measurements[measurement.key]) || 0,
+                            selectedPart?.measurements.find(m => m.key === measurement.key)?.default || 0
+                          )}
                           onChange={(e) => {
                             const inputValue = e.target.value.replace('°', '');
                             if (measurement.label.includes('Açı') || measurement.key === 'a1' || measurement.key === 'a2') {

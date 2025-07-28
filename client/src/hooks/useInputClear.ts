@@ -54,11 +54,15 @@ export const useInputClear = () => {
     defaultValue: number = 0
   ) => {
     return (e: React.FocusEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value.replace('°', ''); // Açı sembolünü kaldır
+      const numericValue = Number(inputValue) || 0;
+      
       const shouldClear = (
         currentValue === defaultValue ||
         e.target.value === String(defaultValue) ||
+        e.target.value === `${defaultValue}°` ||
         e.target.value === '' ||
-        Number(e.target.value) === defaultValue
+        numericValue === defaultValue
       );
       
       if (shouldClear) {
