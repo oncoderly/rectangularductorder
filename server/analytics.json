@@ -112,13 +112,46 @@
         "method": "google",
         "email": "salihosmanli34@gmail.com"
       }
+    },
+    {
+      "id": "1753702693444",
+      "userId": "1753187556983",
+      "action": "session_start",
+      "timestamp": "2025-07-28T11:38:13.444Z",
+      "data": {}
+    },
+    {
+      "id": "1753702714274",
+      "userId": "1753187556983",
+      "action": "page_view",
+      "timestamp": "2025-07-28T11:38:34.274Z",
+      "data": {
+        "page": "dashboard"
+      }
+    },
+    {
+      "id": "1753702714280",
+      "userId": "1753187556983",
+      "action": "session_start",
+      "timestamp": "2025-07-28T11:38:34.280Z",
+      "data": {}
+    },
+    {
+      "id": "1753702718612",
+      "userId": "guest",
+      "action": "button_click",
+      "timestamp": "2025-07-28T11:38:38.612Z",
+      "data": {
+        "buttonName": "login_button",
+        "location": "dashboard_header"
+      }
     }
   ],
   "summary": {
     "totalUsers": 2,
-    "totalSessions": 12,
+    "totalSessions": 16,
     "totalPDFDownloads": 0,
-    "totalButtonClicks": 5,
+    "totalButtonClicks": 6,
     "averageSessionDuration": 0
   }
 }

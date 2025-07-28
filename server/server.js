@@ -291,7 +291,9 @@ app.get('/api/status', (req, res) => {
 });
 
 // Import database module
-const { userDB, tokenDB } = require('./database');
+const { userDB, tokenDB, analyticsDB, isPostgreSQL } = require('./database-selector');
+
+console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
@@ -359,7 +361,7 @@ app.post('/api/register',
         const { email, password, firstName, lastName } = req.body;
         
         // Check if user already exists
-        const existingUser = userDB.getUserByEmail(email);
+        const existingUser = await userDB.getUserByEmail(email);
         
         if (existingUser) {
             return res.status(400).json({ error: 'Bu e-posta adresi zaten kayıtlı' });
@@ -376,7 +378,7 @@ app.post('/api/register',
         };
         
         // Save to database
-        const created = userDB.createUser(newUser);
+        const created = await userDB.createUser(newUser);
         
         if (!created) {
             return res.status(500).json({ error: 'Kullanıcı oluşturulamadı' });
@@ -422,10 +424,10 @@ app.post('/api/login',
         
         console.log('🔐 Login attempt:', { email, passwordProvided: !!password });
         
-        console.log('👥 Total users in database:', userDB.getUserCount());
+        console.log('👥 Total users in database:', await userDB.getUserCount());
         console.log('📧 Looking for user with email:', email);
         
-        const user = userDB.getUserByEmail(email);
+        const user = await userDB.getUserByEmail(email);
         console.log('🔍 User found:', !!user);
         
         if (!user) {
@@ -834,18 +836,18 @@ app.get('/api/admin/users', async (req, res) => {
         console.log('🔍 Admin users list requested by user:', req.session.userId);
         
         // Get all users from database
-        const users = userDB.getAllUsers();
+        const users = await userDB.getAllUsers();
         
-        // Remove sensitive info and format the data
+        // Remove sensitive info and format the data  
         const safeUsers = users.map(user => ({
             id: user.id,
             email: user.email,
-            firstName: user.firstName || 'N/A',
-            lastName: user.lastName || 'N/A',
-            googleId: user.googleId || null,
-            createdAt: user.createdAt,
-            isGoogleUser: !!user.googleId,
-            displayName: `${user.firstName || 'Anonim'} ${user.lastName || 'Kullanıcı'}`.trim()
+            firstName: user.firstName || user.firstname || 'N/A', // PostgreSQL uses lowercase
+            lastName: user.lastName || user.lastname || 'N/A',   // PostgreSQL uses lowercase
+            googleId: user.googleId || user.googleid || null,    // PostgreSQL uses lowercase
+            createdAt: user.createdAt || user.createdat,         // PostgreSQL uses lowercase
+            isGoogleUser: !!(user.googleId || user.googleid),
+            displayName: `${(user.firstName || user.firstname || 'Anonim')} ${(user.lastName || user.lastname || 'Kullanıcı')}`.trim()
         }));
         
         // Sort by creation date (newest first)

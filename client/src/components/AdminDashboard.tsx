@@ -28,6 +28,17 @@ interface UserActivity {
   lastActivity: string;
 }
 
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  googleId?: string;
+  createdAt: string;
+  isGoogleUser: boolean;
+  displayName: string;
+}
+
 interface AnalyticsData {
   summary: AnalyticsSummary;
   recentActivities: Activity[];
@@ -36,11 +47,14 @@ interface AnalyticsData {
 
 const AdminDashboard: React.FC = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAnalytics();
+    fetchUsers();
   }, []);
 
   const fetchAnalytics = async () => {
@@ -58,6 +72,22 @@ const AdminDashboard: React.FC = () => {
       setError(error.response?.data?.error || 'Analytics verisi alınamadı');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      
+      const response = await axios.get(`${API_URL}/api/admin/users`, {
+        withCredentials: true
+      });
+      
+      setUsers(response.data);
+    } catch (error: any) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -358,10 +388,79 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Registered Users Table */}
+        <div className="section slide-in-right">
+          <div className="section-header">
+            <h2 className="section-title">👥 Kayıtlı Kullanıcılar</h2>
+            <div className="user-count-badge">
+              {usersLoading ? '...' : users.length} Kullanıcı
+            </div>
+          </div>
+          <div className="table-container">
+            {usersLoading ? (
+              <div className="table-loading">
+                <div className="loading-spinner"></div>
+                <p>Kullanıcılar yükleniyor...</p>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="table-empty">
+                <div className="empty-icon">👤</div>
+                <p>Henüz kayıtlı kullanıcı bulunmuyor</p>
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th className="table-header">Kullanıcı</th>
+                    <th className="table-header">E-posta</th>
+                    <th className="table-header">Kayıt Tipi</th>
+                    <th className="table-header">Kayıt Tarihi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="table-row">
+                      <td className="table-cell">
+                        <div className="user-info">
+                          <div className="user-avatar">
+                            {user.isGoogleUser ? '🌐' : '👤'}
+                          </div>
+                          <div className="user-details">
+                            <div className="user-name">{user.displayName}</div>
+                            <div className="user-id">ID: {user.id.slice(0, 8)}...</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <div className="email-info">
+                          {user.email}
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <span className={`user-type-badge ${user.isGoogleUser ? 'badge-google' : 'badge-email'}`}>
+                          {user.isGoogleUser ? '🌐 Google' : '📧 Email'}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <div className="date-info">
+                          {formatDate(user.createdAt)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
         {/* Refresh Button */}
         <div className="refresh-section fade-in">
           <button
-            onClick={fetchAnalytics}
+            onClick={() => {
+              fetchAnalytics();
+              fetchUsers();
+            }}
             className="refresh-button"
           >
             🔄 Verileri Yenile
