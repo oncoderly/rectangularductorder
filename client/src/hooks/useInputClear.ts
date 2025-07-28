@@ -1,89 +1,68 @@
 import { useCallback } from 'react';
 
 /**
- * Text input'larda default değerleri temizlemek için kullanılan hook
- * Focus olduğunda default değerleri seçer ve kullanıcının yeni değer girmesini kolaylaştırır
+ * Text input'larda otomatik seçim için kullanılan hook
+ * Her focus olduğunda tüm metni seçer - kolay veri girişi için
  */
 export const useInputClear = () => {
   /**
-   * Input'un focus olduğunda default değerleri temizleyen fonksiyon
-   * @param currentValue - Input'un mevcut değeri
-   * @param defaultValues - Temizlenmesi gereken default değerler array'i
-   * @returns Focus event handler fonksiyonu
+   * Basit focus handler - HER ZAMAN tüm metni seçer
+   */
+  const autoSelectHandler = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.select();
+  }, []);
+
+  /**
+   * Genel focus handler (geriye dönük uyumluluk için)
    */
   const createFocusHandler = useCallback((
-    currentValue: string | number | undefined,
-    defaultValues: (string | number)[] = ['', '0', 0]
+    currentValue?: string | number | undefined,
+    defaultValues?: (string | number)[]
   ) => {
-    return (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const inputValue = e.target.value;
-      const shouldClear = defaultValues.some(defaultVal => 
-        inputValue === String(defaultVal) || 
-        currentValue === defaultVal ||
-        inputValue === '' ||
-        (typeof defaultVal === 'string' && inputValue.includes(defaultVal))
-      );
-      
-      if (shouldClear) {
-        e.target.select(); // Tüm metni seç
-      }
-    };
-  }, []);
+    return autoSelectHandler;
+  }, [autoSelectHandler]);
 
   /**
-   * Placeholder metinli input'lar için özel focus handler
-   * @param currentValue - Input'un mevcut değeri
-   * @param placeholder - Placeholder metni
-   * @returns Focus event handler fonksiyonu
+   * Placeholder metinli input'lar için handler
    */
   const createPlaceholderFocusHandler = useCallback((
-    currentValue: string | number | undefined,
-    placeholder: string
+    currentValue?: string | number | undefined,
+    placeholder?: string
   ) => {
-    return createFocusHandler(currentValue, ['', '0', 0, placeholder]);
-  }, [createFocusHandler]);
+    return autoSelectHandler;
+  }, [autoSelectHandler]);
 
   /**
-   * Numeric input'lar için özel focus handler
-   * @param currentValue - Input'un mevcut sayısal değeri
-   * @param defaultValue - Default sayısal değer (varsayılan: 0)
-   * @returns Focus event handler fonksiyonu
+   * Numeric input'lar için handler
    */
   const createNumericFocusHandler = useCallback((
-    currentValue: number | undefined,
-    defaultValue: number = 0
+    currentValue?: number | undefined,
+    defaultValue?: number
   ) => {
-    return (e: React.FocusEvent<HTMLInputElement>) => {
-      // HER ZAMAN tüm metni seç - kolay veri girişi için
-      e.target.select();
-    };
-  }, []);
+    return autoSelectHandler;
+  }, [autoSelectHandler]);
 
   /**
-   * Password input'lar için özel focus handler
-   * @param currentValue - Input'un mevcut değeri
-   * @returns Focus event handler fonksiyonu
+   * Password input'lar için handler
    */
   const createPasswordFocusHandler = useCallback((
-    currentValue: string | undefined
+    currentValue?: string | undefined
   ) => {
-    return createFocusHandler(currentValue, ['']);
-  }, [createFocusHandler]);
+    return autoSelectHandler;
+  }, [autoSelectHandler]);
 
   /**
-   * Email input'lar için özel focus handler
-   * @param currentValue - Input'un mevcut değeri
-   * @param placeholder - Email placeholder metni
-   * @returns Focus event handler fonksiyonu
+   * Email input'lar için handler
    */
   const createEmailFocusHandler = useCallback((
-    currentValue: string | undefined,
-    placeholder: string = 'E-posta adresi'
+    currentValue?: string | undefined,
+    placeholder?: string
   ) => {
-    return createPlaceholderFocusHandler(currentValue, placeholder);
-  }, [createPlaceholderFocusHandler]);
+    return autoSelectHandler;
+  }, [autoSelectHandler]);
 
   return {
+    autoSelectHandler,
     createFocusHandler,
     createPlaceholderFocusHandler,
     createNumericFocusHandler,
