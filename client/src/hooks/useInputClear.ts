@@ -16,8 +16,8 @@ export const useInputClear = () => {
    * Genel focus handler (geriye dönük uyumluluk için)
    */
   const createFocusHandler = useCallback((
-    currentValue?: string | number | undefined,
-    defaultValues?: (string | number)[]
+    _currentValue?: string | number | undefined,
+    _defaultValues?: (string | number)[]
   ) => {
     return autoSelectHandler;
   }, [autoSelectHandler]);
@@ -26,8 +26,8 @@ export const useInputClear = () => {
    * Placeholder metinli input'lar için handler
    */
   const createPlaceholderFocusHandler = useCallback((
-    currentValue?: string | number | undefined,
-    placeholder?: string
+    _currentValue?: string | number | undefined,
+    _placeholder?: string
   ) => {
     return autoSelectHandler;
   }, [autoSelectHandler]);
@@ -36,8 +36,8 @@ export const useInputClear = () => {
    * Numeric input'lar için handler
    */
   const createNumericFocusHandler = useCallback((
-    currentValue?: number | undefined,
-    defaultValue?: number
+    _currentValue?: number | undefined,
+    _defaultValue?: number
   ) => {
     return autoSelectHandler;
   }, [autoSelectHandler]);
@@ -46,7 +46,7 @@ export const useInputClear = () => {
    * Password input'lar için handler
    */
   const createPasswordFocusHandler = useCallback((
-    currentValue?: string | undefined
+    _currentValue?: string | undefined
   ) => {
     return autoSelectHandler;
   }, [autoSelectHandler]);
@@ -55,8 +55,8 @@ export const useInputClear = () => {
    * Email input'lar için handler
    */
   const createEmailFocusHandler = useCallback((
-    currentValue?: string | undefined,
-    placeholder?: string
+    _currentValue?: string | undefined,
+    _placeholder?: string
   ) => {
     return autoSelectHandler;
   }, [autoSelectHandler]);
