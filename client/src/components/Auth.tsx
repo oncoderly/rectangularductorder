@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useInputClear } from '../hooks/useInputClear';
 import './Auth.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
@@ -32,6 +33,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
+  
+  // Input clear hook'unu kullan
+  const { createPlaceholderFocusHandler, createEmailFocusHandler, createPasswordFocusHandler } = useInputClear();
 
   // Handle Google OAuth callback
   React.useEffect(() => {
@@ -221,6 +225,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                       className="auth-input"
                       placeholder="Ad"
                       value={formData.firstName}
+                      onFocus={createPlaceholderFocusHandler(formData.firstName, 'Ad')}
                       onChange={handleChange}
                     />
                     <input
@@ -230,6 +235,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                       className="auth-input"
                       placeholder="Soyad"
                       value={formData.lastName}
+                      onFocus={createPlaceholderFocusHandler(formData.lastName, 'Soyad')}
                       onChange={handleChange}
                     />
                   </div>
@@ -241,6 +247,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                   className="auth-input"
                   placeholder="E-posta adresi"
                   value={formData.email}
+                  onFocus={createEmailFocusHandler(formData.email, 'E-posta adresi')}
                   onChange={handleChange}
                 />
                 <input
@@ -250,6 +257,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                   className="auth-input"
                   placeholder="Şifre"
                   value={formData.password}
+                  onFocus={createPasswordFocusHandler(formData.password)}
                   onChange={handleChange}
                 />
                 
@@ -407,7 +415,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                   outline: 'none',
                   transition: 'border-color 0.2s ease'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#6366f1';
+                  // Hook'u kullan
+                  createEmailFocusHandler(forgotPasswordEmail, 'E-posta adresiniz')(e);
+                }}
                 onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
               />
 

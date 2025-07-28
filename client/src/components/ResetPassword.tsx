@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useInputClear } from '../hooks/useInputClear';
 import './ResetPassword.css';
 
 const ResetPassword: React.FC = () => {
@@ -10,6 +11,9 @@ const ResetPassword: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isValidToken, setIsValidToken] = useState<boolean>(true);
+  
+  // Input clear hook'unu kullan
+  const { createPlaceholderFocusHandler } = useInputClear();
 
   useEffect(() => {
     // URL'den token parametresini al
@@ -133,6 +137,7 @@ const ResetPassword: React.FC = () => {
               required
               className="form-input"
               disabled={isLoading}
+              onFocus={createPlaceholderFocusHandler(newPassword, 'En az 6 karakter')}
             />
           </div>
 
@@ -147,6 +152,7 @@ const ResetPassword: React.FC = () => {
               required
               className="form-input"
               disabled={isLoading}
+              onFocus={createPlaceholderFocusHandler(confirmPassword, 'Şifrenizi tekrar girin')}
             />
           </div>
 

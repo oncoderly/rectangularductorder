@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { parts } from '../data/parts';
+import { useInputClear } from '../hooks/useInputClear';
 
 interface PartMeasurement {
   [key: string]: number | string;
@@ -41,6 +42,9 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   
   const notesRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  
+  // Input clear hook'unu kullan
+  const { createNumericFocusHandler, createPlaceholderFocusHandler } = useInputClear();
 
   const selectedPart = selectedPartKey ? parts[selectedPartKey] : null;
 
@@ -364,13 +368,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                               border: '1px solid #e3e8ed'
                             }}
                             value={diameters[`${measurement.key}_${direction.key}`] || ''}
-                            onFocus={(e) => {
-                              // Diameter boş veya 0 ise seç
-                              const currentValue = diameters[`${measurement.key}_${direction.key}`] || 0;
-                              if (currentValue === 0) {
-                                e.target.select();
-                              }
-                            }}
+                            onFocus={createNumericFocusHandler(diameters[`${measurement.key}_${direction.key}`], 0)}
                             onChange={(e) => handleDiameterChange(
                               measurement.key, 
                               direction.key, 
@@ -396,13 +394,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                               border: '1px solid #e3e8ed'
                             }}
                             value={directions[`${measurement.key}_${direction.key}`] || ''}
-                            onFocus={(e) => {
-                              // Direction count boş veya 0 ise seç
-                              const currentValue = directions[`${measurement.key}_${direction.key}`] || 0;
-                              if (currentValue === 0) {
-                                e.target.select();
-                              }
-                            }}
+                            onFocus={createNumericFocusHandler(directions[`${measurement.key}_${direction.key}`], 0)}
                             onChange={(e) => handleDirectionChange(
                               measurement.key, 
                               direction.key, 
@@ -558,11 +550,17 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             (measurements[measurement.key] !== undefined && measurements[measurement.key] !== '' ? measurements[measurement.key] + '°' : '') : 
                             (measurements[measurement.key] || '')}
                           onFocus={(e) => {
-                            // Focus'ta default değerleri temizle - sadece default değer varsa
-                            const isDefaultValue = selectedPart?.measurements.find(m => m.key === measurement.key)?.default !== undefined &&
-                                                   measurements[measurement.key] === selectedPart?.measurements.find(m => m.key === measurement.key)?.default?.toString();
-                            if (isDefaultValue) {
-                              e.target.select(); // Tüm metni seç ki kullanıcı hemen yazmaya başlayabilsin
+                            // Default değer varsa veya 0/boş ise temizle
+                            const defaultValue = selectedPart?.measurements.find(m => m.key === measurement.key)?.default;
+                            const currentValue = measurements[measurement.key];
+                            const isDefaultOrEmpty = (
+                              currentValue === '' || 
+                              currentValue === '0' ||
+                              currentValue === '0°' ||
+                              (defaultValue !== undefined && currentValue === defaultValue.toString())
+                            );
+                            if (isDefaultOrEmpty) {
+                              e.target.select();
                             }
                           }}
                           onChange={(e) => {
@@ -651,12 +649,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                   className="focus-ring"
                   placeholder="Malzeme cinsi girin..."
                   value={customMaterial}
-                  onFocus={(e) => {
-                    // Custom material boşsa placeholder'ı temizle
-                    if (customMaterial === '') {
-                      e.target.select();
-                    }
-                  }}
+                  onFocus={createPlaceholderFocusHandler(customMaterial, 'Malzeme cinsi girin...')}
                   onChange={(e) => setCustomMaterial(e.target.value)}
                   style={{ 
                     minWidth: '150px',
@@ -691,12 +684,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                   border: '1px solid #e3e8ed'
                 }}
                 value={quantity}
-                onFocus={(e) => {
-                  // Quantity default değer 1 ise seç
-                  if (quantity === 1) {
-                    e.target.select();
-                  }
-                }}
+                onFocus={createNumericFocusHandler(quantity, 1)}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
               />
               
@@ -792,12 +780,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
               <textarea
                 id="notes"
                 value={notes}
-                onFocus={(e) => {
-                  // Notes boşsa placeholder'ı temizle
-                  if (notes === '') {
-                    e.target.select();
-                  }
-                }}
+                onFocus={createPlaceholderFocusHandler(notes, 'Bu parça için özel notlarınızı yazın...')}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Bu parça için özel notlarınızı yazın..."
                 style={{
