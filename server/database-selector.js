@@ -45,6 +45,8 @@ async function initializeDatabase() {
         userDB = postgres.userDB;
         tokenDB = postgres.tokenDB;
         analyticsDB = postgres.analyticsDB;
+        postgresAvailable = true;
+        isInitialized = true;
         console.log('✅ PostgreSQL database loaded');
     } else {
         console.log('📝 Falling back to SQLite database...');
