@@ -16,7 +16,9 @@ let db, userDB, tokenDB, analyticsDB;
 
 // Test PostgreSQL connection first
 async function testPostgreSQL() {
+    console.log('🧪 testPostgreSQL: postgresAvailable =', postgresAvailable);
     if (!USE_POSTGRESQL) return false;
+
     
     try {
         console.log('🐘 Testing PostgreSQL connection...');
@@ -37,7 +39,9 @@ async function testPostgreSQL() {
 // Initialize database
 async function initializeDatabase() {
     const canUsePostgreSQL = await testPostgreSQL();
-    
+    console.log('🧪 testPostgreSQL: postgresAvailable =', postgresAvailable);
+
+
     if (canUsePostgreSQL) {
         console.log('🐘 Loading PostgreSQL database...');
         const postgres = require('./database-postgres');
@@ -152,6 +156,8 @@ module.exports = {
     get userDB() { return userDB; },
     get tokenDB() { return tokenDB; },
     get analyticsDB() { return analyticsDB; },
-    get isPostgreSQL() { return postgresAvailable; },
+    get isPostgreSQL() {
+        console.log('🧪 isPostgreSQL getter called:', postgresAvailable);
+        return postgresAvailable; },
     waitForInit
 };
