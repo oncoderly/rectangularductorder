@@ -381,6 +381,7 @@ app.post('/api/register',
         };
         
         // Save to database
+        console.log('⚙️ createUser fonksiyonu çağrılmak üzere:', newUser);
         const created = await userDB.createUser(newUser);
         
         if (!created) {

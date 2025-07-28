@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { userDB } = require('./database');
+console.log('🔍 userDB var mı?', typeof userDB?.createUser);
 
 async function testAllUsers() {
     console.log('🧪 Testing password reset for all users...\n');

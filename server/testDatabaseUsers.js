@@ -1,4 +1,6 @@
 const { userDB } = require('./database');
+console.log('🔍 userDB var mı?', typeof userDB?.createUser);
+
 
 console.log('🗄️ Testing database user operations...\n');
 
