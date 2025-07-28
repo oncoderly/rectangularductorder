@@ -1207,6 +1207,7 @@ app.listen(PORT, () => {
     waitForInit().then(() => {
         console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
         console.log('✅ Database ready - Server fully initialized');
+        console.log('🧪 PostgreSQL available flag:', isPostgreSQL);
     }).catch(error => {
         console.error('❌ Database initialization failed:', error);
     });
