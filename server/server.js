@@ -152,6 +152,9 @@ const otpStorage = new Map();
 // Security headers - en üstte olmalı
 app.use(securityHeaders);
 
+// Trust proxy settings for Render.com deployment
+app.set('trust proxy', 1);
+
 // Request logging
 app.use(requestLogger);
 
@@ -180,7 +183,7 @@ app.use(session({
     cookie: { 
         secure: isProduction, // Production'da HTTPS zorunlu
         httpOnly: true,
-        sameSite: isProduction ? 'strict' : 'lax', // Production'da daha sıkı
+        sameSite: isProduction ? 'none' : 'lax', // OAuth için 'none' gerekli
         maxAge: 24 * 60 * 60 * 1000 // 24 saat
     },
     rolling: true // Her istekte session süresi yenilensin
