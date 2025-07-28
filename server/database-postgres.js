@@ -211,15 +211,16 @@ const userDB = {
     },
 
     // Create user
+    // Create user
     createUser: async (userData) => {
         try {
             console.log('📥 DEBUG - createUser called with:', userData); // <-- Ekledik
 
             const result = await pool.query(`
-            INSERT INTO users (id, email, password, firstname, lastname, googleid, createdat)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING *
-        `, [
+                INSERT INTO users (id, email, password, firstname, lastname, googleid, createdat)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING *
+            `, [
                 userData.id,
                 userData.email,
                 userData.password,
@@ -237,7 +238,8 @@ const userDB = {
             if (error.stack) console.error('🧠 Stack trace:', error.stack);
             return false;
         }
-    }
+    }, // ← EKLENMİŞ PARANTEZ VE VİRGÜL
+
 
 
     // Update user
