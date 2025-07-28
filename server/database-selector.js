@@ -8,7 +8,9 @@ let isInitialized = false;
 
 console.log('🔍 Database selection...');
 console.log('📍 DATABASE_URL:', DATABASE_URL ? 'Set' : 'Not set');
+console.log('📍 DATABASE_URL length:', DATABASE_URL ? DATABASE_URL.length : 0);
 console.log('🐘 USE_POSTGRESQL:', USE_POSTGRESQL);
+console.log('🏁 Starting database initialization...');
 
 let db, userDB, tokenDB, analyticsDB;
 

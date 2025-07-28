@@ -215,18 +215,15 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
-        // Wait for database initialization
-        await waitForInit();
-        
         // Find user by Google ID first
-        let user = (await userDB.getAllUsers()).find(u => u.googleId === profile.id);
+        let user = userDB.getAllUsers().find(u => u.googleId === profile.id);
         
         if (!user) {
             // Check if user exists with same email
-            user = await userDB.getUserByEmail(profile.emails[0].value);
+            user = userDB.getUserByEmail(profile.emails[0].value);
             if (user) {
                 // Link Google account to existing user
-                await userDB.updateUser(user.id, { googleId: profile.id });
+                userDB.updateUser(user.id, { googleId: profile.id });
                 user.googleId = profile.id; // Update local object
             } else {
                 // Create new user
@@ -239,7 +236,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                     createdAt: new Date().toISOString()
                 };
                 
-                const created = await userDB.createUser(newUser);
+                const created = userDB.createUser(newUser);
                 if (created) {
                     user = newUser;
                 } else {
@@ -293,16 +290,20 @@ app.get('/api/status', (req, res) => {
     });
 });
 
+// Debug environment variables
+console.log('🔍 ENV DEBUG - DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('🔍 ENV DEBUG - DATABASE_URL first 30 chars:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT SET');
+console.log('🔍 ENV DEBUG - NODE_ENV:', process.env.NODE_ENV);
+
 // Import database module
-const { userDB, tokenDB, analyticsDB, isPostgreSQL, waitForInit } = require('./database-selector');
+const { userDB, tokenDB, analyticsDB, isPostgreSQL } = require('./database-selector');
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
 
 const loadUsers = async () => {
     try {
-        await waitForInit();
-        const users = await userDB.getAllUsers();
+        const users = userDB.getAllUsers();
         console.log(`📊 Loaded ${users.length} users from database`);
         return users;
     } catch (error) {

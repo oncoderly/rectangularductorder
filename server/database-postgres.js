@@ -9,6 +9,7 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 console.log('🐘 PostgreSQL Database initializing...');
 console.log('📍 Environment:', NODE_ENV);
 console.log('🔗 Database URL:', DATABASE_URL ? 'Set' : 'Not set');
+console.log('🔍 First 50 chars of URL:', DATABASE_URL ? DATABASE_URL.substring(0, 50) + '...' : 'Not available');
 
 // PostgreSQL connection pool
 let pool;
@@ -16,35 +17,41 @@ let pool;
 function initPostgreSQL() {
     try {
         // Connection configuration
-        const config = DATABASE_URL ? {
+        if (!DATABASE_URL) {
+            throw new Error('DATABASE_URL environment variable is required');
+        }
+        
+        const config = {
             connectionString: DATABASE_URL,
-            ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-        } : {
-            host: process.env.DB_HOST || 'localhost',
-            port: process.env.DB_PORT || 5432,
-            database: process.env.DB_NAME || 'rectangularduct',
-            user: process.env.DB_USER || 'postgres',
-            password: process.env.DB_PASSWORD || 'password',
-            ssl: false
+            ssl: {
+                rejectUnauthorized: false
+            },
+            connectionTimeoutMillis: 10000,
+            idleTimeoutMillis: 30000,
+            max: 10
         };
 
         pool = new Pool(config);
 
-        // Test connection
-        pool.connect((err, client, release) => {
-            if (err) {
-                console.error('❌ PostgreSQL connection failed:', err);
-                throw err;
-            } else {
+        // Test connection with timeout
+        const testConnection = async () => {
+            try {
+                const client = await pool.connect();
+                await client.query('SELECT NOW()');
+                client.release();
                 console.log('✅ PostgreSQL connected successfully');
-                release();
+                return true;
+            } catch (error) {
+                console.error('❌ PostgreSQL connection test failed:', error.message);
+                throw error;
             }
-        });
-
-        // Create tables
-        createTables();
+        };
         
-        return pool;
+        // Run connection test and create tables
+        return testConnection().then(() => {
+            createTables();
+            return pool;
+        });
         
     } catch (error) {
         console.error('❌ PostgreSQL initialization failed:', error);
