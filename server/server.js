@@ -818,7 +818,14 @@ app.get('/api/admin/analytics', async (req, res) => {
         }
         
         const summary = await getAnalyticsSummary();
-        res.json(summary);
+        
+        // Database tipi bilgisini ekle
+        const response = {
+            ...summary,
+            databaseType: isPostgreSQL ? 'PostgreSQL' : 'SQLite'
+        };
+        
+        res.json(response);
     } catch (error) {
         console.error('Analytics summary error:', error);
         res.status(500).json({ error: 'Failed to get analytics' });

@@ -43,6 +43,7 @@ interface AnalyticsData {
   summary: AnalyticsSummary;
   recentActivities: Activity[];
   userActivities: UserActivity[];
+  databaseType?: string;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -173,10 +174,25 @@ const AdminDashboard: React.FC = () => {
       <div className="admin-container">
         {/* Header */}
         <div className="admin-header fade-in">
-          <h1 className="admin-title">📊 Analytics Dashboard</h1>
-          <p className="admin-subtitle">
-            Kullanıcı aktiviteleri ve detaylı site istatistikleri
-          </p>
+          <div className="admin-header-content">
+            <div>
+              <h1 className="admin-title">📊 Analytics Dashboard</h1>
+              <p className="admin-subtitle">
+                Kullanıcı aktiviteleri ve detaylı site istatistikleri
+              </p>
+            </div>
+            <div className="database-info">
+              <div className={`database-badge ${analyticsData?.databaseType === 'PostgreSQL' ? 'badge-postgres' : 'badge-sqlite'}`}>
+                {analyticsData?.databaseType === 'PostgreSQL' ? '🐘 PostgreSQL' : '📝 SQLite'}
+              </div>
+              <div className="database-status">
+                {analyticsData?.databaseType === 'PostgreSQL' 
+                  ? '✅ Kalıcı Veritabanı' 
+                  : '⚠️ Geçici Veritabanı'
+                }
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Summary Cards */}

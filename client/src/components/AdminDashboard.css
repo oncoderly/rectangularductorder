@@ -24,6 +24,48 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.admin-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.database-info {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.database-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-postgres {
+  background: linear-gradient(135deg, #336791, #2d5a87);
+  box-shadow: 0 2px 8px rgba(51, 103, 145, 0.3);
+}
+
+.badge-sqlite {
+  background: linear-gradient(135deg, #003b57, #0f172a);
+  box-shadow: 0 2px 8px rgba(0, 59, 87, 0.3);
+}
+
+.database-status {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .admin-title {
   font-size: 2.5rem;
   font-weight: 700;
@@ -32,15 +74,24 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
-  text-align: center;
 }
 
 .admin-subtitle {
-  text-align: center;
   color: #64748b;
   font-size: 1.1rem;
   margin-top: 10px;
   font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .admin-header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .database-info {
+    text-align: center;
+  }
 }
 
 /* Loading & Error States */
