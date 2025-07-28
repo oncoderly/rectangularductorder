@@ -295,7 +295,7 @@ console.log('🔍 ENV DEBUG - DATABASE_URL exists:', !!process.env.DATABASE_URL)
 console.log('🔍 ENV DEBUG - DATABASE_URL first 30 chars:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT SET');
 console.log('🔍 ENV DEBUG - NODE_ENV:', process.env.NODE_ENV);
 
-// Import database module
+// Import database module  
 const { userDB, tokenDB, analyticsDB, isPostgreSQL } = require('./database-selector');
 
 // Import analytics module
