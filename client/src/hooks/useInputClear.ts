@@ -54,20 +54,8 @@ export const useInputClear = () => {
     defaultValue: number = 0
   ) => {
     return (e: React.FocusEvent<HTMLInputElement>) => {
-      const inputValue = e.target.value.replace('°', ''); // Açı sembolünü kaldır
-      const numericValue = Number(inputValue) || 0;
-      
-      const shouldClear = (
-        currentValue === defaultValue ||
-        e.target.value === String(defaultValue) ||
-        e.target.value === `${defaultValue}°` ||
-        e.target.value === '' ||
-        numericValue === defaultValue
-      );
-      
-      if (shouldClear) {
-        e.target.select();
-      }
+      // HER ZAMAN tüm metni seç - kolay veri girişi için
+      e.target.select();
     };
   }, []);
 
