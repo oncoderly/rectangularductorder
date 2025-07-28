@@ -21,19 +21,19 @@ const createRateLimiter = (windowMs, max, message, skipSuccessfulRequests = fals
 // Different rate limits for different endpoints
 const rateLimiters = {
     // Genel API rate limit - daha gevşek
-    general: createRateLimiter(15 * 60 * 1000, 100, 'Çok fazla istek. 15 dakika sonra tekrar deneyin.'),
+    general: createRateLimiter(15 * 60 * 1000, 500, 'Çok fazla istek. 15 dakika sonra tekrar deneyin.'),
     
-    // Auth endpoints - orta sıkı
-    auth: createRateLimiter(15 * 60 * 1000, 10, 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.'),
+    // Auth endpoints - geliştirme için gevşek
+    auth: createRateLimiter(15 * 60 * 1000, 50, 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.'),
     
     // Password reset - sıkı
-    passwordReset: createRateLimiter(60 * 60 * 1000, 3, 'Saatte en fazla 3 şifre sıfırlama isteği gönderebilirsiniz.'),
+    passwordReset: createRateLimiter(60 * 60 * 1000, 10, 'Saatte en fazla 10 şifre sıfırlama isteği gönderebilirsiniz.'),
     
     // SMS/OTP - çok sıkı
-    sms: createRateLimiter(60 * 60 * 1000, 5, 'Saatte en fazla 5 SMS gönderebilirsiniz.'),
+    sms: createRateLimiter(60 * 60 * 1000, 10, 'Saatte en fazla 10 SMS gönderebilirsiniz.'),
     
     // Analytics - gevşek
-    analytics: createRateLimiter(60 * 1000, 30, 'Çok fazla analytics isteği.', true)
+    analytics: createRateLimiter(60 * 1000, 100, 'Çok fazla analytics isteği.', true)
 };
 
 // Input validation rules
@@ -144,10 +144,10 @@ const securityHeaders = helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-eval'"], // WebAssembly için gerekli
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"],
-            fontSrc: ["'self'"],
+            connectSrc: ["'self'", "data:"], // WebAssembly blob için gerekli
+            fontSrc: ["'self'", "https:"], // PDF fontları için
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
             frameSrc: ["'none'"],

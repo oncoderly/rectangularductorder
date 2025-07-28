@@ -1,127 +1,124 @@
 {
   "sessions": [
     {
-      "id": "1753444427994",
+      "id": "1753701602142",
+      "userId": "1753187556983",
+      "action": "button_click",
+      "timestamp": "2025-07-28T11:20:02.142Z",
+      "data": {
+        "buttonName": "users_list_toggle",
+        "location": "dashboard_header"
+      }
+    },
+    {
+      "id": "1753701608411",
+      "userId": "1753187556983",
+      "action": "button_click",
+      "timestamp": "2025-07-28T11:20:08.411Z",
+      "data": {
+        "buttonName": "users_list_toggle",
+        "location": "dashboard_header"
+      }
+    },
+    {
+      "id": "1753701613155",
       "userId": "1753187556983",
       "action": "page_view",
-      "timestamp": "2025-07-25T11:53:47.994Z",
+      "timestamp": "2025-07-28T11:20:13.155Z",
       "data": {
         "page": "dashboard"
       }
     },
     {
-      "id": "1753452809945",
+      "id": "1753701693373",
       "userId": "1753187556983",
-      "action": "session_start",
-      "timestamp": "2025-07-25T14:13:29.945Z",
-      "data": {}
+      "action": "page_view",
+      "timestamp": "2025-07-28T11:21:33.373Z",
+      "data": {
+        "page": "dashboard"
+      }
     },
     {
-      "id": "1753452809947",
+      "id": "1753701699585",
       "userId": "1753187556983",
-      "action": "session_start",
-      "timestamp": "2025-07-25T14:13:29.947Z",
-      "data": {}
+      "action": "page_view",
+      "timestamp": "2025-07-28T11:21:39.585Z",
+      "data": {
+        "page": "dashboard"
+      }
     },
     {
-      "id": "1753452813501",
-      "userId": "guest",
+      "id": "1753701700835",
+      "userId": "1753187556983",
       "action": "button_click",
-      "timestamp": "2025-07-25T14:13:33.501Z",
+      "timestamp": "2025-07-28T11:21:40.835Z",
+      "data": {
+        "buttonName": "users_list_toggle",
+        "location": "dashboard_header"
+      }
+    },
+    {
+      "id": "1753701708443",
+      "userId": "1753187556983",
+      "action": "page_view",
+      "timestamp": "2025-07-28T11:21:48.443Z",
+      "data": {
+        "page": "dashboard"
+      }
+    },
+    {
+      "id": "1753702059050",
+      "userId": "1753187556983",
+      "action": "button_click",
+      "timestamp": "2025-07-28T11:27:39.050Z",
       "data": {
         "buttonName": "login_button",
         "location": "dashboard_header"
       }
     },
     {
-      "id": "1753453728786",
+      "id": "1753702060616",
       "userId": "1753187556983",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T14:28:48.786Z",
-      "data": {
-        "email": "salihosmanli34@gmail.com"
-      }
-    },
-    {
-      "id": "1753453831168",
-      "userId": "1753187556983",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T14:30:31.168Z",
-      "data": {
-        "email": "salihosmanli34@gmail.com"
-      }
-    },
-    {
-      "id": "1753455560821",
-      "userId": "1753455560820",
-      "action": "user_register",
-      "timestamp": "2025-07-25T14:59:20.821Z",
-      "data": {
-        "method": "email",
-        "email": "test1753455560753@example.com"
-      }
-    },
-    {
-      "id": "1753455560876",
-      "userId": "1753455560820",
       "action": "user_login",
-      "timestamp": "2025-07-25T14:59:20.876Z",
+      "timestamp": "2025-07-28T11:27:40.616Z",
       "data": {
-        "method": "email",
-        "email": "test1753455560753@example.com"
-      }
-    },
-    {
-      "id": "1753455561352",
-      "userId": "1753455560820",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T14:59:21.352Z",
-      "data": {
-        "email": "test1753455560753@example.com"
-      }
-    },
-    {
-      "id": "1753456167984",
-      "userId": "1753187556983",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T15:09:27.984Z",
-      "data": {
+        "method": "google",
         "email": "salihosmanli34@gmail.com"
       }
     },
     {
-      "id": "1753456336381",
-      "userId": "1753455560820",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T15:12:16.381Z",
-      "data": {
-        "email": "test1753455560753@example.com"
-      }
-    },
-    {
-      "id": "1753456338687",
-      "userId": "1753360820390",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T15:12:18.687Z",
-      "data": {
-        "email": "Salihamz3101@gmail.com"
-      }
-    },
-    {
-      "id": "1753456340872",
+      "id": "1753702150953",
       "userId": "1753187556983",
-      "action": "password_reset_request",
-      "timestamp": "2025-07-25T15:12:20.872Z",
+      "action": "session_start",
+      "timestamp": "2025-07-28T11:29:10.953Z",
+      "data": {}
+    },
+    {
+      "id": "1753702153163",
+      "userId": "guest",
+      "action": "button_click",
+      "timestamp": "2025-07-28T11:29:13.163Z",
       "data": {
+        "buttonName": "login_button",
+        "location": "dashboard_header"
+      }
+    },
+    {
+      "id": "1753702154740",
+      "userId": "1753187556983",
+      "action": "user_login",
+      "timestamp": "2025-07-28T11:29:14.740Z",
+      "data": {
+        "method": "google",
         "email": "salihosmanli34@gmail.com"
       }
     }
   ],
   "summary": {
-    "totalUsers": 4,
-    "totalSessions": 13,
+    "totalUsers": 2,
+    "totalSessions": 12,
     "totalPDFDownloads": 0,
-    "totalButtonClicks": 1,
+    "totalButtonClicks": 5,
     "averageSessionDuration": 0
   }
 }

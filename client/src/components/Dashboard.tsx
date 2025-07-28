@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PartSelector from './PartSelector';
 import OrderList from './OrderList';
-import UsersList from './UsersList';
 import { useAnalytics } from '../hooks/useAnalytics';
 import './Dashboard.css';
 
@@ -47,7 +46,6 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, isGuest = false }) => {
   console.log('🏠 Dashboard: Component initializing with props - user:', !!user, 'isGuest:', isGuest);
   const [orderList, setOrderList] = useState<SelectedPart[]>([]);
-  const [showUsersList, setShowUsersList] = useState(false);
   const { trackPageView, trackButtonClick, trackSessionStart } = useAnalytics();
   console.log('🏠 Dashboard: orderList length:', orderList.length);
 
@@ -147,27 +145,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
                     </span>
                   </div>
                   <button
-                    onClick={() => {
-                      trackButtonClick('users_list_toggle', 'dashboard_header');
-                      setShowUsersList(!showUsersList);
-                    }}
-                    className="dashboard-users-btn"
-                    style={{
-                      padding: '8px 16px',
-                      backgroundColor: showUsersList ? '#059669' : '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      marginRight: '12px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    👥 {showUsersList ? 'Sipariş Paneli' : 'Kullanıcı Listesi'}
-                  </button>
-                  <button
                     onClick={handleLogout}
                     className="dashboard-logout-btn"
                   >
@@ -181,22 +158,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
       </header>
 
       <main className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        {showUsersList ? (
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8">
-            <UsersList />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-            <PartSelector onAddPart={handleAddPart} />
-            <OrderList 
-              orderList={orderList} 
-              user={user} 
-              onRemovePart={handleRemovePart} 
-              onClearAll={handleClearAll}
-              onRequireAuth={onRequireAuth}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+          <PartSelector onAddPart={handleAddPart} />
+          <OrderList 
+            orderList={orderList} 
+            user={user} 
+            onRemovePart={handleRemovePart} 
+            onClearAll={handleClearAll}
+            onRequireAuth={onRequireAuth}
+          />
+        </div>
       </main>
     </div>
   );
