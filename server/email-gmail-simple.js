@@ -49,7 +49,7 @@ class GmailSMTPService {
             
             this.senderEmail = SENDER_EMAIL;
 
-            // Test SMTP connection
+            // Test SMTP connection (async)
             this.transporter.verify((error, success) => {
                 if (error) {
                     console.error('❌ SMTP bağlantı hatası:', error.message);
@@ -58,11 +58,15 @@ class GmailSMTPService {
                     console.log(`   Port: ${SMTP_PORT}`);
                     console.log(`   Secure: ${SMTP_SECURE}`);
                     console.log(`   User: ${SMTP_USER}`);
+                    this.isConfigured = false;
                 } else {
                     console.log(`✅ SMTP başarıyla yapılandırıldı (${SMTP_HOST}:${SMTP_PORT})`);
                     this.isConfigured = true;
                 }
             });
+            
+            // Set as configured for immediate use (verify runs in background)
+            this.isConfigured = true;
 
         } catch (error) {
             console.error('❌ SMTP kurulum hatası:', error.message);
