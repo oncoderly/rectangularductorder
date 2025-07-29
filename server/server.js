@@ -244,7 +244,8 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             user = await userDB.getUserByEmail(profile.emails[0].value);
             if (user) {
                 // Link Google account to existing user and update admin role if needed
-                const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com';
+                const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
+                               profile.emails[0].value === 'salihosmanli34@gmail.com';
                 const updateData = { 
                     googleId: profile.id,
                     role: isAdmin ? 'admin' : (user.role || 'user')
@@ -254,7 +255,8 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                 user.role = updateData.role; // Update local object
             } else {
                 // Create new user
-                const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com';
+                const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
+                               profile.emails[0].value === 'salihosmanli34@gmail.com';
                 const newUser = {
                     id: Date.now().toString(),
                     googleId: profile.id,
@@ -467,7 +469,7 @@ app.post('/api/register',
         const hashedPassword = await bcrypt.hash(password, 10);
         
         // Check if this is admin email
-        const isAdmin = email === 'havakanalsiparis@gmail.com';
+        const isAdmin = email === 'havakanalsiparis@gmail.com' || email === 'salihosmanli34@gmail.com';
         
         const newUser = {
             id: Date.now().toString(),
