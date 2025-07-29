@@ -28,12 +28,12 @@ Bu rehber, şifre sıfırlama emaillerini Gmail SMTP üzerinden göndermek için
 
 ```env
 # Gmail SMTP Basit Servis
-GMAIL_USER=your-gmail@gmail.com
+GMAIL_USER=havakanalsiparis@gmail.com
 GMAIL_APP_PASSWORD=abcdefghijklmnop
 ```
 
 **Önemli Notlar:**
-- `GMAIL_USER`: Gmail adresiniz (örn: `kanal.siparis@gmail.com`)
+- `GMAIL_USER`: Gmail adresiniz (örn: `havakanalsiparis@gmail.com`)
 - `GMAIL_APP_PASSWORD`: Yukarıda oluşturduğunuz 16 haneli parola (boşluksuz)
 
 ## 3. Test Etme
