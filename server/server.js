@@ -355,6 +355,7 @@ app.get('/api/status', async (req, res) => {
     }
 });
 
+<<<<<<< Updated upstream
 // Debug endpoint for render.com
 app.get('/api/debug/env', async (req, res) => {
     try {
@@ -388,6 +389,10 @@ const { db, userDB, tokenDB, analyticsDB, waitForInit, isPostgreSQL } = require(
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
+=======
+const USERS_FILE = path.join(__dirname, 'users.json');
+const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
+>>>>>>> Stashed changes
 
 const loadUsers = async () => {
     try {
@@ -405,6 +410,46 @@ const saveUsers = async (users) => {
     // Bu fonksiyon artık gereksiz, ancak eski kod için uyumluluk
     console.log('⚠️ saveUsers called - using database instead');
     return true;
+};
+
+// Analytics functions
+const loadAnalytics = async () => {
+    try {
+        return await fs.readJson(ANALYTICS_FILE);
+    } catch (error) {
+        return { sessions: [], activities: [] };
+    }
+};
+
+const saveAnalytics = async (analytics) => {
+    await fs.writeJson(ANALYTICS_FILE, analytics, { spaces: 2 });
+};
+
+// Track user session
+const trackSession = async (userId, action, data = {}) => {
+    try {
+        const analytics = await loadAnalytics();
+        const sessionData = {
+            id: Date.now().toString(),
+            userId: userId || 'guest',
+            action, // 'login', 'logout', 'activity'
+            timestamp: new Date().toISOString(),
+            data
+        };
+        
+        if (action === 'login') {
+            analytics.sessions.push({
+                ...sessionData,
+                sessionStart: new Date().toISOString()
+            });
+        } else if (action === 'activity') {
+            analytics.activities.push(sessionData);
+        }
+        
+        await saveAnalytics(analytics);
+    } catch (error) {
+        console.error('Analytics tracking error:', error);
+    }
 };
 
 // Helper functions for SMS
