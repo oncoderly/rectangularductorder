@@ -223,15 +223,19 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         // Find user by Google ID first
-        let user = userDB.getAllUsers().find(u => u.googleId === profile.id);
+        const allUsers = await userDB.getAllUsers();
+        let user = allUsers.find(u => u.googleId === profile.id);
         
         if (!user) {
             // Check if user exists with same email
-            user = userDB.getUserByEmail(profile.emails[0].value);
+            user = await userDB.getUserByEmail(profile.emails[0].value);
             if (user) {
                 // Link Google account to existing user
-                userDB.updateUser(user.id, { googleId: profile.id });
+                await userDB.updateUser(user.id, { googleId: profile.id });
                 user.googleId = profile.id; // Update local object
             } else {
                 // Create new user
@@ -244,7 +248,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                     createdAt: new Date().toISOString()
                 };
                 
-                const created = userDB.createUser(newUser);
+                const created = await userDB.createUser(newUser);
                 if (created) {
                     user = newUser;
                 } else {
@@ -271,7 +275,8 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
     try {
-        const user = userDB.getUserById(id);
+        await waitForInit();
+        const user = await userDB.getUserById(id);
         done(null, user);
     } catch (error) {
         done(error, null);
@@ -311,7 +316,8 @@ const { trackSession, getAnalyticsSummary } = require('./analytics');
 
 const loadUsers = async () => {
     try {
-        const users = userDB.getAllUsers();
+        await waitForInit();
+        const users = await userDB.getAllUsers();
         console.log(`📊 Loaded ${users.length} users from database`);
         return users;
     } catch (error) {
@@ -369,6 +375,9 @@ app.post('/api/register',
     handleValidationErrors, 
     async (req, res) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         const { email, password, firstName, lastName } = req.body;
         
         // Check if user already exists
@@ -432,6 +441,9 @@ app.post('/api/login',
     handleValidationErrors, 
     async (req, res) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         const { email, password } = req.body;
         
         console.log('🔐 Login attempt:', { email, passwordProvided: !!password });
@@ -479,12 +491,14 @@ app.post('/api/login',
 
 app.get('/api/me', async (req, res) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         if (!req.session.userId) {
             return res.status(401).json({ error: 'Oturum açılmamış' });
         }
         
-        const users = await loadUsers();
-        const user = users.find(u => u.id === req.session.userId);
+        const user = await userDB.getUserById(req.session.userId);
         
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
@@ -907,13 +921,16 @@ app.post('/api/forgot-password',
     handleValidationErrors, 
     async (req, res) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         const { email } = req.body;
         
         if (!email) {
             return res.status(400).json({ error: 'E-posta adresi gerekli' });
         }
         
-        const user = userDB.getUserByEmail(email);
+        const user = await userDB.getUserByEmail(email);
         
         if (!user) {
             // Security: Don't reveal if email exists or not
@@ -925,7 +942,7 @@ app.post('/api/forgot-password',
         const resetTokenExpiry = Date.now() + (30 * 60 * 1000); // 30 minutes
         
         // Store reset token in database
-        const tokenSaved = tokenDB.saveResetToken(resetToken, user.id, user.email, resetTokenExpiry);
+        const tokenSaved = await tokenDB.saveResetToken(resetToken, user.id, user.email, resetTokenExpiry);
         
         if (!tokenSaved) {
             console.error('❌ Failed to save reset token');
@@ -1082,6 +1099,9 @@ app.post('/api/reset-password',
     handleValidationErrors, 
     async (req, res) => {
     try {
+        // Wait for database initialization
+        await waitForInit();
+        
         const { token, newPassword } = req.body;
         
         if (!token || !newPassword) {
@@ -1089,13 +1109,13 @@ app.post('/api/reset-password',
         }
         
         // Check if token exists and not expired
-        const tokenData = tokenDB.getResetToken(token);
+        const tokenData = await tokenDB.getResetToken(token);
         if (!tokenData || tokenData.expires < Date.now()) {
             return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş token' });
         }
         
         // Get user and update password
-        const user = userDB.getUserById(tokenData.userId);
+        const user = await userDB.getUserById(tokenData.userId);
         
         if (!user) {
             return res.status(400).json({ error: 'Kullanıcı bulunamadı' });
@@ -1105,7 +1125,7 @@ app.post('/api/reset-password',
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
         // Update user password in database
-        const updated = userDB.updateUser(user.id, { 
+        const updated = await userDB.updateUser(user.id, { 
             password: hashedPassword,
             updatedAt: new Date().toISOString()
         });
@@ -1115,7 +1135,7 @@ app.post('/api/reset-password',
         }
         
         // Remove used token
-        tokenDB.deleteResetToken(token);
+        await tokenDB.deleteResetToken(token);
         
         // Track password reset completion
         await trackSession(tokenData.userId, 'password_reset_complete', {
