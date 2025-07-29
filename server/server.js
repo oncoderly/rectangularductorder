@@ -290,17 +290,75 @@ app.use(express.static(path.join(__dirname, '../client/dist')));
 
 console.log('🔧 Registering root route...');
 // API status endpoint
-app.get('/api/status', (req, res) => {
-    res.json({ 
-        message: 'Rectangular Duct Order API', 
-        version: '2.0.0',
-        endpoints: [
-            '/api/register', '/api/login', '/api/me', '/api/logout',
-            '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
-            '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success',
-            '/api/track', '/api/admin/analytics'
-        ]
-    });
+app.get('/api/status', async (req, res) => {
+    try {
+        let dbStatus = 'unknown';
+        let dbType = 'unknown';
+        let dbError = null;
+        
+        try {
+            await waitForInit();
+            dbType = isPostgreSQL ? 'PostgreSQL' : 'SQLite';
+            
+            // Test database connection
+            if (isPostgreSQL && db) {
+                const result = await db.query('SELECT 1 as test');
+                dbStatus = 'connected';
+            } else if (userDB) {
+                const count = await userDB.getUserCount();
+                dbStatus = 'connected';
+            }
+        } catch (error) {
+            dbStatus = 'error';
+            dbError = error.message;
+        }
+        
+        res.json({ 
+            message: 'Rectangular Duct Order API', 
+            version: '2.0.0',
+            database: {
+                type: dbType,
+                status: dbStatus,
+                error: dbError,
+                initialized: isInitialized,
+                postgresAvailable: isPostgreSQL
+            },
+            endpoints: [
+                '/api/register', '/api/login', '/api/me', '/api/logout',
+                '/api/phone/send-otp', '/api/phone/register', '/api/phone/login',
+                '/api/auth/google', '/api/auth/google/callback', '/api/auth/google/success',
+                '/api/track', '/api/admin/analytics'
+            ]
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'API Status Error',
+            error: error.message
+        });
+    }
+});
+
+// Debug endpoint for render.com
+app.get('/api/debug/env', async (req, res) => {
+    try {
+        await waitForInit();
+        
+        res.json({
+            NODE_ENV: process.env.NODE_ENV,
+            DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+            DATABASE_URL_LENGTH: process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0,
+            DATABASE_URL_PREFIX: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'NOT SET',
+            USE_POSTGRESQL: process.env.USE_POSTGRESQL,
+            isPostgreSQL: isPostgreSQL,
+            dbStatus: {
+                userDB_exists: !!userDB,
+                userDB_methods: userDB ? Object.keys(userDB) : null,
+                db_exists: !!db
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Debug environment variables
@@ -431,7 +489,17 @@ app.post('/api/register',
             } 
         });
     } catch (error) {
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('❌ REGISTRATION ERROR DETAILS:');
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Request body:', req.body);
+        console.error('userDB available:', !!userDB);
+        console.error('userDB methods:', userDB ? Object.keys(userDB) : 'NULL');
+        
+        res.status(500).json({ 
+            error: 'Sunucu hatası',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 

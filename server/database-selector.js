@@ -36,89 +36,64 @@ async function testPostgreSQL() {
     }
 }
 
-// Initialize database
+// Initialize database - try PostgreSQL upgrade
 async function initializeDatabase() {
-    const canUsePostgreSQL = await testPostgreSQL();
-    console.log('🧪 testPostgreSQL: postgresAvailable =', postgresAvailable);
+    try {
+        const canUsePostgreSQL = await testPostgreSQL();
+        console.log('🧪 testPostgreSQL result:', canUsePostgreSQL);
 
-
-    if (canUsePostgreSQL) {
-        console.log('🐘 Loading PostgreSQL database...');
-        const postgres = require('./database-postgres');
-        db = postgres.pool;
-        userDB = postgres.userDB;
-        tokenDB = postgres.tokenDB;
-        analyticsDB = postgres.analyticsDB;
-        postgresAvailable = true;
-        isInitialized = true;
-        console.log('✅ PostgreSQL database loaded');
-    } else {
-        console.log('📝 Falling back to SQLite database...');
-        const sqlite = require('./database');
-        db = sqlite.db;
-        userDB = sqlite.userDB;
-        tokenDB = sqlite.tokenDB;
-        analyticsDB = null; // SQLite doesn't have analytics DB
-        
-        // Convert SQLite sync functions to async
-        const originalUserDB = { ...userDB };
-        userDB.getAllUsers = async (...args) => originalUserDB.getAllUsers(...args);
-        userDB.getUserByEmail = async (...args) => originalUserDB.getUserByEmail(...args);
-        userDB.getUserById = async (...args) => originalUserDB.getUserById(...args);
-        userDB.createUser = async (...args) => originalUserDB.createUser(...args);
-        userDB.updateUser = async (...args) => originalUserDB.updateUser(...args);
-        userDB.deleteUser = async (...args) => originalUserDB.deleteUser(...args);
-        userDB.getUserCount = async (...args) => originalUserDB.getUserCount(...args);
-
-        const originalTokenDB = { ...tokenDB };
-        tokenDB.saveResetToken = async (...args) => originalTokenDB.saveResetToken(...args);
-        tokenDB.getResetToken = async (...args) => originalTokenDB.getResetToken(...args);
-        tokenDB.deleteResetToken = async (...args) => originalTokenDB.deleteResetToken(...args);
-        tokenDB.cleanupExpiredTokens = async (...args) => originalTokenDB.cleanupExpiredTokens(...args);
-
-        // Add basic analytics for SQLite
-        analyticsDB = {
-            saveAnalytics: async () => true,
-            getAnalyticsSummary: async () => ({
-                total_users: await userDB.getUserCount(),
-                total_sessions: 0,
-                total_pdf_downloads: 0,
-                total_button_clicks: 0
-            }),
-            getRecentActivities: async () => []
-        };
+        if (canUsePostgreSQL) {
+            console.log('🐘 Upgrading to PostgreSQL database...');
+            const postgres = require('./database-postgres');
+            
+            // Test that postgres module loaded correctly
+            if (!postgres.userDB || !postgres.userDB.getAllUsers) {
+                throw new Error('PostgreSQL userDB not properly initialized');
+            }
+            
+            db = postgres.pool;
+            userDB = postgres.userDB;
+            tokenDB = postgres.tokenDB;
+            analyticsDB = postgres.analyticsDB;
+            postgresAvailable = true;
+            console.log('✅ PostgreSQL database upgraded successfully');
+        } else {
+            console.log('📝 Staying with SQLite fallback (already initialized)');
+        }
+    } catch (error) {
+        console.error('❌ PostgreSQL upgrade failed:', error.message);
+        console.log('📝 Continuing with SQLite fallback');
     }
     
     isInitialized = true;
     console.log('✅ Database initialization completed');
 }
 
-// Initialize immediately
-initializeDatabase().catch(error => {
-    console.error('❌ Database initialization failed:', error);
-    // Force SQLite fallback
-    console.log('🔄 Forcing SQLite fallback...');
+// Initialize fallback first - CRITICAL for production
+function initializeFallback() {
+    console.log('🔄 Initializing SQLite fallback...');
     const sqlite = require('./database');
     db = sqlite.db;
-    userDB = sqlite.userDB;
-    tokenDB = sqlite.tokenDB;
-    analyticsDB = null;
     
-    // Convert to async
-    const originalUserDB = { ...userDB };
-    userDB.getAllUsers = async (...args) => originalUserDB.getAllUsers(...args);
-    userDB.getUserByEmail = async (...args) => originalUserDB.getUserByEmail(...args);
-    userDB.getUserById = async (...args) => originalUserDB.getUserById(...args);
-    userDB.createUser = async (...args) => originalUserDB.createUser(...args);
-    userDB.updateUser = async (...args) => originalUserDB.updateUser(...args);
-    userDB.deleteUser = async (...args) => originalUserDB.deleteUser(...args);
-    userDB.getUserCount = async (...args) => originalUserDB.getUserCount(...args);
+    // Convert SQLite sync functions to async
+    const originalUserDB = { ...sqlite.userDB };
+    userDB = {
+        getAllUsers: async (...args) => originalUserDB.getAllUsers(...args),
+        getUserByEmail: async (...args) => originalUserDB.getUserByEmail(...args),
+        getUserById: async (...args) => originalUserDB.getUserById(...args),
+        createUser: async (...args) => originalUserDB.createUser(...args),
+        updateUser: async (...args) => originalUserDB.updateUser(...args),
+        deleteUser: async (...args) => originalUserDB.deleteUser(...args),
+        getUserCount: async (...args) => originalUserDB.getUserCount(...args)
+    };
 
-    const originalTokenDB = { ...tokenDB };
-    tokenDB.saveResetToken = async (...args) => originalTokenDB.saveResetToken(...args);
-    tokenDB.getResetToken = async (...args) => originalTokenDB.getResetToken(...args);
-    tokenDB.deleteResetToken = async (...args) => originalTokenDB.deleteResetToken(...args);
-    tokenDB.cleanupExpiredTokens = async (...args) => originalTokenDB.cleanupExpiredTokens(...args);
+    const originalTokenDB = { ...sqlite.tokenDB };
+    tokenDB = {
+        saveResetToken: async (...args) => originalTokenDB.saveResetToken(...args),
+        getResetToken: async (...args) => originalTokenDB.getResetToken(...args),
+        deleteResetToken: async (...args) => originalTokenDB.deleteResetToken(...args),
+        cleanupExpiredTokens: async (...args) => originalTokenDB.cleanupExpiredTokens(...args)
+    };
 
     analyticsDB = {
         saveAnalytics: async () => true,
@@ -131,8 +106,17 @@ initializeDatabase().catch(error => {
         getRecentActivities: async () => []
     };
     
-    isInitialized = true;
     console.log('✅ SQLite fallback initialized');
+}
+
+// Initialize fallback FIRST to ensure userDB is never undefined
+initializeFallback();
+
+// Then try to upgrade to PostgreSQL
+initializeDatabase().catch(error => {
+    console.error('❌ Database initialization failed, using SQLite fallback:', error.message);
+    // Fallback is already initialized above
+    isInitialized = true;
 });
 
 console.log('🔄 Database selector loading...');
