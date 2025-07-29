@@ -146,7 +146,7 @@ const securityHeaders = helmet({
             styleSrc: ["'self'", "'unsafe-inline'"], // Sadece gerektiğinde unsafe-inline
             scriptSrc: ["'self'", "'wasm-unsafe-eval'", "'unsafe-eval'"], // WebAssembly support for PDF generation
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "blob:", "data:"], // PDF generation support
+            connectSrc: ["'self'", "blob:", "data:", "https://unpkg.com", "https://cdn.jsdelivr.net"], // PDF generation support with CDN access
             fontSrc: ["'self'", "https:"],
             objectSrc: ["'self'", "blob:", "data:"], // PDF object support
             mediaSrc: ["'self'"],
