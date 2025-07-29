@@ -22,27 +22,7 @@ interface AuthProps {
 
 const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  const [authMethod, setAuthMethod] = useState<'email' | 'google'>('email');
-=======
   const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
->>>>>>> Stashed changes
-=======
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
->>>>>>> Stashed changes
-=======
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
->>>>>>> Stashed changes
-=======
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
->>>>>>> Stashed changes
-=======
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
->>>>>>> Stashed changes
   const [formData, setFormData] = useState({
     email: '',
     password: '',
