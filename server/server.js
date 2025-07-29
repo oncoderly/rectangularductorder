@@ -355,7 +355,6 @@ app.get('/api/status', async (req, res) => {
     }
 });
 
-<<<<<<< Updated upstream
 // Debug endpoint for render.com
 app.get('/api/debug/env', async (req, res) => {
     try {
@@ -389,10 +388,6 @@ const { db, userDB, tokenDB, analyticsDB, waitForInit, isPostgreSQL } = require(
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
-=======
-const USERS_FILE = path.join(__dirname, 'users.json');
-const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
->>>>>>> Stashed changes
 
 const loadUsers = async () => {
     try {
