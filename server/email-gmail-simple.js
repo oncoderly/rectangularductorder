@@ -86,50 +86,269 @@ class GmailSMTPService {
             to: email,
             subject: '🔑 Şifre Sıfırlama Kodu - Hava Kanalı Sipariş Sistemi',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-                    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <div style="text-align: center; margin-bottom: 30px;">
-                            <h1 style="color: #667eea; margin-bottom: 10px;">🏭 Hava Kanalı Sipariş Sistemi</h1>
-                            <h2 style="color: #2c3e50; margin-bottom: 20px;">🔑 Şifre Sıfırlama Kodu</h2>
+                <!DOCTYPE html>
+                <html lang="tr">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Şifre Sıfırlama</title>
+                    <style>
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                            line-height: 1.6;
+                            background-color: #f8fafc;
+                            color: #334155;
+                        }
+                        
+                        .email-container {
+                            max-width: 600px;
+                            margin: 40px auto;
+                            background: #ffffff;
+                            border-radius: 16px;
+                            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                            overflow: hidden;
+                        }
+                        
+                        .header {
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            text-align: center;
+                            padding: 40px 30px;
+                        }
+                        
+                        .header-icon {
+                            font-size: 48px;
+                            margin-bottom: 16px;
+                            display: block;
+                        }
+                        
+                        .header h1 {
+                            font-size: 28px;
+                            font-weight: 600;
+                            margin-bottom: 8px;
+                        }
+                        
+                        .header p {
+                            font-size: 16px;
+                            opacity: 0.9;
+                        }
+                        
+                        .content {
+                            padding: 40px 30px;
+                        }
+                        
+                        .greeting {
+                            font-size: 18px;
+                            font-weight: 500;
+                            margin-bottom: 24px;
+                            color: #1e293b;
+                        }
+                        
+                        .message {
+                            font-size: 16px;
+                            margin-bottom: 32px;
+                            color: #475569;
+                            line-height: 1.7;
+                        }
+                        
+                        .code-section {
+                            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+                            border: 2px solid #e2e8f0;
+                            border-radius: 12px;
+                            padding: 24px;
+                            text-align: center;
+                            margin: 32px 0;
+                            position: relative;
+                        }
+                        
+                        .code-section::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            height: 4px;
+                            background: linear-gradient(90deg, #667eea, #764ba2);
+                            border-radius: 12px 12px 0 0;
+                        }
+                        
+                        .code-label {
+                            font-size: 14px;
+                            color: #64748b;
+                            font-weight: 500;
+                            margin-bottom: 12px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+                        
+                        .verification-code {
+                            font-size: 36px;
+                            font-weight: 700;
+                            color: #1e293b;
+                            letter-spacing: 8px;
+                            font-family: 'Courier New', monospace;
+                            background: white;
+                            padding: 16px 24px;
+                            border-radius: 8px;
+                            border: 2px solid #e2e8f0;
+                            display: inline-block;
+                            margin: 8px 0;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                        }
+                        
+                        .expiry-notice {
+                            background: #fef3c7;
+                            border: 1px solid #f59e0b;
+                            border-radius: 8px;
+                            padding: 16px;
+                            margin: 24px 0;
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                        }
+                        
+                        .expiry-notice .icon {
+                            font-size: 20px;
+                            color: #d97706;
+                        }
+                        
+                        .expiry-notice .text {
+                            color: #92400e;
+                            font-size: 14px;
+                            font-weight: 500;
+                        }
+                        
+                        .security-note {
+                            background: #f0f9ff;
+                            border: 1px solid #0ea5e9;
+                            border-radius: 8px;
+                            padding: 16px;
+                            margin: 24px 0;
+                            font-size: 14px;
+                            color: #0c4a6e;
+                        }
+                        
+                        .cta-button {
+                            display: inline-block;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            text-decoration: none;
+                            padding: 14px 28px;
+                            border-radius: 8px;
+                            font-weight: 600;
+                            font-size: 16px;
+                            margin: 20px 0;
+                            transition: transform 0.2s ease, box-shadow 0.2s ease;
+                            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                        }
+                        
+                        .cta-button:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                        }
+                        
+                        .footer {
+                            background: #f8fafc;
+                            padding: 30px;
+                            text-align: center;
+                            border-top: 1px solid #e2e8f0;
+                        }
+                        
+                        .footer p {
+                            font-size: 14px;
+                            color: #64748b;
+                            margin-bottom: 8px;
+                        }
+                        
+                        .footer .company {
+                            font-weight: 600;
+                            color: #1e293b;
+                        }
+                        
+                        .divider {
+                            height: 1px;
+                            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+                            margin: 24px 0;
+                        }
+                        
+                        @media (max-width: 600px) {
+                            .email-container {
+                                margin: 20px;
+                                border-radius: 12px;
+                            }
+                            
+                            .header, .content, .footer {
+                                padding: 24px 20px;
+                            }
+                            
+                            .verification-code {
+                                font-size: 28px;
+                                letter-spacing: 4px;
+                                padding: 12px 16px;
+                            }
+                            
+                            .header h1 {
+                                font-size: 24px;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="email-container">
+                        <div class="header">
+                            <span class="header-icon">🔒</span>
+                            <h1>Şifre Sıfırlama</h1>
+                            <p>Güvenli giriş sistemi</p>
                         </div>
                         
-                        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
-                            <p style="color: #2c3e50; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                                Merhaba <strong>${userName}</strong>,<br><br>
-                                Hesabınız için şifre sıfırlama talebinde bulunuldu. Şifrenizi sıfırlamak için aşağıdaki 6 haneli kodu kullanın:
-                            </p>
-                            
-                            <div style="text-align: center; margin: 30px 0;">
-                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                           color: white; 
-                                           font-size: 32px; 
-                                           font-weight: bold; 
-                                           padding: 20px; 
-                                           border-radius: 10px; 
-                                           letter-spacing: 8px;
-                                           font-family: 'Courier New', monospace;">
-                                    ${otp}
-                                </div>
+                        <div class="content">
+                            <div class="greeting">
+                                Merhaba ${userName},
                             </div>
                             
-                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin-top: 20px;">
-                                <p style="color: #856404; font-size: 14px; margin: 0; font-weight: bold;">
-                                    ⏰ Bu kod 15 dakika geçerlidir
-                                </p>
+                            <div class="message">
+                                Hesabınız için şifre sıfırlama talebinde bulundunuz. Şifrenizi sıfırlamak için aşağıdaki 6 haneli kodu kullanın:
                             </div>
                             
-                            <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
-                                Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz.
-                                Hesabınız güvende kalacaktır.
-                            </p>
+                            <div class="code-section">
+                                <div class="code-label">Doğrulama Kodu</div>
+                                <div class="verification-code">${otp}</div>
+                            </div>
+                            
+                            <div class="expiry-notice">
+                                <span class="icon">⏰</span>
+                                <span class="text">Bu kod 15 dakika geçerlidir</span>
+                            </div>
+                            
+                            <div class="security-note">
+                                <strong>Güvenlik İpucu:</strong> Eğer şifre sıfırlama talebinde bulunmadıysanız, bu e-postayı görmezden gelebilirsiniz. Hesabınız güvende kalacaktır.
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div class="message">
+                                Alternatif olarak, aşağıdaki butona tıklayarak doğrudan şifre sıfırlama sayfasına gidebilirsiniz:
+                            </div>
+                            
+                            <center>
+                                <a href="${process.env.CLIENT_URL || 'https://rectangularductorder.onrender.com'}?forgot=true" class="cta-button">Şifreyi Sıfırla</a>
+                            </center>
                         </div>
                         
-                        <div style="text-align: center; color: #666; font-size: 12px; border-top: 1px solid #e9ecef; padding-top: 20px;">
-                            <p>Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.</p>
-                            <p>© 2024 Hava Kanalı Sipariş Sistemi | Güvenli Şifre Sıfırlama</p>
+                        <div class="footer">
+                            <p class="company">Hava Kanalı Sipariş Sistemi</p>
+                            <p>© 2024 Güvenli Şifre Sıfırlama Sistemi</p>
+                            <p>Bu e-posta otomatik olarak gönderilmiştir.</p>
                         </div>
                     </div>
-                </div>
+                </body>
+                </html>
             `
         };
 
