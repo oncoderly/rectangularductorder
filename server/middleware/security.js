@@ -144,13 +144,14 @@ const securityHeaders = helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"], // Sadece gerektiğinde unsafe-inline
-            scriptSrc: ["'self'"], // unsafe-eval kaldırıldı (güvenlik riski)
+            scriptSrc: ["'self'", "'wasm-unsafe-eval'", "'unsafe-eval'"], // WebAssembly support for PDF generation
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"], // data: kaldırıldı, sadece self
+            connectSrc: ["'self'", "blob:", "data:"], // PDF generation support
             fontSrc: ["'self'", "https:"],
-            objectSrc: ["'none'"],
+            objectSrc: ["'self'", "blob:", "data:"], // PDF object support
             mediaSrc: ["'self'"],
             frameSrc: ["'none'"],
+            workerSrc: ["'self'", "blob:"], // PDF Web Workers support
             baseUri: ["'self'"], // Base URI sınırlandırıldı
             formAction: ["'self'"], // Form action sınırlandırıldı
         },
