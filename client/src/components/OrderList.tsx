@@ -116,7 +116,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                       fontWeight: 'bold',
                       color: '#2c3e50'
                     }}>
-                      🔧 Malzeme: {part.materialType}
+                      MALZEME: {part.materialType}
                     </Text>
                   </View>
                   
@@ -265,7 +265,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                       fontWeight: 'bold',
                       color: '#2c3e50'
                     }}>
-                      🔧 Malzeme: {part.materialType}
+                      MALZEME: {part.materialType}
                     </Text>
                   </View>
                   
