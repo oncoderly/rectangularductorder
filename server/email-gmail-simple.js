@@ -1,59 +1,84 @@
-// Basit Gmail SMTP - App Password ile
+// Gmail SMTP Service with Nodemailer
 const nodemailer = require('nodemailer');
 
-// Gmail App Password ile e-posta gönderimi
-class GmailSimple {
+// Gmail SMTP Provider Configuration
+class GmailSMTPService {
     constructor() {
         this.transporter = null;
         this.isConfigured = false;
+        this.senderEmail = null;
         this.init();
     }
 
     init() {
-        const EMAIL_USER = process.env.GMAIL_USER; // Gmail adresiniz
-        const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD; // Gmail App Password
-
-        if (!EMAIL_USER || !GMAIL_APP_PASSWORD) {
-            console.log('⚠️ Gmail SMTP yapılandırılmamış (GMAIL_USER, GMAIL_APP_PASSWORD eksik)');
+        // SMTP Credentials from environment variables
+        const SMTP_USER = process.env.GMAIL_USER || process.env.SMTP_USER;
+        const SMTP_PASSWORD = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASSWORD;
+        const SENDER_EMAIL = process.env.SENDER_EMAIL || SMTP_USER;
+        
+        // Gmail SMTP Server Configuration
+        const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+        const SMTP_PORT = process.env.SMTP_PORT || 587;
+        const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || false; // TLS
+        
+        if (!SMTP_USER || !SMTP_PASSWORD) {
+            console.log('⚠️ SMTP yapılandırılmamış (SMTP_USER, SMTP_PASSWORD eksik)');
+            console.log('📋 Gerekli environment variables:');
+            console.log('   - GMAIL_USER veya SMTP_USER');
+            console.log('   - GMAIL_APP_PASSWORD veya SMTP_PASSWORD'); 
+            console.log('   - SENDER_EMAIL (isteğe bağlı)');
             return;
         }
 
         try {
-            // Remove spaces from app password
-            const cleanPassword = GMAIL_APP_PASSWORD.replace(/\s/g, '');
+            // Clean password (remove spaces from Gmail App Password)
+            const cleanPassword = SMTP_PASSWORD.replace(/\s/g, '');
             
+            // Create Nodemailer transporter with SMTP configuration
             this.transporter = nodemailer.createTransport({
-                service: 'gmail',
+                host: SMTP_HOST,
+                port: parseInt(SMTP_PORT),
+                secure: SMTP_SECURE, // false for 587 (STARTTLS), true for 465 (SSL)
                 auth: {
-                    user: EMAIL_USER,
+                    user: SMTP_USER,
                     pass: cleanPassword
-                }
+                },
+                // Gmail specific settings
+                service: SMTP_HOST.includes('gmail.com') ? 'gmail' : undefined
             });
+            
+            this.senderEmail = SENDER_EMAIL;
 
-            // Bağlantıyı test et
+            // Test SMTP connection
             this.transporter.verify((error, success) => {
                 if (error) {
-                    console.error('❌ Gmail SMTP bağlantı hatası:', error.message);
+                    console.error('❌ SMTP bağlantı hatası:', error.message);
+                    console.log('🔧 SMTP Konfigürasyonu:');
+                    console.log(`   Host: ${SMTP_HOST}`);
+                    console.log(`   Port: ${SMTP_PORT}`);
+                    console.log(`   Secure: ${SMTP_SECURE}`);
+                    console.log(`   User: ${SMTP_USER}`);
                 } else {
-                    console.log('✅ Gmail SMTP başarıyla yapılandırıldı');
+                    console.log(`✅ SMTP başarıyla yapılandırıldı (${SMTP_HOST}:${SMTP_PORT})`);
                     this.isConfigured = true;
                 }
             });
 
         } catch (error) {
-            console.error('❌ Gmail SMTP kurulum hatası:', error.message);
+            console.error('❌ SMTP kurulum hatası:', error.message);
         }
     }
 
     async sendPasswordResetOTP(email, otp, userName = 'Kullanıcı') {
         if (!this.isConfigured) {
-            console.log('🎯 DEMO MODE: Gmail SMTP yapılandırılmamış');
+            console.log('🎯 DEMO MODE: SMTP yapılandırılmamış');
             console.log(`📧 ${email} adresine OTP gönderilecekti: ${otp}`);
             return { success: true, demo: true };
         }
 
+        // Mail options for transporter.sendMail method
         const mailOptions = {
-            from: process.env.GMAIL_USER,
+            from: `"Hava Kanalı Sipariş Sistemi" <${this.senderEmail}>`,
             to: email,
             subject: '🔑 Şifre Sıfırlama Kodu - Hava Kanalı Sipariş Sistemi',
             html: `
@@ -105,11 +130,13 @@ class GmailSimple {
         };
 
         try {
-            await this.transporter.sendMail(mailOptions);
+            // Send email using transporter.sendMail method
+            const info = await this.transporter.sendMail(mailOptions);
             console.log(`✅ Şifre sıfırlama OTP gönderildi: ${email}`);
-            return { success: true };
+            console.log(`📬 Message ID: ${info.messageId}`);
+            return { success: true, messageId: info.messageId };
         } catch (error) {
-            console.error('❌ Gmail SMTP e-posta gönderme hatası:', error.message);
+            console.error('❌ SMTP e-posta gönderme hatası:', error.message);
             return { success: false, error: error.message };
         }
     }
@@ -120,8 +147,9 @@ class GmailSimple {
             return { success: true, demo: true };
         }
 
+        // Welcome email mail options
         const mailOptions = {
-            from: process.env.GMAIL_USER,
+            from: `"Hava Kanalı Sipariş Sistemi" <${this.senderEmail}>`,
             to: email,
             subject: '🎉 Hoş Geldiniz - Hava Kanalı Sipariş Sistemi',
             html: `
@@ -158,9 +186,11 @@ class GmailSimple {
         };
 
         try {
-            await this.transporter.sendMail(mailOptions);
+            // Send welcome email using transporter.sendMail method
+            const info = await this.transporter.sendMail(mailOptions);
             console.log(`✅ Hoş geldin e-postası gönderildi: ${email}`);
-            return { success: true };
+            console.log(`📬 Message ID: ${info.messageId}`);
+            return { success: true, messageId: info.messageId };
         } catch (error) {
             console.error('❌ Hoş geldin e-postası hatası:', error.message);
             return { success: false, error: error.message };
@@ -168,11 +198,11 @@ class GmailSimple {
     }
 }
 
-// Singleton instance
-const gmailService = new GmailSimple();
+// Singleton SMTP Service instance
+const smtpService = new GmailSMTPService();
 
 module.exports = {
-    gmailService,
-    sendPasswordResetOTP: (email, otp, userName) => gmailService.sendPasswordResetOTP(email, otp, userName),
-    sendWelcomeEmail: (email, userName) => gmailService.sendWelcomeEmail(email, userName)
+    smtpService,
+    sendPasswordResetOTP: (email, otp, userName) => smtpService.sendPasswordResetOTP(email, otp, userName),
+    sendWelcomeEmail: (email, userName) => smtpService.sendWelcomeEmail(email, userName)
 };
