@@ -234,6 +234,11 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         const allUsers = await userDB.getAllUsers();
         let user = allUsers.find(u => u.googleId === profile.id);
         
+        // If user found, get fresh data from database to ensure role is current
+        if (user) {
+            user = await userDB.getUserById(user.id);
+        }
+        
         if (!user) {
             // Check if user exists with same email
             user = await userDB.getUserByEmail(profile.emails[0].value);
