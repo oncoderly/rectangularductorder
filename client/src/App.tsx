@@ -163,7 +163,6 @@ function App() {
         )}
         
         {/* Admin Dashboard Toggle Button - Only for admin users */}
-        {console.log('🔍 Button visibility check:', { user: !!user, role: user?.role, isAdmin: user?.role === 'admin', showAdminDashboard })}
         {user && user.role === 'admin' && !showAdminDashboard && (
           <button
             onClick={toggleAdminDashboard}
