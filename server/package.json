@@ -29,12 +29,18 @@
     "multer": "^2.0.2",
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "nodemailer": "^7.0.5",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.16.3",
     "puppeteer": "^24.14.0",
     "sqlite3": "^5.1.7",
+=======
+    "puppeteer": "^24.14.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+>>>>>>> Stashed changes
 =======
     "puppeteer": "^24.14.0",
     "passport": "^0.7.0",
