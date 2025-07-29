@@ -450,12 +450,17 @@ app.post('/api/register',
         }
         
         const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Check if this is admin email
+        const isAdmin = email === 'havakanalsiparis@gmail.com';
+        
         const newUser = {
             id: Date.now().toString(),
             email,
             password: hashedPassword,
             firstName,
             lastName,
+            role: isAdmin ? 'admin' : 'user',
             createdAt: new Date().toISOString()
         };
         
@@ -487,7 +492,8 @@ app.post('/api/register',
                 id: newUser.id, 
                 email: newUser.email, 
                 firstName: newUser.firstName, 
-                lastName: newUser.lastName 
+                lastName: newUser.lastName,
+                role: newUser.role
             } 
         });
     } catch (error) {
@@ -551,7 +557,8 @@ app.post('/api/login',
                 id: user.id, 
                 email: user.email, 
                 firstName: user.firstName, 
-                lastName: user.lastName 
+                lastName: user.lastName,
+                role: user.role || 'user'
             } 
         });
     } catch (error) {
@@ -579,7 +586,8 @@ app.get('/api/me', async (req, res) => {
                 id: user.id, 
                 email: user.email, 
                 firstName: user.firstName, 
-                lastName: user.lastName 
+                lastName: user.lastName,
+                role: user.role || 'user'
             } 
         });
     } catch (error) {

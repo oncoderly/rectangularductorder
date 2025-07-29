@@ -38,10 +38,18 @@ function initDatabase() {
                 firstName TEXT,
                 lastName TEXT,
                 googleId TEXT,
+                role TEXT DEFAULT 'user',
                 createdAt TEXT NOT NULL,
                 updatedAt TEXT
             )
         `);
+        
+        // Add role column if it doesn't exist (for existing databases)
+        try {
+            db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`);
+        } catch (error) {
+            // Column might already exist, ignore
+        }
         
         // Password reset tokens tablosu
         db.exec(`

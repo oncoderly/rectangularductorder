@@ -13,6 +13,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  role?: string;
 }
 
 function App() {
@@ -33,7 +34,7 @@ function App() {
         const path = window.location.pathname;
         console.log('🔍 App: Current path:', path);
         if (path === '/admin-dashboard' || path.includes('admin')) {
-          console.log('📊 App: Admin dashboard requested');
+          console.log('📊 App: Admin dashboard requested via URL');
           setShowAdminDashboard(true);
         }
         
@@ -144,9 +145,9 @@ function App() {
   return (
     <>
       <div className="App">
-        {showAdminDashboard ? (
+        {showAdminDashboard && user && user.role === 'admin' ? (
           <>
-            {console.log('📊 App: Rendering AdminDashboard')}
+            {console.log('📊 App: Rendering AdminDashboard for admin user')}
             <AdminDashboard />
           </>
         ) : (
@@ -161,19 +162,19 @@ function App() {
           </>
         )}
         
-        {/* Admin Dashboard Toggle Button - Only for authenticated users */}
-        {user && !showAdminDashboard && (
+        {/* Admin Dashboard Toggle Button - Only for admin users */}
+        {user && user.role === 'admin' && !showAdminDashboard && (
           <button
             onClick={toggleAdminDashboard}
             className="fixed bottom-4 right-4 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-50"
-            title="Analytics Dashboard"
+            title="Admin Dashboard"
           >
             📊
           </button>
         )}
         
         {/* Back to Main Dashboard Button */}
-        {showAdminDashboard && (
+        {showAdminDashboard && user && user.role === 'admin' && (
           <button
             onClick={toggleAdminDashboard}
             className="fixed bottom-4 right-4 bg-gray-600 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors z-50"

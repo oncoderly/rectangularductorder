@@ -72,9 +72,16 @@ async function createTables() {
                 firstname VARCHAR(255),
                 lastname VARCHAR(255),
                 googleid VARCHAR(255),
+                role VARCHAR(50) DEFAULT 'user',
                 createdat TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updatedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        `);
+
+        // Add role column if it doesn't exist (for existing databases)
+        await pool.query(`
+            ALTER TABLE users 
+            ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'
         `);
 
         // Create reset_tokens table
