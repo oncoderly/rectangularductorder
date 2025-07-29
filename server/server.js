@@ -407,45 +407,7 @@ const saveUsers = async (users) => {
     return true;
 };
 
-// Analytics functions
-const loadAnalytics = async () => {
-    try {
-        return await fs.readJson(ANALYTICS_FILE);
-    } catch (error) {
-        return { sessions: [], activities: [] };
-    }
-};
-
-const saveAnalytics = async (analytics) => {
-    await fs.writeJson(ANALYTICS_FILE, analytics, { spaces: 2 });
-};
-
-// Track user session
-const trackSession = async (userId, action, data = {}) => {
-    try {
-        const analytics = await loadAnalytics();
-        const sessionData = {
-            id: Date.now().toString(),
-            userId: userId || 'guest',
-            action, // 'login', 'logout', 'activity'
-            timestamp: new Date().toISOString(),
-            data
-        };
-        
-        if (action === 'login') {
-            analytics.sessions.push({
-                ...sessionData,
-                sessionStart: new Date().toISOString()
-            });
-        } else if (action === 'activity') {
-            analytics.activities.push(sessionData);
-        }
-        
-        await saveAnalytics(analytics);
-    } catch (error) {
-        console.error('Analytics tracking error:', error);
-    }
-};
+// Analytics functions are now imported from analytics.js module
 
 // Helper functions for SMS
 const generateOTP = () => {
