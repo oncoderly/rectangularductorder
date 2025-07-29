@@ -11,6 +11,7 @@ const path = require('path');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const twilio = require('twilio');
+<<<<<<< Updated upstream
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
@@ -30,6 +31,8 @@ const {
     errorHandler,
     requestLogger
 } = require('./middleware/security');
+=======
+>>>>>>> Stashed changes
 
 const app = express();
 const PORT = process.env.PORT || 5050;
