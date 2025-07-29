@@ -595,6 +595,129 @@
   }
 }
 
+/* Stage Indicator */
+.stage-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0 30px;
+  gap: 10px;
+}
+
+.stage {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  background: #e9ecef;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.stage.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: scale(1.1);
+}
+
+.stage.completed {
+  background: #28a745;
+  color: white;
+}
+
+.stage-line {
+  width: 40px;
+  height: 2px;
+  background: #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.stage.completed + .stage-line {
+  background: #28a745;
+}
+
+/* OTP Input Styles */
+.otp-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.otp-input {
+  width: 50px;
+  height: 60px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  transform: scale(1.05);
+}
+
+.otp-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+}
+
+/* Resend Section */
+.resend-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.resend-timer {
+  color: #6c757d;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Success Stage */
+.success-stage {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  animation: bounce 1s ease-in-out;
+}
+
+.success-stage h3 {
+  color: #28a745;
+  margin-bottom: 15px;
+}
+
+.success-stage p {
+  color: #6c757d;
+  margin-bottom: 25px;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .auth-card {

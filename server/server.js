@@ -16,6 +16,7 @@ const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('./sendEmail');
+const { sendPasswordResetOTP, sendWelcomeEmail: sendWelcomeEmailGmail } = require('./email-gmail-simple');
 
 
 
@@ -154,6 +155,9 @@ try {
 
 // OTP storage (in production, use Redis or database)
 const otpStorage = new Map();
+
+// Password reset OTP storage
+const passwordResetOTPStorage = new Map();
 
 // Password reset tokens now stored in database
 
@@ -471,13 +475,11 @@ app.post('/api/register',
             email: newUser.email
         });
         
-        // Send welcome email with SendGrid (non-blocking)
-        if (emailService === 'sendgrid') {
-            sendWelcomeEmail(newUser.email, newUser.firstName).catch(error => {
-                console.error('❌ Welcome email failed:', error);
-                // Don't block registration if email fails
-            });
-        }
+        // Send welcome email with Gmail (non-blocking)
+        sendWelcomeEmailGmail(newUser.email, newUser.firstName).catch(error => {
+            console.error('❌ Welcome email failed:', error);
+            // Don't block registration if email fails
+        });
         
         res.json({ 
             message: 'Kayıt başarılı', 
@@ -1156,6 +1158,157 @@ app.post('/api/forgot-password',
         
     } catch (error) {
         console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
+
+// OTP tabanlı şifre sıfırlama - Daha basit ve güvenli
+app.post('/api/forgot-password-otp', 
+    rateLimiters.passwordReset, 
+    validationRules.forgotPassword, 
+    handleValidationErrors, 
+    async (req, res) => {
+    try {
+        await waitForInit();
+        
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'E-posta adresi gerekli' });
+        }
+        
+        const user = await userDB.getUserByEmail(email);
+        
+        if (!user) {
+            // Security: Don't reveal if email exists or not
+            return res.json({ 
+                success: true,
+                message: 'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama kodu gönderildi.' 
+            });
+        }
+        
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = Date.now() + (15 * 60 * 1000); // 15 minutes
+        
+        // Store OTP
+        passwordResetOTPStorage.set(email, {
+            otp: otp,
+            expiresAt: otpExpiry,
+            userId: user.id,
+            attempts: 0
+        });
+        
+        // Auto-cleanup expired OTP
+        setTimeout(() => {
+            passwordResetOTPStorage.delete(email);
+        }, 15 * 60 * 1000);
+        
+        // Send OTP via Gmail
+        try {
+            const userName = user.firstName || user.email.split('@')[0];
+            const emailResult = await sendPasswordResetOTP(email, otp, userName);
+            
+            if (emailResult.success) {
+                console.log(`✅ Şifre sıfırlama OTP gönderildi: ${email}`);
+            } else if (emailResult.demo) {
+                console.log(`🎯 DEMO: Şifre sıfırlama OTP: ${otp} (${email})`);
+            }
+        } catch (emailError) {
+            console.error('❌ OTP e-posta gönderme hatası:', emailError);
+            // Continue anyway for security
+        }
+        
+        // Track password reset request
+        await trackSession(user.id, 'password_reset_otp_request', {
+            email: user.email
+        });
+        
+        res.json({ 
+            success: true,
+            message: 'Şifre sıfırlama kodu e-posta adresinize gönderildi. Kod 15 dakika geçerlidir.' 
+        });
+        
+    } catch (error) {
+        console.error('❌ OTP şifre sıfırlama hatası:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
+
+// OTP ile şifre sıfırlama
+app.post('/api/reset-password-otp', 
+    rateLimiters.passwordReset, 
+    async (req, res) => {
+    try {
+        await waitForInit();
+        
+        const { email, otp, newPassword } = req.body;
+        
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ error: 'E-posta, OTP ve yeni şifre gerekli' });
+        }
+        
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır' });
+        }
+        
+        // Check OTP
+        const otpData = passwordResetOTPStorage.get(email);
+        
+        if (!otpData) {
+            return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş OTP' });
+        }
+        
+        if (otpData.expiresAt < Date.now()) {
+            passwordResetOTPStorage.delete(email);
+            return res.status(400).json({ error: 'OTP süresi doldu' });
+        }
+        
+        if (otpData.attempts >= 3) {
+            passwordResetOTPStorage.delete(email);
+            return res.status(400).json({ error: 'Çok fazla yanlış deneme. Yeni OTP talep edin.' });
+        }
+        
+        if (otpData.otp !== otp) {
+            otpData.attempts++;
+            return res.status(400).json({ error: 'Geçersiz OTP' });
+        }
+        
+        // Get user and update password
+        const user = await userDB.getUserById(otpData.userId);
+        
+        if (!user) {
+            return res.status(400).json({ error: 'Kullanıcı bulunamadı' });
+        }
+        
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        // Update password
+        const updated = await userDB.updateUser(user.id, { 
+            password: hashedPassword,
+            updatedAt: new Date().toISOString()
+        });
+        
+        if (!updated) {
+            return res.status(500).json({ error: 'Şifre güncellenemedi' });
+        }
+        
+        // Remove used OTP
+        passwordResetOTPStorage.delete(email);
+        
+        // Track password reset completion
+        await trackSession(user.id, 'password_reset_otp_complete', {
+            email: user.email
+        });
+        
+        res.json({ 
+            success: true,
+            message: 'Şifreniz başarıyla güncellendi' 
+        });
+        
+    } catch (error) {
+        console.error('❌ OTP şifre sıfırlama completion hatası:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
 });
