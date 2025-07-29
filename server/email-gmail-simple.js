@@ -19,11 +19,14 @@ class GmailSimple {
         }
 
         try {
-            this.transporter = nodemailer.createTransporter({
+            // Remove spaces from app password
+            const cleanPassword = GMAIL_APP_PASSWORD.replace(/\s/g, '');
+            
+            this.transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
                     user: EMAIL_USER,
-                    pass: GMAIL_APP_PASSWORD
+                    pass: cleanPassword
                 }
             });
 
