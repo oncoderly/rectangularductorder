@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { useInputClear } from '../hooks/useInputClear';
 import './Auth.css';
@@ -34,8 +34,24 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
   
-  // Input clear hook'unu kullan
+  // Input clear hook'unu kullan - performance optimization
   const { createPlaceholderFocusHandler, createEmailFocusHandler, createPasswordFocusHandler } = useInputClear();
+  
+  // Memoize frequently used values
+  const authTitle = useMemo(() => 
+    isLogin ? '👋 Hoş Geldiniz!' : '🎉 Hesap Oluşturun', 
+    [isLogin]
+  );
+  
+  const authSubtitle = useMemo(() => 
+    isLogin ? 'Hesabınıza güvenli giriş yapın' : 'Birkaç dakikada hesap oluşturun', 
+    [isLogin]
+  );
+  
+  const submitButtonText = useMemo(() => 
+    isLogin ? 'Giriş Yap' : 'Kayıt Ol', 
+    [isLogin]
+  );
 
   // Handle Google OAuth callback
   React.useEffect(() => {
@@ -59,12 +75,13 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     }
   }, [onLogin]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,13 +124,13 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = useCallback(async () => {
     try {
       window.location.href = `${API_URL}/api/auth/google`;
     } catch (error: any) {
       setError('Google ile giriş başarısız');
     }
-  };
+  }, []);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,12 +152,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     }
   };
 
-  const closeForgotPassword = () => {
+  const closeForgotPassword = useCallback(() => {
     setShowForgotPassword(false);
     setForgotPasswordEmail('');
     setForgotPasswordMessage('');
     setError('');
-  };
+  }, []);
 
   return (
     <div className={isModal ? "auth-modal-container" : "auth-container"}>
@@ -168,10 +185,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
         <div className={`auth-body ${isModal ? 'auth-body-modal' : ''}`}>
           <div className={`auth-welcome ${isModal ? 'auth-welcome-modal' : ''}`}>
             <h3 className={`auth-welcome-title ${isModal ? 'auth-welcome-title-modal' : ''}`}>
-              {isLogin ? '👋 Hoş Geldiniz!' : '🎉 Hesap Oluşturun'}
+              {authTitle}
             </h3>
             <p className="auth-welcome-subtitle">
-              {isLogin ? 'Hesabınıza güvenli giriş yapın' : 'Birkaç dakikada hesap oluşturun'}
+              {authSubtitle}
             </p>
           </div>
 
@@ -315,7 +332,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                     {isLogin ? '🚀' : '✨'}
                   </div>
                   <span>
-                    {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
+                    {submitButtonText}
                   </span>
                 </>
               )}

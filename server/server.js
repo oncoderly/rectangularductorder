@@ -39,7 +39,13 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
-const SESSION_SECRET = process.env.SESSION_SECRET || 'rectangularduct-secret-key';
+// Generate a secure session secret if not provided
+const generateSecureSecret = () => crypto.randomBytes(64).toString('hex');
+const SESSION_SECRET = process.env.SESSION_SECRET || (() => {
+    console.warn('⚠️ SESSION_SECRET ortam değişkeni ayarlanmamış! Güvenli rastgele anahtar oluşturuluyor...');
+    console.warn('🔐 Production için SESSION_SECRET ortam değişkenini mutlaka ayarlayın!');
+    return generateSecureSecret();
+})();
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5050';
@@ -438,12 +444,15 @@ app.post('/api/login',
         
         if (!user) {
             console.log('❌ No user found with email:', email);
-            return res.status(400).json({ error: 'Geçersiz e-posta veya şifre' });
+            // Generic error message to prevent user enumeration
+            return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
         }
         
         const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
-            return res.status(400).json({ error: 'Geçersiz e-posta veya şifre' });
+            console.log('❌ Invalid password for user:', email);
+            // Generic error message to prevent user enumeration
+            return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
         }
         
         req.session.userId = user.id;
@@ -521,7 +530,8 @@ app.post('/api/phone/send-otp',
         const existingUser = users.find(u => u.phone === formattedPhone);
         
         if (isLogin && !existingUser) {
-            return res.status(400).json({ error: 'Bu telefon numarası kayıtlı değil' });
+            // Generic error message to prevent user enumeration
+            return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
         }
         
         if (!isLogin && existingUser) {
@@ -662,7 +672,8 @@ app.post('/api/phone/login',
         const user = users.find(u => u.phone === formattedPhone);
         
         if (!user) {
-            return res.status(400).json({ error: 'Bu telefon numarasıyla kayıtlı kullanıcı bulunamadı' });
+            // Generic error message to prevent user enumeration
+            return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
         }
         
         otpStorage.delete(formattedPhone);
@@ -909,8 +920,8 @@ app.post('/api/forgot-password',
             return res.json({ message: 'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama linki gönderildi.' });
         }
         
-        // Generate reset token
-        const resetToken = crypto.randomBytes(32).toString('hex');
+        // Generate secure reset token (64 bytes for higher entropy)
+        const resetToken = crypto.randomBytes(64).toString('hex');
         const resetTokenExpiry = Date.now() + (30 * 60 * 1000); // 30 minutes
         
         // Store reset token in database

@@ -23,14 +23,14 @@ const rateLimiters = {
     // Genel API rate limit - daha gevşek
     general: createRateLimiter(15 * 60 * 1000, 500, 'Çok fazla istek. 15 dakika sonra tekrar deneyin.'),
     
-    // Auth endpoints - geliştirme için gevşek
-    auth: createRateLimiter(15 * 60 * 1000, 50, 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.'),
+    // Auth endpoints - güvenlik için sıkılaştırıldı
+    auth: createRateLimiter(15 * 60 * 1000, 10, 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.'),
     
     // Password reset - sıkı
     passwordReset: createRateLimiter(60 * 60 * 1000, 10, 'Saatte en fazla 10 şifre sıfırlama isteği gönderebilirsiniz.'),
     
-    // SMS/OTP - çok sıkı
-    sms: createRateLimiter(60 * 60 * 1000, 10, 'Saatte en fazla 10 SMS gönderebilirsiniz.'),
+    // SMS/OTP - çok sıkı, IP bazlı koruma
+    sms: createRateLimiter(60 * 60 * 1000, 5, 'Saatte en fazla 5 SMS gönderebilirsiniz. Güvenlik amacıyla kısıtlanmıştır.'),
     
     // Analytics - gevşek
     analytics: createRateLimiter(60 * 1000, 100, 'Çok fazla analytics isteği.', true)
@@ -138,22 +138,32 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
-// Security headers configuration
+// Enhanced security headers configuration
 const securityHeaders = helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'", "'unsafe-eval'"], // WebAssembly için gerekli
+            styleSrc: ["'self'", "'unsafe-inline'"], // Sadece gerektiğinde unsafe-inline
+            scriptSrc: ["'self'"], // unsafe-eval kaldırıldı (güvenlik riski)
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "data:"], // WebAssembly blob için gerekli
-            fontSrc: ["'self'", "https:"], // PDF fontları için
+            connectSrc: ["'self'"], // data: kaldırıldı, sadece self
+            fontSrc: ["'self'", "https:"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
             frameSrc: ["'none'"],
+            baseUri: ["'self'"], // Base URI sınırlandırıldı
+            formAction: ["'self'"], // Form action sınırlandırıldı
         },
     },
-    crossOriginEmbedderPolicy: false, // CORS ile çakışma olmaması için
+    crossOriginEmbedderPolicy: false,
+    hsts: {
+        maxAge: 31536000, // 1 yıl HSTS
+        includeSubDomains: true,
+        preload: true
+    },
+    noSniff: true, // X-Content-Type-Options: nosniff
+    frameguard: { action: 'deny' }, // X-Frame-Options: DENY
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 });
 
 // Sanitize user input to prevent XSS
