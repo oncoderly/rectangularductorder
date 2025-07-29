@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useInputClear } from '../hooks/useInputClear';
 import './Auth.css';
@@ -209,7 +209,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
 
         {/* Stage Indicator */}
         <div className="stage-indicator">
-          <div className={`stage ${stage === 'email' ? 'active' : stage !== 'email' ? 'completed' : ''}`}>1</div>
+          <div className={`stage ${stage === 'email' ? 'active' : (stage === 'otp' || stage === 'newPassword' || stage === 'success') ? 'completed' : ''}`}>1</div>
           <div className="stage-line"></div>
           <div className={`stage ${stage === 'otp' ? 'active' : (stage === 'newPassword' || stage === 'success') ? 'completed' : ''}`}>2</div>
           <div className="stage-line"></div>
@@ -265,7 +265,9 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                 {otp.map((digit, index) => (
                   <input
                     key={index}
-                    ref={(el) => (otpRefs.current[index] = el)}
+                    ref={(el) => {
+                      otpRefs.current[index] = el;
+                    }}
                     type="text"
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
