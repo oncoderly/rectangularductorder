@@ -11,19 +11,12 @@ const path = require('path');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const twilio = require('twilio');
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('./sendEmail');
 const { sendPasswordResetOTP, sendWelcomeEmail: sendWelcomeEmailGmail } = require('./email-gmail-simple');
-
-
 
 // Security middleware import
 const {
@@ -35,16 +28,6 @@ const {
     errorHandler,
     requestLogger
 } = require('./middleware/security');
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 const app = express();
 const PORT = process.env.PORT || 5050;
