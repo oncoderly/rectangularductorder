@@ -238,17 +238,25 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             // Check if user exists with same email
             user = await userDB.getUserByEmail(profile.emails[0].value);
             if (user) {
-                // Link Google account to existing user
-                await userDB.updateUser(user.id, { googleId: profile.id });
+                // Link Google account to existing user and update admin role if needed
+                const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com';
+                const updateData = { 
+                    googleId: profile.id,
+                    role: isAdmin ? 'admin' : (user.role || 'user')
+                };
+                await userDB.updateUser(user.id, updateData);
                 user.googleId = profile.id; // Update local object
+                user.role = updateData.role; // Update local object
             } else {
                 // Create new user
+                const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com';
                 const newUser = {
                     id: Date.now().toString(),
                     googleId: profile.id,
                     email: profile.emails[0].value,
                     firstName: profile.name.givenName,
                     lastName: profile.name.familyName,
+                    role: isAdmin ? 'admin' : 'user',
                     createdAt: new Date().toISOString()
                 };
                 
@@ -875,8 +883,10 @@ app.get('/api/auth/google/success', async (req, res) => {
             return res.status(401).json({ error: 'Oturum açılmamış' });
         }
         
-        const users = await loadUsers();
-        const user = users.find(u => u.id === req.session.userId);
+        // Wait for database initialization
+        await waitForInit();
+        
+        const user = await userDB.getUserById(req.session.userId);
         
         if (!user) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
@@ -888,7 +898,8 @@ app.get('/api/auth/google/success', async (req, res) => {
                 id: user.id, 
                 email: user.email,
                 firstName: user.firstName, 
-                lastName: user.lastName 
+                lastName: user.lastName,
+                role: user.role || 'user'
             } 
         });
     } catch (error) {
