@@ -140,22 +140,24 @@ const handleValidationErrors = (req, res, next) => {
 
 // Enhanced security headers configuration
 const securityHeaders = helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"], // Sadece gerektiğinde unsafe-inline
-            scriptSrc: ["'self'", "'wasm-unsafe-eval'", "'unsafe-eval'"], // WebAssembly support for PDF generation
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "blob:", "data:", "https://unpkg.com", "https://cdn.jsdelivr.net"], // PDF generation support with CDN access
-            fontSrc: ["'self'", "https:"],
-            objectSrc: ["'self'", "blob:", "data:"], // PDF object support
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-            workerSrc: ["'self'", "blob:"], // PDF Web Workers support
-            baseUri: ["'self'"], // Base URI sınırlandırıldı
-            formAction: ["'self'"], // Form action sınırlandırıldı
-        },
-    },
+    contentSecurityPolicy: false, // Temporarily disable CSP for PDF generation debugging
+    // contentSecurityPolicy: {
+    //     directives: {
+    //         defaultSrc: ["'self'"],
+    //         styleSrc: ["'self'", "'unsafe-inline'"], // Sadece gerektiğinde unsafe-inline
+    //         scriptSrc: ["'self'", "'wasm-unsafe-eval'", "'unsafe-eval'", "blob:"], // WebAssembly support for PDF generation
+    //         imgSrc: ["'self'", "data:", "https:", "blob:"],
+    //         connectSrc: ["'self'", "blob:", "data:", "https:", "wss:", "ws:"], // Allow all HTTPS connections for PDF generation
+    //         fontSrc: ["'self'", "https:", "data:", "blob:"],
+    //         objectSrc: ["'self'", "blob:", "data:"], // PDF object support
+    //         mediaSrc: ["'self'", "blob:", "data:"],
+    //         frameSrc: ["'none'"],
+    //         workerSrc: ["'self'", "blob:", "data:"], // PDF Web Workers support
+    //         childSrc: ["'self'", "blob:", "data:"], // Child contexts for PDF
+    //         baseUri: ["'self'"], // Base URI sınırlandırıldı
+    //         formAction: ["'self'"], // Form action sınırlandırıldı
+    //     },
+    // },
     crossOriginEmbedderPolicy: false,
     hsts: {
         maxAge: 31536000, // 1 yıl HSTS
