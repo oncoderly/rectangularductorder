@@ -121,7 +121,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                   </View>
                   
                   {(() => {
-                    const selectedPart = parts[part.partKey];
+                    const selectedPart = parts && parts[part.partKey] ? parts[part.partKey] : null;
                     if (!selectedPart) return null;
                     
                     return (
@@ -157,7 +157,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                   })()}
 
                   {(() => {
-                    const selectedPart = parts[part.partKey];
+                    const selectedPart = parts && parts[part.partKey] ? parts[part.partKey] : null;
                     if (!selectedPart || !selectedPart.checkboxes || selectedPart.checkboxes.length === 0) return null;
                     
                     return (
@@ -270,7 +270,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                   </View>
                   
                   {(() => {
-                    const selectedPart = parts[part.partKey];
+                    const selectedPart = parts && parts[part.partKey] ? parts[part.partKey] : null;
                     if (!selectedPart) return null;
                     
                     return (
@@ -306,7 +306,7 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                   })()}
 
                   {(() => {
-                    const selectedPart = parts[part.partKey];
+                    const selectedPart = parts && parts[part.partKey] ? parts[part.partKey] : null;
                     if (!selectedPart || !selectedPart.checkboxes || selectedPart.checkboxes.length === 0) return null;
                     
                     return (
@@ -585,7 +585,7 @@ PDF dosyası ekte yer almaktadır.
                     📏 Ölçüler:
                   </div>
                   {(() => {
-                    const selectedPart = parts[part.partKey];
+                    const selectedPart = parts && parts[part.partKey] ? parts[part.partKey] : null;
                     if (!selectedPart) return null;
                     
                     return (selectedPart.measurements || []).map((measurement) => {

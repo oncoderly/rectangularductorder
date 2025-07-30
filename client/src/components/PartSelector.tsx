@@ -46,7 +46,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   // Input clear hook'unu kullan
   const { createNumericFocusHandler, createPlaceholderFocusHandler } = useInputClear();
 
-  const selectedPart = selectedPartKey ? parts[selectedPartKey] : null;
+  const selectedPart = selectedPartKey && parts ? parts[selectedPartKey] : null;
 
   // İlk yükleme sırasında varsayılan değerleri ayarla
   useEffect(() => {
@@ -83,15 +83,17 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
 
   const handlePartSelect = (partKey: string) => {
     setSelectedPartKey(partKey);
-    const part = parts[partKey];
+    const part = parts && parts[partKey] ? parts[partKey] : null;
     
     // Reset values
     const newMeasurements: PartMeasurement = {};
-    (part.measurements || []).forEach(m => {
+    if (part) {
+      (part.measurements || []).forEach(m => {
       if (m.default !== undefined) {
         newMeasurements[m.key] = m.default.toString();
       }
     });
+    }
     setMeasurements(newMeasurements);
     setCheckboxes({});
     setDirections({});
@@ -271,6 +273,20 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     setNotes('');
   };
 
+  // Guard against missing parts data
+  if (!parts || Object.keys(parts).length === 0) {
+    return (
+      <div className="panel slide-in">
+        <div className="panel-header">
+          <h2 className="panel-title">🔧 Parça Seçimi</h2>
+        </div>
+        <div className="form-row">
+          <p>Parça verileri yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="panel slide-in">
       <div className="panel-header">
@@ -286,7 +302,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
           className="custom-select focus-ring"
           style={{ width: '100%', maxWidth: '400px' }}
         >
-          {Object.entries(parts).map(([partKey, part]) => (
+          {Object.entries(parts || {}).map(([partKey, part]) => (
             <option key={partKey} value={partKey}>
               {part.name}
             </option>

@@ -227,3 +227,5 @@ export const parts: PartData = {
         checkboxes: []
     }
 };
+
+export default parts;
