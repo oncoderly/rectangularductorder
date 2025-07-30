@@ -4,23 +4,23 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding: 20px;
+  padding: 10px;
 }
 
 .admin-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 10px;
 }
 
 /* Header Styles */
 .admin-header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -161,17 +161,17 @@
 /* Summary Cards Grid */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 25px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .summary-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   position: relative;
@@ -225,27 +225,27 @@
 .analytics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 40px;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
 .analytics-panel {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
 }
 
 .panel-header {
-  padding: 25px 30px;
+  padding: 12px 15px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
 }
 
 .panel-title {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
@@ -263,8 +263,8 @@
 }
 
 .panel-content {
-  padding: 30px;
-  max-height: 450px;
+  padding: 15px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -292,11 +292,12 @@
 
 .activity-item {
   background: linear-gradient(135deg, #f8fafc, #ffffff);
-  border-radius: 15px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 10px 12px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   position: relative;
+  margin-bottom: 8px;
 }
 
 .activity-item:hover {
@@ -313,20 +314,20 @@
 
 .activity-action {
   font-weight: 600;
-  color: #1e293b;
-  font-size: 0.95rem;
+  color: #0f172a;
+  font-size: 0.85rem;
 }
 
 .activity-time {
-  font-size: 0.8rem;
-  color: #64748b;
+  font-size: 0.75rem;
+  color: #334155;
   font-weight: 500;
 }
 
 .activity-user {
-  font-size: 0.85rem;
-  color: #475569;
-  margin-top: 5px;
+  font-size: 0.8rem;
+  color: #1e293b;
+  margin-top: 3px;
 }
 
 .activity-data {
@@ -349,10 +350,11 @@
 
 .user-item {
   background: linear-gradient(135deg, #ffffff, #f8fafc);
-  border-radius: 15px;
-  padding: 25px;
+  border-radius: 8px;
+  padding: 12px 15px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
+  margin-bottom: 8px;
 }
 
 .user-item:hover {
@@ -392,14 +394,15 @@
 .user-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .stat-item {
   text-align: center;
-  padding: 15px;
+  padding: 8px 10px;
   background: rgba(0, 0, 0, 0.02);
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -568,10 +571,11 @@
 .user-table-container {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
+  margin-top: 15px;
 }
 
 .user-table-header {
@@ -646,8 +650,8 @@
 }
 
 .table-cell {
-  padding: 18px 15px;
-  font-size: 0.9rem;
+  padding: 10px 8px;
+  font-size: 0.8rem;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
