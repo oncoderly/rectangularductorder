@@ -577,8 +577,29 @@ app.post('/api/login',
         console.log('👥 Total users in database:', await userDB.getUserCount());
         console.log('📧 Looking for user with email:', email);
         
+        // Debug: List all users for troubleshooting
+        const allUsers = await userDB.getAllUsers();
+        console.log('🔍 All users in database:', allUsers.map(u => ({ 
+            email: u.email, 
+            id: u.id, 
+            hasPassword: !!u.password,
+            createdAt: u.createdAt 
+        })));
+        
         const user = await userDB.getUserByEmail(email);
         console.log('🔍 User found:', !!user);
+        
+        if (user) {
+            console.log('🔍 User details:', {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                hasPassword: !!user.password,
+                passwordHash: user.password ? user.password.substring(0, 20) + '...' : 'NO PASSWORD',
+                createdAt: user.createdAt
+            });
+        }
         
         if (!user) {
             console.log('❌ No user found with email:', email);
@@ -1502,40 +1523,6 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-// Debug endpoint - temporary for user investigation
-app.get('/api/debug/user/:email', async (req, res) => {
-    try {
-        await waitForInit();
-        const { email } = req.params;
-        
-        console.log('🔍 Debug: Searching for user:', email);
-        
-        const user = await userDB.getUserByEmail(email);
-        const allUsers = await userDB.getAllUsers();
-        const totalUsers = await userDB.getUserCount();
-        
-        console.log('🔍 Debug: User found:', !!user);
-        console.log('🔍 Debug: Total users in DB:', totalUsers);
-        
-        res.json({
-            email: email,
-            userFound: !!user,
-            userDetails: user ? {
-                id: user.id,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                hasPassword: !!user.password,
-                createdAt: user.createdAt
-            } : null,
-            totalUsersInDB: totalUsers,
-            databaseType: process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'
-        });
-    } catch (error) {
-        console.error('Debug endpoint error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Error handler - en son middleware olmalı
 app.use(errorHandler);
