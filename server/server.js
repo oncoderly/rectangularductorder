@@ -575,6 +575,8 @@ app.post('/api/login',
         console.log('🔐 Login attempt:', { email, passwordProvided: !!password });
         
         console.log('👥 Total users in database:', await userDB.getUserCount());
+        console.log('🗄️ Current database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
+        console.log('🔍 Database connection status:', isPostgreSQL);
         console.log('📧 Looking for user with email:', email);
         
         // Debug: List all users for troubleshooting
