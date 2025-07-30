@@ -379,39 +379,112 @@ const analyticsDB = {
     },
 
     // Get analytics summary
+    // Get analytics summary (last 12 months)
     getAnalyticsSummary: async () => {
         try {
-            const result = await pool.query(`
+            // Main summary query - limited to last 12 months
+            const summaryResult = await pool.query(`
                 SELECT 
                     COUNT(DISTINCT userid) as total_users,
                     COUNT(*) FILTER (WHERE action = 'session_start') as total_sessions,
                     COUNT(*) FILTER (WHERE action = 'pdf_download') as total_pdf_downloads,
                     COUNT(*) FILTER (WHERE action = 'button_click') as total_button_clicks
                 FROM analytics
+                WHERE timestamp >= NOW() - INTERVAL '12 months'
             `);
             
-            return result.rows[0] || {
+            // Recent activities
+            const recentResult = await pool.query(`
+                SELECT id, userid, action, data, timestamp
+                FROM analytics 
+                WHERE timestamp >= NOW() - INTERVAL '12 months'
+                ORDER BY timestamp DESC 
+                LIMIT 50
+            `);
+            
+            // User activities grouped
+            const userActivitiesResult = await pool.query(`
+                SELECT 
+                    userid,
+                    COUNT(*) as totalActivities,
+                    COUNT(*) FILTER (WHERE action = 'pdf_download') as pdfDownloads,
+                    COUNT(*) FILTER (WHERE action = 'button_click') as buttonClicks,
+                    MAX(timestamp) as lastActivity
+                FROM analytics
+                WHERE timestamp >= NOW() - INTERVAL '12 months'
+                GROUP BY userid
+                ORDER BY lastActivity DESC
+            `);
+            
+            const summary = summaryResult.rows[0] || {
                 total_users: 0,
                 total_sessions: 0,
                 total_pdf_downloads: 0,
                 total_button_clicks: 0
             };
+            
+            const recentActivities = recentResult.rows.map(row => ({
+                id: row.id.toString(),
+                userId: row.userid,
+                action: row.action,
+                data: row.data,
+                timestamp: row.timestamp.toISOString()
+            }));
+            
+            const userActivities = userActivitiesResult.rows.map(row => ({
+                userId: row.userid,
+                totalActivities: parseInt(row.totalactivities),
+                pdfDownloads: parseInt(row.pdfdownloads),
+                buttonClicks: parseInt(row.buttonclicks),
+                lastActivity: row.lastactivity.toISOString()
+            }));
+            
+            return {
+                summary: {
+                    totalUsers: parseInt(summary.total_users),
+                    totalSessions: parseInt(summary.total_sessions),
+                    totalPDFDownloads: parseInt(summary.total_pdf_downloads),
+                    totalButtonClicks: parseInt(summary.total_button_clicks),
+                    averageSessionDuration: 0 // Calculate if needed
+                },
+                recentActivities,
+                userActivities
+            };
         } catch (error) {
             console.error('❌ Error getting analytics summary:', error);
-            return null;
+            return {
+                summary: {
+                    totalUsers: 0,
+                    totalSessions: 0,
+                    totalPDFDownloads: 0,
+                    totalButtonClicks: 0,
+                    averageSessionDuration: 0
+                },
+                recentActivities: [],
+                userActivities: []
+            };
         }
     },
 
     // Get recent activities
+    // Get recent activities (limited to last 12 months)
     getRecentActivities: async (limit = 50) => {
         try {
             const result = await pool.query(`
-                SELECT * FROM analytics 
+                SELECT id, userid, action, data, timestamp
+                FROM analytics 
+                WHERE timestamp >= NOW() - INTERVAL '12 months'
                 ORDER BY timestamp DESC 
                 LIMIT $1
             `, [limit]);
             
-            return result.rows;
+            return result.rows.map(row => ({
+                id: row.id.toString(),
+                userId: row.userid,
+                action: row.action,
+                data: row.data,
+                timestamp: row.timestamp.toISOString()
+            }));
         } catch (error) {
             console.error('❌ Error getting recent activities:', error);
             return [];

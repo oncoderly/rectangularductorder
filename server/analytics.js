@@ -26,6 +26,17 @@ const saveAnalytics = async (data) => {
     await fs.writeJson(ANALYTICS_FILE, data, { spaces: 2 });
 };
 
+// Clean old analytics data (keep last 12 months)
+const cleanOldAnalytics = (sessions) => {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    
+    return sessions.filter(session => {
+        const sessionDate = new Date(session.timestamp);
+        return sessionDate >= twelveMonthsAgo;
+    });
+};
+
 // Track user session/activity
 const trackSession = async (userId, action, data = {}) => {
     try {
@@ -40,6 +51,9 @@ const trackSession = async (userId, action, data = {}) => {
         };
         
         analytics.sessions.push(sessionData);
+        
+        // Clean old data (keep last 12 months)
+        analytics.sessions = cleanOldAnalytics(analytics.sessions);
         
         // Update summary
         const uniqueUsers = new Set(analytics.sessions.map(s => s.userId)).size;
@@ -149,9 +163,31 @@ const getAnalyticsSummary = async () => {
     }
 };
 
+// Get recent activities only
+const getRecentActivities = async () => {
+    try {
+        const analytics = await loadAnalytics();
+        
+        return analytics.sessions
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 50)
+            .map(session => ({
+                id: session.id,
+                userId: session.userId,
+                action: session.action,
+                timestamp: session.timestamp,
+                data: session.data
+            }));
+    } catch (error) {
+        console.error('Recent activities error:', error);
+        return [];
+    }
+};
+
 module.exports = {
     trackSession,
     getAnalyticsSummary,
+    getRecentActivities,
     loadAnalytics,
     saveAnalytics
 };

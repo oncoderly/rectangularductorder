@@ -95,15 +95,15 @@ function initializeFallback() {
         cleanupExpiredTokens: async (...args) => originalTokenDB.cleanupExpiredTokens(...args)
     };
 
+    // Use file-based analytics for SQLite fallback
+    const { trackSession, getAnalyticsSummary } = require('./analytics');
     analyticsDB = {
-        saveAnalytics: async () => true,
-        getAnalyticsSummary: async () => ({
-            total_users: await userDB.getUserCount(),
-            total_sessions: 0,
-            total_pdf_downloads: 0,
-            total_button_clicks: 0
-        }),
-        getRecentActivities: async () => []
+        saveAnalytics: async (userId, action, data) => trackSession(userId, action, data),
+        getAnalyticsSummary: async () => getAnalyticsSummary(),
+        getRecentActivities: async () => {
+            const analytics = require('./analytics');
+            return await analytics.getRecentActivities();
+        }
     };
     
     console.log('✅ SQLite fallback initialized');
