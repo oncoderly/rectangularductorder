@@ -48,6 +48,16 @@ interface AnalyticsData {
 
 const AdminDashboard: React.FC = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  
+  // Debug: Log analytics data
+  console.log('🔍 AdminDashboard: analyticsData:', analyticsData);
+  console.log('🔍 AdminDashboard: typeof analyticsData:', typeof analyticsData);
+  if (analyticsData) {
+    console.log('🔍 AdminDashboard: recentActivities:', analyticsData.recentActivities);
+    console.log('🔍 AdminDashboard: Array.isArray(recentActivities):', Array.isArray(analyticsData.recentActivities));
+    console.log('🔍 AdminDashboard: userActivities:', analyticsData.userActivities);
+    console.log('🔍 AdminDashboard: Array.isArray(userActivities):', Array.isArray(analyticsData.userActivities));
+  }
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -256,7 +266,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="panel-content">
               <div className="activity-list">
-                {(analyticsData.recentActivities || []).map((activity, index) => (
+                {(analyticsData?.recentActivities || []).map((activity, index) => (
                   <div key={activity.id} className="activity-item" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="activity-header">
                       <div className="activity-action">
@@ -287,7 +297,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="panel-content">
               <div className="user-list">
-                {(analyticsData.userActivities || []).map((user, index) => (
+                {(analyticsData?.userActivities || []).map((user, index) => (
                   <div key={user.userId} className="user-item" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="user-header">
                       <div className="user-name">
@@ -341,7 +351,7 @@ const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(analyticsData.userActivities || []).map((user, index) => {
+                  {(analyticsData?.userActivities || []).map((user, index) => {
                     const isGuest = user.userId === 'guest';
                     const userInitials = isGuest ? 'G' : user.userId.substring(0, 2).toUpperCase();
                     const isRecentlyActive = new Date().getTime() - new Date(user.lastActivity).getTime() < 24 * 60 * 60 * 1000; // Son 24 saat
