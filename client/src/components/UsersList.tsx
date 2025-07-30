@@ -145,7 +145,7 @@ const UsersList: React.FC = () => {
             display: 'grid',
             gap: '16px'
           }}>
-            {users.map((user, index) => (
+            {(users || []).map((user, index) => (
               <div
                 key={user.id}
                 style={{

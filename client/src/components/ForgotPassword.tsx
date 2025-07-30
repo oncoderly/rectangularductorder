@@ -262,7 +262,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
             <div className="form-group">
               <label>E-postanıza gönderilen 6 haneli kodu girin:</label>
               <div className="otp-container">
-                {otp.map((digit, index) => (
+                {(otp || []).map((digit, index) => (
                   <input
                     key={index}
                     ref={(el) => {

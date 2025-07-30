@@ -256,7 +256,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="panel-content">
               <div className="activity-list">
-                {analyticsData.recentActivities.map((activity, index) => (
+                {(analyticsData.recentActivities || []).map((activity, index) => (
                   <div key={activity.id} className="activity-item" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="activity-header">
                       <div className="activity-action">
@@ -287,7 +287,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="panel-content">
               <div className="user-list">
-                {analyticsData.userActivities.map((user, index) => (
+                {(analyticsData.userActivities || []).map((user, index) => (
                   <div key={user.userId} className="user-item" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="user-header">
                       <div className="user-name">
@@ -341,7 +341,7 @@ const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {analyticsData.userActivities.map((user, index) => {
+                  {(analyticsData.userActivities || []).map((user, index) => {
                     const isGuest = user.userId === 'guest';
                     const userInitials = isGuest ? 'G' : user.userId.substring(0, 2).toUpperCase();
                     const isRecentlyActive = new Date().getTime() - new Date(user.lastActivity).getTime() < 24 * 60 * 60 * 1000; // Son 24 saat
@@ -434,7 +434,7 @@ const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
+                  {(users || []).map((user) => (
                     <tr key={user.id} className="table-row">
                       <td className="table-cell">
                         <div className="user-info">
