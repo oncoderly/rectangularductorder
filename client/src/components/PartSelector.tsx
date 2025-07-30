@@ -47,6 +47,15 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   const { createNumericFocusHandler, createPlaceholderFocusHandler } = useInputClear();
 
   const selectedPart = selectedPartKey && parts ? parts[selectedPartKey] : null;
+  
+  // Debug: Log selected part data
+  console.log('🔍 PartSelector: selectedPartKey:', selectedPartKey);
+  console.log('🔍 PartSelector: selectedPart:', selectedPart);
+  if (selectedPart) {
+    console.log('🔍 PartSelector: selectedPart.measurements:', selectedPart.measurements);
+    console.log('🔍 PartSelector: typeof selectedPart.measurements:', typeof selectedPart.measurements);
+    console.log('🔍 PartSelector: Array.isArray(selectedPart.measurements):', Array.isArray(selectedPart.measurements));
+  }
 
   // İlk yükleme sırasında varsayılan değerleri ayarla
   useEffect(() => {
@@ -273,6 +282,11 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     setNotes('');
   };
 
+  // Debug: Log parts data
+  console.log('🔍 PartSelector: parts data:', parts);
+  console.log('🔍 PartSelector: typeof parts:', typeof parts);
+  console.log('🔍 PartSelector: Array.isArray(parts):', Array.isArray(parts));
+  
   // Guard against missing parts data
   if (!parts || Object.keys(parts).length === 0) {
     return (

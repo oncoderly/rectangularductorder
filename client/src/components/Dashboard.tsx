@@ -49,6 +49,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
   const [orderList, setOrderList] = useState<SelectedPart[]>([]);
   const { trackPageView, trackButtonClick, trackSessionStart } = useAnalytics();
   console.log('🏠 Dashboard: orderList length:', orderList.length);
+  console.log('🔍 Dashboard: orderList:', orderList);
+  console.log('🔍 Dashboard: typeof orderList:', typeof orderList);
+  console.log('🔍 Dashboard: Array.isArray(orderList):', Array.isArray(orderList));
 
   useEffect(() => {
     // Her kullanıcı için ayrı sipariş listesi veya misafir modu için genel liste

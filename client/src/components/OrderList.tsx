@@ -58,6 +58,10 @@ interface OrderListProps {
 }
 
 const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, onClearAll, onRequireAuth }) => {
+  // Debug: Log orderList data
+  console.log('🔍 OrderList: orderList:', orderList);
+  console.log('🔍 OrderList: typeof orderList:', typeof orderList);
+  console.log('🔍 OrderList: Array.isArray(orderList):', Array.isArray(orderList));
   const [loading, setLoading] = React.useState(false);
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showClearModal, setShowClearModal] = React.useState(false);
