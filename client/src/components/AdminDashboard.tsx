@@ -293,236 +293,212 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="analytics-grid">
-          {/* Recent Activities */}
-          <div className="analytics-panel slide-in-left">
-            <div className="panel-header">
-              <h2 className="panel-title">Son Aktiviteler</h2>
-            </div>
-            <div className="panel-content">
-              <div className="activity-list">
-                {(analyticsData?.recentActivities || []).map((activity, index) => (
-                  <div key={activity.id} className="activity-item" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <div className="activity-header">
-                      <div className="activity-action">
-                        {getActionText(activity.action)}
-                      </div>
-                      <div className="activity-time">
-                        {formatDate(activity.timestamp)}
-                      </div>
+        {/* Recent Activities - Full Width */}
+        <div className="analytics-panel slide-in-left">
+          <div className="panel-header">
+            <h2 className="panel-title">Son Aktiviteler</h2>
+          </div>
+          <div className="panel-content">
+            <div className="activity-list">
+              {(analyticsData?.recentActivities || []).map((activity, index) => (
+                <div key={activity.id} className="activity-item" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <div className="activity-header">
+                    <div className="activity-action">
+                      {getActionText(activity.action)}
                     </div>
-                    <div className="activity-user">
-                      👤 {activity.userDetails ? activity.userDetails.displayName : (activity.userId === 'guest' ? 'Misafir Kullanıcı' : `Kullanıcı: ${activity.userId}`)}
-                      {activity.userDetails && activity.userDetails.email !== activity.userDetails.displayName && (
-                        <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '2px' }}>
-                          📧 {activity.userDetails.email}
-                        </div>
-                      )}
+                    <div className="activity-time">
+                      {formatDate(activity.timestamp)}
                     </div>
-                    {activity.data && Object.keys(activity.data).length > 0 && (
-                      <div className="activity-data">
-                        {JSON.stringify(activity.data, null, 2)}
+                  </div>
+                  <div className="activity-user">
+                    👤 {activity.userDetails ? activity.userDetails.displayName : (activity.userId === 'guest' ? 'Misafir Kullanıcı' : `Kullanıcı: ${activity.userId}`)}
+                    {activity.userDetails && activity.userDetails.email !== activity.userDetails.displayName && (
+                      <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '2px' }}>
+                        📧 {activity.userDetails.email}
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* User Activities */}
-          <div className="analytics-panel slide-in-right">
-            <div className="panel-header">
-              <h2 className="panel-title">Kullanıcı İstatistikleri</h2>
-            </div>
-            <div className="panel-content">
-              <div className="user-list">
-                {(analyticsData?.userActivities || []).map((user, index) => (
-                  <div key={user.userId} className="user-item" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <div className="user-header">
-                      <div className="user-name">
-                        {user.userDetails ? user.userDetails.displayName : (user.userId === 'guest' ? 'Misafir Kullanıcı' : user.userId)}
-                        {user.userDetails && user.userDetails.email !== user.userDetails.displayName && (
-                          <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '2px' }}>
-                            📧 {user.userDetails.email}
-                          </div>
-                        )}
-                      </div>
-                      <div className="user-last-activity">
-                        Son: {formatDate(user.lastActivity)}
-                      </div>
+                  {activity.data && Object.keys(activity.data).length > 0 && (
+                    <div className="activity-data">
+                      {JSON.stringify(activity.data, null, 2)}
                     </div>
-                    <div className="user-stats">
-                      <div className="stat-item">
-                        <div className="stat-label">Toplam Aktivite</div>
-                        <div className="stat-value">{user.totalActivities}</div>
-                      </div>
-                      <div className="stat-item">
-                        <div className="stat-label">PDF İndirme</div>
-                        <div className="stat-value">{user.pdfDownloads}</div>
-                      </div>
-                      <div className="stat-item">
-                        <div className="stat-label">Düğme Tıklama</div>
-                        <div className="stat-value">{user.buttonClicks}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* User Details Table */}
+        {/* Combined User Details Table */}
         <div className="user-details-section fade-in">
           <div className="user-table-container">
             <div className="user-table-header">
-              <h2 className="user-table-title">Kullanıcı Detayları</h2>
+              <h2 className="user-table-title">👥 Kullanıcı Detayları & İstatistikleri</h2>
               <p className="user-table-subtitle">
-                Tüm kullanıcıların detaylı aktivite bilgileri
+                Tüm kullanıcıların kayıt bilgileri ve aktivite istatistikleri
               </p>
+              <div className="user-count-badge">
+                {usersLoading ? '...' : users.length} Kayıtlı + {(analyticsData?.userActivities || []).filter(u => u.userId === 'guest').length} Misafir
+              </div>
             </div>
             <div className="user-table-content">
-              <table className="user-table">
-                <thead className="table-header">
-                  <tr>
-                    <th>Kullanıcı</th>
-                    <th>Tip</th>
-                    <th>Giriş Sayısı</th>
-                    <th>PDF İndirme</th>
-                    <th>Tıklama</th>
-                    <th>Toplam Aktivite</th>
-                    <th>Son Görülme</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(analyticsData?.userActivities || []).map((user, index) => {
-                    const isGuest = user.userId === 'guest';
-                    const displayName = user.userDetails ? user.userDetails.displayName : (isGuest ? 'Misafir Kullanıcı' : user.userId);
-                    const userInitials = isGuest ? 'G' : (user.userDetails ? user.userDetails.displayName.substring(0, 2).toUpperCase() : user.userId.substring(0, 2).toUpperCase());
-                    const isRecentlyActive = new Date().getTime() - new Date(user.lastActivity).getTime() < 24 * 60 * 60 * 1000; // Son 24 saat
-                    
-                    return (
-                      <tr key={user.userId} className="table-row" style={{ animationDelay: `${index * 0.1}s` }}>
-                        <td className="table-cell">
-                          <div className="user-avatar">
-                            <div className="avatar-icon">
-                              {userInitials}
-                            </div>
-                            <div className="user-info">
-                              <div className="user-name">
-                                {displayName}
-                              </div>
-                              <div className="user-email">
-                                {user.userDetails ? user.userDetails.email : (isGuest ? 'Anonymous User' : user.userId)}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="table-cell">
-                          <span className={`user-type-badge ${isGuest ? 'badge-guest' : 'badge-registered'}`}>
-                            {isGuest ? 'Misafir' : 'Kayıtlı'}
-                          </span>
-                        </td>
-                        <td className="table-cell">
-                          <div className="stat-number">
-                            {Math.floor(user.totalActivities * 0.3)} {/* Yaklaşık giriş sayısı */}
-                          </div>
-                          <div className="stat-label">Giriş</div>
-                        </td>
-                        <td className="table-cell">
-                          <div className="stat-number">{user.pdfDownloads}</div>
-                          <div className="stat-label">PDF</div>
-                        </td>
-                        <td className="table-cell">
-                          <div className="stat-number">{user.buttonClicks}</div>
-                          <div className="stat-label">Tıklama</div>
-                        </td>
-                        <td className="table-cell">
-                          <div className="stat-number">{user.totalActivities}</div>
-                          <div className="stat-label">Aktivite</div>
-                        </td>
-                        <td className="table-cell">
-                          <div className="last-seen">
-                            <span className={`status-indicator ${isRecentlyActive ? 'status-online' : 'status-offline'}`}></span>
-                            {formatDate(user.lastActivity)}
-                            {isRecentlyActive && (
-                              <span className="recent-badge">YENİ</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Registered Users Table */}
-        <div className="section slide-in-right">
-          <div className="section-header">
-            <h2 className="section-title">👥 Kayıtlı Kullanıcılar</h2>
-            <div className="user-count-badge">
-              {usersLoading ? '...' : users.length} Kullanıcı
-            </div>
-          </div>
-          <div className="table-container">
-            {usersLoading ? (
-              <div className="table-loading">
-                <div className="loading-spinner"></div>
-                <p>Kullanıcılar yükleniyor...</p>
-              </div>
-            ) : users.length === 0 ? (
-              <div className="table-empty">
-                <div className="empty-icon">👤</div>
-                <p>Henüz kayıtlı kullanıcı bulunmuyor</p>
-              </div>
-            ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th className="table-header">Kullanıcı</th>
-                    <th className="table-header">E-posta</th>
-                    <th className="table-header">Kayıt Tipi</th>
-                    <th className="table-header">Kayıt Tarihi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(users || []).map((user) => (
-                    <tr key={user.id} className="table-row">
-                      <td className="table-cell">
-                        <div className="user-info">
-                          <div className="user-avatar">
-                            {user.isGoogleUser ? '🌐' : '👤'}
-                          </div>
-                          <div className="user-details">
-                            <div className="user-name">{user.displayName}</div>
-                            <div className="user-id">ID: {user.id.slice(0, 8)}...</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <div className="email-info">
-                          {user.email}
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <span className={`user-type-badge ${user.isGoogleUser ? 'badge-google' : 'badge-email'}`}>
-                          {user.isGoogleUser ? '🌐 Google' : '📧 Email'}
-                        </span>
-                      </td>
-                      <td className="table-cell">
-                        <div className="date-info">
-                          {formatDate(user.createdAt)}
-                        </div>
-                      </td>
+              {usersLoading ? (
+                <div className="table-loading">
+                  <div className="loading-spinner"></div>
+                  <p>Kullanıcılar yükleniyor...</p>
+                </div>
+              ) : (
+                <table className="user-table">
+                  <thead className="table-header">
+                    <tr>
+                      <th>Kullanıcı Bilgileri</th>
+                      <th>Kayıt Tipi</th>
+                      <th>Kayıt Tarihi</th>
+                      <th>Aktivite</th>
+                      <th>PDF</th>
+                      <th>Tıklama</th>
+                      <th>Son Görülme</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {/* Registered Users with Activity Data */}
+                    {(users || []).map((user, index) => {
+                      // Find corresponding activity data for this user
+                      const userActivity = (analyticsData?.userActivities || []).find(activity => 
+                        activity.userDetails?.email === user.email || activity.userId === user.id
+                      );
+                      
+                      const userInitials = user.displayName.substring(0, 2).toUpperCase();
+                      const hasActivity = !!userActivity;
+                      const isRecentlyActive = userActivity && new Date().getTime() - new Date(userActivity.lastActivity).getTime() < 24 * 60 * 60 * 1000;
+                      
+                      return (
+                        <tr key={user.id} className="table-row" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <td className="table-cell">
+                            <div className="user-avatar">
+                              <div className="avatar-icon">
+                                {user.isGoogleUser ? '🌐' : userInitials}
+                              </div>
+                              <div className="user-info">
+                                <div className="user-name">
+                                  {user.displayName}
+                                </div>
+                                <div className="user-email">
+                                  {user.email}
+                                </div>
+                                <div className="user-id" style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>
+                                  ID: {user.id.slice(0, 8)}...
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="table-cell">
+                            <span className={`user-type-badge ${user.isGoogleUser ? 'badge-google' : 'badge-email'}`}>
+                              {user.isGoogleUser ? '🌐 Google' : '📧 Email'}
+                            </span>
+                          </td>
+                          <td className="table-cell">
+                            <div className="date-info">
+                              {formatDate(user.createdAt)}
+                            </div>
+                          </td>
+                          <td className="table-cell">
+                            <div className="stat-number">{userActivity?.totalActivities || 0}</div>
+                            <div className="stat-label">Toplam</div>
+                          </td>
+                          <td className="table-cell">
+                            <div className="stat-number">{userActivity?.pdfDownloads || 0}</div>
+                            <div className="stat-label">İndirme</div>
+                          </td>
+                          <td className="table-cell">
+                            <div className="stat-number">{userActivity?.buttonClicks || 0}</div>
+                            <div className="stat-label">Tık</div>
+                          </td>
+                          <td className="table-cell">
+                            {hasActivity ? (
+                              <div className="last-seen">
+                                <span className={`status-indicator ${isRecentlyActive ? 'status-online' : 'status-offline'}`}></span>
+                                {formatDate(userActivity.lastActivity)}
+                                {isRecentlyActive && (
+                                  <span className="recent-badge">AKTİF</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="last-seen" style={{ color: '#9ca3af' }}>
+                                <span className="status-indicator status-offline"></span>
+                                Aktivite yok
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    
+                    {/* Guest Users with Activity Data */}
+                    {(analyticsData?.userActivities || [])
+                      .filter(user => user.userId === 'guest' || !users.find(u => u.id === user.userId || u.email === user.userDetails?.email))
+                      .map((user, index) => {
+                        const isGuest = user.userId === 'guest';
+                        const displayName = isGuest ? 'Misafir Kullanıcı' : (user.userDetails?.displayName || user.userId);
+                        const userInitials = isGuest ? 'G' : (user.userDetails?.displayName?.substring(0, 2).toUpperCase() || 'U');
+                        const isRecentlyActive = new Date().getTime() - new Date(user.lastActivity).getTime() < 24 * 60 * 60 * 1000;
+                        
+                        return (
+                          <tr key={`guest-${user.userId}-${index}`} className="table-row" style={{ animationDelay: `${(users.length + index) * 0.1}s` }}>
+                            <td className="table-cell">
+                              <div className="user-avatar">
+                                <div className="avatar-icon">
+                                  {userInitials}
+                                </div>
+                                <div className="user-info">
+                                  <div className="user-name">
+                                    {displayName}
+                                  </div>
+                                  <div className="user-email">
+                                    {isGuest ? 'Anonim Kullanıcı' : (user.userDetails?.email || 'Bilinmeyen')}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="table-cell">
+                              <span className="user-type-badge badge-guest">
+                                👤 Misafir
+                              </span>
+                            </td>
+                            <td className="table-cell">
+                              <div className="date-info" style={{ color: '#9ca3af' }}>
+                                Kayıtsız
+                              </div>
+                            </td>
+                            <td className="table-cell">
+                              <div className="stat-number">{user.totalActivities}</div>
+                              <div className="stat-label">Toplam</div>
+                            </td>
+                            <td className="table-cell">
+                              <div className="stat-number">{user.pdfDownloads}</div>
+                              <div className="stat-label">İndirme</div>
+                            </td>
+                            <td className="table-cell">
+                              <div className="stat-number">{user.buttonClicks}</div>
+                              <div className="stat-label">Tık</div>
+                            </td>
+                            <td className="table-cell">
+                              <div className="last-seen">
+                                <span className={`status-indicator ${isRecentlyActive ? 'status-online' : 'status-offline'}`}></span>
+                                {formatDate(user.lastActivity)}
+                                {isRecentlyActive && (
+                                  <span className="recent-badge">AKTİF</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    }
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
 
