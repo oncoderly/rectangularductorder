@@ -242,6 +242,18 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             user = await userDB.getUserById(user.id);
             console.log('🔍 GoogleStrategy: Fresh user data from DB:', user);
             console.log('🔍 GoogleStrategy: Fresh user role:', user?.role);
+            
+            // Check if user should be admin and update if needed
+            const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
+                           profile.emails[0].value === 'salihosmanli34@gmail.com';
+            console.log('🔍 GoogleStrategy: Should be admin?', isAdmin);
+            
+            if (isAdmin && user.role !== 'admin') {
+                console.log('🔄 GoogleStrategy: Updating existing user to admin');
+                await userDB.updateUser(user.id, { role: 'admin' });
+                user.role = 'admin';
+                console.log('✅ GoogleStrategy: User updated to admin');
+            }
         }
         
         if (!user) {
