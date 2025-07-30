@@ -61,8 +61,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('google_auth') === 'success') {
       // Check for user data from server
+      console.log('🔍 Auth: Google auth success detected, calling success endpoint');
       axios.get(`${API_URL}/api/auth/google/success`, { withCredentials: true })
         .then(response => {
+          console.log('✅ Auth: Google auth success response:', response.data);
+          console.log('👤 Auth: User object received:', response.data.user);
+          console.log('🔑 Auth: User role:', response.data.user?.role);
           onLogin(response.data.user);
           // Clean URL
           window.history.replaceState({}, document.title, window.location.pathname);

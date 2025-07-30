@@ -103,6 +103,8 @@ function App() {
   };
 
   const handleLogin = (userData: User) => {
+    console.log('🚀 App: handleLogin called with userData:', userData);
+    console.log('🔑 App: User role in handleLogin:', userData?.role);
     setUser(userData);
     setShowAuthModal(false);
   };
@@ -161,16 +163,21 @@ function App() {
             />
           </>
         )}
+        {user && user.role !== 'admin' && (console.log('❌ App: User is not admin - role:', user?.role), null)}
         
         {/* Admin Dashboard Toggle Button - Only for admin users */}
+        {(console.log('🔍 App: Admin button check - user:', !!user, 'role:', user?.role, 'showAdminDashboard:', showAdminDashboard), null)}
         {user && user.role === 'admin' && !showAdminDashboard && (
-          <button
+          <>
+            {(console.log('✅ App: Rendering admin dashboard button'), null)}
+            <button
             onClick={toggleAdminDashboard}
             className="fixed bottom-4 right-4 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-50"
             title="Admin Dashboard"
           >
             📊
           </button>
+          </>
         )}
         
         {/* Back to Main Dashboard Button */}

@@ -225,32 +225,52 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         callbackURL: `${SERVER_URL}/api/auth/google/callback`
     }, async (accessToken, refreshToken, profile, done) => {
     try {
+        console.log('🔍 GoogleStrategy: Callback triggered');
+        console.log('🔍 GoogleStrategy: Profile email:', profile.emails[0].value);
+        console.log('🔍 GoogleStrategy: Profile ID:', profile.id);
+        
         // Wait for database initialization
         await waitForInit();
         
         // Find user by Google ID first
         const allUsers = await userDB.getAllUsers();
         let user = allUsers.find(u => u.googleId === profile.id);
+        console.log('🔍 GoogleStrategy: User found by Google ID:', !!user);
         
         // If user found, get fresh data from database to ensure role is current
         if (user) {
             user = await userDB.getUserById(user.id);
+            console.log('🔍 GoogleStrategy: Fresh user data from DB:', user);
+            console.log('🔍 GoogleStrategy: Fresh user role:', user?.role);
         }
         
         if (!user) {
+            console.log('🔍 GoogleStrategy: No user found by Google ID, checking by email');
             // Check if user exists with same email
             user = await userDB.getUserByEmail(profile.emails[0].value);
+            console.log('🔍 GoogleStrategy: User found by email:', !!user);
+            
             if (user) {
+                console.log('🔍 GoogleStrategy: Linking Google account to existing user');
+                console.log('🔍 GoogleStrategy: Existing user role:', user.role);
+                
                 // Link Google account to existing user and update admin role if needed
                 const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
                                profile.emails[0].value === 'salihosmanli34@gmail.com';
+                console.log('🔍 GoogleStrategy: Is admin email?', isAdmin);
+                
                 const updateData = { 
                     googleId: profile.id,
                     role: isAdmin ? 'admin' : (user.role || 'user')
                 };
+                console.log('🔍 GoogleStrategy: Update data:', updateData);
+                
                 await userDB.updateUser(user.id, updateData);
                 user.googleId = profile.id; // Update local object
                 user.role = updateData.role; // Update local object
+                
+                console.log('🔍 GoogleStrategy: User after update:', user);
+                console.log('🔍 GoogleStrategy: Final user role:', user.role);
             } else {
                 // Create new user
                 const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
@@ -274,8 +294,11 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             }
         }
         
+        console.log('✅ GoogleStrategy: Final user object to return:', user);
+        console.log('✅ GoogleStrategy: Final role to return:', user?.role);
         return done(null, user);
     } catch (error) {
+        console.error('❌ GoogleStrategy: Error:', error);
         return done(error, null);
     }
 }));
@@ -858,9 +881,11 @@ app.get('/api/auth/google/callback', (req, res, next) => {
         
         // Successful authentication, redirect to client  
         console.log('✅ OAuth Callback - User authenticated:', req.user?.email);
+        console.log('✅ OAuth Callback - User role:', req.user?.role);
         console.log('✅ OAuth Callback - User object:', JSON.stringify(req.user, null, 2));
         
         req.session.userId = req.user.id;
+        console.log('🔍 OAuth Callback - Setting session userId:', req.user.id);
         
         // Session'ı kaydet (ÇÖZÜM!)
         req.session.save((err) => {
@@ -886,7 +911,11 @@ app.get('/api/auth/google/callback', (req, res, next) => {
 // Google Auth success check endpoint
 app.get('/api/auth/google/success', async (req, res) => {
     try {
+        console.log('🔍 Google Success: Endpoint called');
+        console.log('🔍 Google Success: Session userId:', req.session.userId);
+        
         if (!req.session.userId) {
+            console.log('❌ Google Success: No session userId');
             return res.status(401).json({ error: 'Oturum açılmamış' });
         }
         
@@ -894,22 +923,30 @@ app.get('/api/auth/google/success', async (req, res) => {
         await waitForInit();
         
         const user = await userDB.getUserById(req.session.userId);
+        console.log('👤 Google Success: User from DB:', user);
+        console.log('🔑 Google Success: User role from DB:', user?.role);
         
         if (!user) {
+            console.log('❌ Google Success: User not found in DB');
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
         }
         
+        const userResponse = { 
+            id: user.id, 
+            email: user.email,
+            firstName: user.firstName, 
+            lastName: user.lastName,
+            role: user.role || 'user'
+        };
+        
+        console.log('✅ Google Success: Sending user response:', userResponse);
+        
         res.json({ 
             message: 'Google ile giriş başarılı',
-            user: { 
-                id: user.id, 
-                email: user.email,
-                firstName: user.firstName, 
-                lastName: user.lastName,
-                role: user.role || 'user'
-            } 
+            user: userResponse
         });
     } catch (error) {
+        console.error('❌ Google Success: Error:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
 });
