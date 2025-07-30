@@ -1014,15 +1014,57 @@ app.get('/api/admin/analytics', async (req, res) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
+        await waitForInit();
+        
         const summary = await getAnalyticsSummary();
         
-        // Database tipi bilgisini ekle
-        const response = {
+        // Get all users to enrich the data with user details
+        const allUsers = await userDB.getAllUsers();
+        const userMap = {};
+        allUsers.forEach(user => {
+            userMap[user.id] = {
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                displayName: `${user.firstName} ${user.lastName}`.trim() || user.email
+            };
+        });
+        
+        // Enrich analytics data with user details
+        const enrichedSummary = {
             ...summary,
             databaseType: isPostgreSQL ? 'PostgreSQL' : 'SQLite'
         };
         
-        res.json(response);
+        // Enrich recent activities with user details
+        if (enrichedSummary.recentActivities) {
+            enrichedSummary.recentActivities = enrichedSummary.recentActivities.map(activity => ({
+                ...activity,
+                userDetails: activity.userId === 'guest' ? {
+                    email: 'Misafir Kullanıcı',
+                    displayName: 'Misafir Kullanıcı'
+                } : userMap[activity.userId] || {
+                    email: activity.userId,
+                    displayName: activity.userId
+                }
+            }));
+        }
+        
+        // Enrich user activities with user details
+        if (enrichedSummary.userActivities) {
+            enrichedSummary.userActivities = enrichedSummary.userActivities.map(userActivity => ({
+                ...userActivity,
+                userDetails: userActivity.userId === 'guest' ? {
+                    email: 'Misafir Kullanıcı',
+                    displayName: 'Misafir Kullanıcı'
+                } : userMap[userActivity.userId] || {
+                    email: userActivity.userId,
+                    displayName: userActivity.userId
+                }
+            }));
+        }
+        
+        res.json(enrichedSummary);
     } catch (error) {
         console.error('Analytics summary error:', error);
         res.status(500).json({ error: 'Failed to get analytics' });

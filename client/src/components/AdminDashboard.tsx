@@ -18,6 +18,12 @@ interface Activity {
   action: string;
   timestamp: string;
   data: any;
+  userDetails?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+  };
 }
 
 interface UserActivity {
@@ -26,6 +32,12 @@ interface UserActivity {
   pdfDownloads: number;
   buttonClicks: number;
   lastActivity: string;
+  userDetails?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+  };
 }
 
 interface User {
@@ -115,7 +127,9 @@ const AdminDashboard: React.FC = () => {
       console.log('🔍 AdminDashboard: typeof response.data:', typeof response.data);
       console.log('🔍 AdminDashboard: Array.isArray(response.data):', Array.isArray(response.data));
       
-      setUsers(Array.isArray(response.data) ? response.data : []);
+      // Server returns { users: [], totalCount: number }
+      const usersData = response.data.users || response.data;
+      setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (error: any) {
       console.error('Failed to fetch users:', error);
     } finally {
@@ -298,7 +312,12 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="activity-user">
-                      👤 {activity.userId === 'guest' ? 'Misafir Kullanıcı' : `Kullanıcı: ${activity.userId}`}
+                      👤 {activity.userDetails ? activity.userDetails.displayName : (activity.userId === 'guest' ? 'Misafir Kullanıcı' : `Kullanıcı: ${activity.userId}`)}
+                      {activity.userDetails && activity.userDetails.email !== activity.userDetails.displayName && (
+                        <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '2px' }}>
+                          📧 {activity.userDetails.email}
+                        </div>
+                      )}
                     </div>
                     {activity.data && Object.keys(activity.data).length > 0 && (
                       <div className="activity-data">
@@ -322,7 +341,12 @@ const AdminDashboard: React.FC = () => {
                   <div key={user.userId} className="user-item" style={{ animationDelay: `${index * 0.1}s` }}>
                     <div className="user-header">
                       <div className="user-name">
-                        {user.userId === 'guest' ? 'Misafir Kullanıcı' : user.userId}
+                        {user.userDetails ? user.userDetails.displayName : (user.userId === 'guest' ? 'Misafir Kullanıcı' : user.userId)}
+                        {user.userDetails && user.userDetails.email !== user.userDetails.displayName && (
+                          <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '2px' }}>
+                            📧 {user.userDetails.email}
+                          </div>
+                        )}
                       </div>
                       <div className="user-last-activity">
                         Son: {formatDate(user.lastActivity)}
@@ -374,7 +398,8 @@ const AdminDashboard: React.FC = () => {
                 <tbody>
                   {(analyticsData?.userActivities || []).map((user, index) => {
                     const isGuest = user.userId === 'guest';
-                    const userInitials = isGuest ? 'G' : user.userId.substring(0, 2).toUpperCase();
+                    const displayName = user.userDetails ? user.userDetails.displayName : (isGuest ? 'Misafir Kullanıcı' : user.userId);
+                    const userInitials = isGuest ? 'G' : (user.userDetails ? user.userDetails.displayName.substring(0, 2).toUpperCase() : user.userId.substring(0, 2).toUpperCase());
                     const isRecentlyActive = new Date().getTime() - new Date(user.lastActivity).getTime() < 24 * 60 * 60 * 1000; // Son 24 saat
                     
                     return (
@@ -386,10 +411,10 @@ const AdminDashboard: React.FC = () => {
                             </div>
                             <div className="user-info">
                               <div className="user-name">
-                                {isGuest ? 'Misafir Kullanıcı' : user.userId}
+                                {displayName}
                               </div>
                               <div className="user-email">
-                                {isGuest ? 'Anonymous User' : `${user.userId}@example.com`}
+                                {user.userDetails ? user.userDetails.email : (isGuest ? 'Anonymous User' : user.userId)}
                               </div>
                             </div>
                           </div>
