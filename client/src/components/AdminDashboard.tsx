@@ -62,6 +62,11 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Debug: Log users array
+  console.log('🔍 AdminDashboard: users:', users);
+  console.log('🔍 AdminDashboard: typeof users:', typeof users);
+  console.log('🔍 AdminDashboard: Array.isArray(users):', Array.isArray(users));
 
   useEffect(() => {
     fetchAnalytics();
@@ -77,7 +82,18 @@ const AdminDashboard: React.FC = () => {
         withCredentials: true
       });
       
-      setAnalyticsData(response.data);
+      // Debug: Log analytics response
+      console.log('🔍 AdminDashboard: fetchAnalytics response.data:', response.data);
+      console.log('🔍 AdminDashboard: typeof response.data:', typeof response.data);
+      
+      // Ensure arrays exist in analytics data
+      const safeAnalyticsData = {
+        ...response.data,
+        recentActivities: Array.isArray(response.data?.recentActivities) ? response.data.recentActivities : [],
+        userActivities: Array.isArray(response.data?.userActivities) ? response.data.userActivities : []
+      };
+      
+      setAnalyticsData(safeAnalyticsData);
     } catch (error: any) {
       console.error('Failed to fetch analytics:', error);
       setError(error.response?.data?.error || 'Analytics verisi alınamadı');
@@ -94,7 +110,12 @@ const AdminDashboard: React.FC = () => {
         withCredentials: true
       });
       
-      setUsers(response.data);
+      // Debug: Log users response
+      console.log('🔍 AdminDashboard: fetchUsers response.data:', response.data);
+      console.log('🔍 AdminDashboard: typeof response.data:', typeof response.data);
+      console.log('🔍 AdminDashboard: Array.isArray(response.data):', Array.isArray(response.data));
+      
+      setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error: any) {
       console.error('Failed to fetch users:', error);
     } finally {
