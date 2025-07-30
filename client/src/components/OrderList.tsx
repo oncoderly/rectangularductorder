@@ -66,6 +66,8 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
   const [showShareModal, setShowShareModal] = React.useState(false);
   const [showClearModal, setShowClearModal] = React.useState(false);
   const [pdfBlob, setPdfBlob] = React.useState<Blob | null>(null);
+  const [projeAdi, setProjeAdi] = React.useState('');
+  const [mahalAdi, setMahalAdi] = React.useState('');
   const { trackPDFDownload } = useAnalytics();
 
   const generatePDF = async () => {
@@ -88,8 +90,14 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
             <Text style={pdfStyles.header}>HAVA KANALI SİPARİŞ LİSTESİ</Text>
             
             <View style={pdfStyles.customerInfo}>
-              <Text style={pdfStyles.customerTitle}>Müşteri Bilgileri</Text>
-              <Text style={pdfStyles.customerText}>Müşteri: {user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}</Text>
+              <Text style={pdfStyles.customerTitle}>Sipariş Bilgileri</Text>
+              {projeAdi && (
+                <Text style={pdfStyles.customerText}>Proje Adı: {projeAdi}</Text>
+              )}
+              {mahalAdi && (
+                <Text style={pdfStyles.customerText}>Mahal Adı (Alan/Zone): {mahalAdi}</Text>
+              )}
+              <Text style={pdfStyles.customerText}>Siparişi Veren Kişi/Firma: {user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}</Text>
               <Text style={pdfStyles.customerText}>E-posta: {user ? user.email : '-'}</Text>
               <Text style={pdfStyles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
             </View>
@@ -237,8 +245,14 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
             <Text style={pdfStyles.header}>HAVA KANALI SİPARİŞ LİSTESİ</Text>
             
             <View style={pdfStyles.customerInfo}>
-              <Text style={pdfStyles.customerTitle}>Müşteri Bilgileri</Text>
-              <Text style={pdfStyles.customerText}>Müşteri: {user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}</Text>
+              <Text style={pdfStyles.customerTitle}>Sipariş Bilgileri</Text>
+              {projeAdi && (
+                <Text style={pdfStyles.customerText}>Proje Adı: {projeAdi}</Text>
+              )}
+              {mahalAdi && (
+                <Text style={pdfStyles.customerText}>Mahal Adı (Alan/Zone): {mahalAdi}</Text>
+              )}
+              <Text style={pdfStyles.customerText}>Siparişi Veren Kişi/Firma: {user ? `${user.firstName} ${user.lastName}` : 'Misafir Kullanıcı'}</Text>
               <Text style={pdfStyles.customerText}>E-posta: {user ? user.email : '-'}</Text>
               <Text style={pdfStyles.customerText}>Sipariş Tarihi: {new Date().toLocaleDateString('tr-TR')}</Text>
             </View>
@@ -455,6 +469,81 @@ PDF dosyası ekte yer almaktadır.
           </div>
         )}
         
+        {/* Project Info Input Fields */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '12px', 
+          marginBottom: '16px',
+          background: 'rgba(59, 130, 246, 0.05)',
+          padding: '16px',
+          borderRadius: '12px',
+          border: '1px solid rgba(59, 130, 246, 0.2)'
+        }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1', minWidth: '200px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#374151', 
+                marginBottom: '6px' 
+              }}>
+                📋 Proje Adı:
+              </label>
+              <input
+                type="text"
+                value={projeAdi}
+                onChange={(e) => setProjeAdi(e.target.value)}
+                placeholder="Proje adını girin..."
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '2px solid #e5e7eb',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  backgroundColor: 'white'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+            </div>
+            <div style={{ flex: '1', minWidth: '200px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#374151', 
+                marginBottom: '6px' 
+              }}>
+                🏢 Mahal Adı (Alan/Zone):
+              </label>
+              <input
+                type="text"
+                value={mahalAdi}
+                onChange={(e) => setMahalAdi(e.target.value)}
+                placeholder="Mahal/alan adını girin..."
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '2px solid #e5e7eb',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  backgroundColor: 'white'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Buttons Container */}
         <div style={{ 
           display: 'flex', 

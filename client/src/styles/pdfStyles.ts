@@ -31,7 +31,7 @@ export const pdfStyles = StyleSheet.create({
     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
   },
   customerTitle: {
-    fontSize: 7,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 10,
@@ -40,7 +40,7 @@ export const pdfStyles = StyleSheet.create({
     borderBottomColor: '#e3e8ed',
   },
   customerText: {
-    fontSize: 6,
+    fontSize: 12,
     color: '#495057',
     marginBottom: 5,
   },
