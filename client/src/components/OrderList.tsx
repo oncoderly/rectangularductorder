@@ -128,9 +128,9 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                       <View style={pdfStyles.measurementsContainer}>
                         <Text style={pdfStyles.measurementsTitle}>Ölçüler</Text>
                         <View style={pdfStyles.measurementRow}>
-                          {selectedPart.measurements.map((measurement) => {
+                          {(selectedPart.measurements || []).map((measurement) => {
                             if (measurement.directions) {
-                              return measurement.directions.map((direction) => {
+                              return (measurement.directions || []).map((direction) => {
                                 const directionKey = `${measurement.key}_${direction.key}`;
                                 const value = part.directions?.[directionKey] || 0;
                                 const diameter = part.diameters?.[directionKey] || 0;
@@ -158,12 +158,12 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
 
                   {(() => {
                     const selectedPart = parts[part.partKey];
-                    if (!selectedPart || selectedPart.checkboxes.length === 0) return null;
+                    if (!selectedPart || !selectedPart.checkboxes || selectedPart.checkboxes.length === 0) return null;
                     
                     return (
                       <View style={pdfStyles.optionsContainer}>
                         <Text style={pdfStyles.optionsTitle}>Seçenekler:</Text>
-                        {selectedPart.checkboxes.filter((checkbox) => part.checkboxes[checkbox.key] || false).map((checkbox) => {
+                        {(selectedPart.checkboxes || []).filter((checkbox) => part.checkboxes[checkbox.key] || false).map((checkbox) => {
                           return (
                             <Text key={checkbox.key} style={pdfStyles.option}>
                               ✓ {checkbox.label}
@@ -277,9 +277,9 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
                       <View style={pdfStyles.measurementsContainer}>
                         <Text style={pdfStyles.measurementsTitle}>Ölçüler</Text>
                         <View style={pdfStyles.measurementRow}>
-                          {selectedPart.measurements.map((measurement) => {
+                          {(selectedPart.measurements || []).map((measurement) => {
                             if (measurement.directions) {
-                              return measurement.directions.map((direction) => {
+                              return (measurement.directions || []).map((direction) => {
                                 const directionKey = `${measurement.key}_${direction.key}`;
                                 const value = part.directions?.[directionKey] || 0;
                                 const diameter = part.diameters?.[directionKey] || 0;
@@ -307,12 +307,12 @@ const OrderList: React.FC<OrderListProps> = ({ orderList, user, onRemovePart, on
 
                   {(() => {
                     const selectedPart = parts[part.partKey];
-                    if (!selectedPart || selectedPart.checkboxes.length === 0) return null;
+                    if (!selectedPart || !selectedPart.checkboxes || selectedPart.checkboxes.length === 0) return null;
                     
                     return (
                       <View style={pdfStyles.optionsContainer}>
                         <Text style={pdfStyles.optionsTitle}>Seçenekler:</Text>
-                        {selectedPart.checkboxes.filter((checkbox) => part.checkboxes[checkbox.key] || false).map((checkbox) => {
+                        {(selectedPart.checkboxes || []).filter((checkbox) => part.checkboxes[checkbox.key] || false).map((checkbox) => {
                           return (
                             <Text key={checkbox.key} style={pdfStyles.option}>
                               ✓ {checkbox.label}
@@ -588,9 +588,9 @@ PDF dosyası ekte yer almaktadır.
                     const selectedPart = parts[part.partKey];
                     if (!selectedPart) return null;
                     
-                    return selectedPart.measurements.map((measurement) => {
+                    return (selectedPart.measurements || []).map((measurement) => {
                       if (measurement.directions) {
-                        return measurement.directions.map((direction) => {
+                        return (measurement.directions || []).map((direction) => {
                           const directionKey = `${measurement.key}_${direction.key}`;
                           const value = part.directions?.[directionKey] || 0;
                           const diameter = part.diameters?.[directionKey] || 0;

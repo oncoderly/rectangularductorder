@@ -52,7 +52,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   useEffect(() => {
     if (selectedPart) {
       const newMeasurements: PartMeasurement = {};
-      selectedPart.measurements.forEach(m => {
+      (selectedPart.measurements || []).forEach(m => {
         if (m.default !== undefined) {
           newMeasurements[m.key] = m.default.toString();
         }
@@ -87,7 +87,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     
     // Reset values
     const newMeasurements: PartMeasurement = {};
-    part.measurements.forEach(m => {
+    (part.measurements || []).forEach(m => {
       if (m.default !== undefined) {
         newMeasurements[m.key] = m.default.toString();
       }
@@ -255,7 +255,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     // Reset measurements but keep default values, checkboxes, directions and quantity
     if (selectedPart) {
       const defaultMeasurements: PartMeasurement = {};
-      selectedPart.measurements.forEach(m => {
+      (selectedPart.measurements || []).forEach(m => {
         if (m.default !== undefined) {
           defaultMeasurements[m.key] = m.default.toString();
         }
@@ -316,7 +316,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
 
           {/* Measurements */}
           <div className="form-panel">
-            {selectedPart.measurements.map((measurement) => (
+            {(selectedPart.measurements || []).map((measurement) => (
               <div key={measurement.key}>
                 {measurement.directions ? (
                   <div style={{ 
@@ -329,7 +329,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                     <h4 style={{ marginBottom: '16px', fontWeight: 'bold', color: '#34495e', textAlign: 'center' }}>
                       {measurement.label}
                     </h4>
-                    {measurement.directions.map((direction) => (
+                    {(measurement.directions || []).map((direction) => (
                       <div key={direction.key} style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
@@ -551,7 +551,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                             (measurements[measurement.key] || '')}
                           onFocus={createNumericFocusHandler(
                             Number(measurements[measurement.key]) || 0,
-                            selectedPart?.measurements.find(m => m.key === measurement.key)?.default || 0
+                            (selectedPart?.measurements || []).find(m => m.key === measurement.key)?.default || 0
                           )}
                           onChange={(e) => {
                             const inputValue = e.target.value.replace('°', '');
@@ -724,7 +724,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
           </div>
 
           {/* Checkboxes */}
-          {selectedPart.checkboxes.length > 0 && (
+          {(selectedPart.checkboxes || []).length > 0 && (
             <div style={{ marginTop: '24px', marginBottom: '24px' }}>
               <h4 style={{ marginBottom: '16px', fontWeight: 'bold', color: '#34495e', fontSize: '18px' }}>
                 Seçenekler:
@@ -736,7 +736,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                 border: '1px solid #e3e8ed' 
               }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                  {selectedPart.checkboxes.map((checkbox) => (
+                  {(selectedPart.checkboxes || []).map((checkbox) => (
                     <label key={checkbox.key} style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
