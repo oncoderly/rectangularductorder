@@ -1,11 +1,11 @@
 /* Dashboard Header Styles */
 
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border-bottom: 2px solid rgba(79, 70, 229, 0.2);
 }
 
 .dashboard-header-container {
@@ -18,7 +18,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
+  padding: 0.75rem 0;
 }
 
 .dashboard-title-section {
@@ -30,20 +30,20 @@
 }
 
 .dashboard-main-title {
-  font-size: 2.25rem;
+  font-size: 1.8rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #1e40af 0%, #4338ca 50%, #6366f1 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-subtitle {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #2563eb;
+  color: #4f46e5;
   margin-bottom: 0;
 }
 
@@ -55,38 +55,38 @@
 
 .dashboard-guest-badge {
   background: linear-gradient(135deg, #fed7aa 0%, #fef3c7 100%);
-  padding: 1rem 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1.2rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
   border: 2px solid rgba(251, 146, 60, 0.3);
 }
 
 .dashboard-guest-text {
   color: #c2410c;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .dashboard-login-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 50%, #6366f1 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #8b5cf6 100%);
   color: white;
-  padding: 1.25rem 2rem;
+  padding: 1rem 1.5rem;
   border: none;
-  border-radius: 1rem;
-  font-size: 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
-  border: 2px solid rgba(99, 102, 241, 0.5);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);
+  border: 2px solid rgba(139, 92, 246, 0.5);
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .dashboard-login-btn:hover {
@@ -116,30 +116,30 @@
 }
 
 .dashboard-user-section {
-  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(79, 70, 229, 0.3);
 }
 
 .dashboard-user-text {
-  color: #1e40af;
-  font-size: 1rem;
+  color: #4f46e5;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .dashboard-logout-btn {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1rem;
   border: none;
-  border-radius: 0.75rem;
-  font-size: 1rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.3);
   border: 2px solid rgba(220, 38, 38, 0.5);
 }
 

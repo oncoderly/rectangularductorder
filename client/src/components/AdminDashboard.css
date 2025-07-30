@@ -4,7 +4,7 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding: 10px;
+  padding: 8px;
 }
 
 .admin-container {
@@ -17,10 +17,10 @@
 .admin-header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 15px 20px;
-  margin-bottom: 15px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -40,14 +40,14 @@
 }
 
 .database-badge {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
   font-weight: 600;
   color: white;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .badge-postgres {
@@ -61,13 +61,13 @@
 }
 
 .database-status {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #64748b;
   font-weight: 500;
 }
 
 .admin-title {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
   background: linear-gradient(135deg, #667eea, #764ba2);
   background-clip: text;
@@ -78,8 +78,8 @@
 
 .admin-subtitle {
   color: #64748b;
-  font-size: 1.1rem;
-  margin-top: 10px;
+  font-size: 0.9rem;
+  margin-top: 6px;
   font-weight: 500;
 }
 
@@ -161,18 +161,18 @@
 /* Summary Cards Grid */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .summary-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -196,17 +196,17 @@
 .card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
 }
 
 .card-icon {
-  font-size: 2.5rem;
-  margin-right: 15px;
+  font-size: 1.8rem;
+  margin-right: 10px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .card-content h3 {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #64748b;
   margin: 0;
@@ -215,39 +215,39 @@
 }
 
 .card-value {
-  font-size: 2.2rem;
+  font-size: 1.6rem;
   font-weight: 800;
-  color: #1e293b;
-  margin: 5px 0 0 0;
+  color: #0f172a;
+  margin: 3px 0 0 0;
 }
 
 /* Analytics Grid */
 .analytics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .analytics-panel {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
 }
 
 .panel-header {
-  padding: 12px 15px;
+  padding: 8px 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
 }
 
 .panel-title {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin: 0;
   display: flex;
   align-items: center;
@@ -255,16 +255,16 @@
 
 .panel-title::before {
   content: '';
-  width: 4px;
-  height: 20px;
+  width: 3px;
+  height: 16px;
   background: linear-gradient(135deg, #667eea, #764ba2);
   border-radius: 2px;
-  margin-right: 12px;
+  margin-right: 8px;
 }
 
 .panel-content {
-  padding: 15px;
-  max-height: 300px;
+  padding: 10px;
+  max-height: 250px;
   overflow-y: auto;
 }
 
@@ -287,17 +287,17 @@
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .activity-item {
   background: linear-gradient(135deg, #f8fafc, #ffffff);
-  border-radius: 8px;
-  padding: 10px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   position: relative;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .activity-item:hover {
@@ -307,54 +307,54 @@
 
 .activity-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .activity-action {
   font-weight: 600;
   color: #0f172a;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
 }
 
 .activity-time {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: #334155;
   font-weight: 500;
 }
 
 .activity-user {
-  font-size: 0.8rem;
-  color: #1e293b;
-  margin-top: 3px;
+  font-size: 0.7rem;
+  color: #0f172a;
+  margin-top: 2px;
 }
 
 .activity-data {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   color: #64748b;
   background: rgba(0, 0, 0, 0.02);
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
   font-family: 'Courier New', monospace;
-  border-left: 3px solid #e2e8f0;
+  border-left: 2px solid #e2e8f0;
 }
 
 /* User Activity Items */
 .user-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .user-item {
   background: linear-gradient(135deg, #ffffff, #f8fafc);
-  border-radius: 8px;
-  padding: 12px 15px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .user-item:hover {
@@ -366,78 +366,78 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 }
 
 .user-name {
   font-weight: 700;
-  color: #1e293b;
-  font-size: 1.1rem;
+  color: #0f172a;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
 }
 
 .user-name::before {
   content: '👤';
-  margin-right: 10px;
-  font-size: 1.2rem;
+  margin-right: 6px;
+  font-size: 1rem;
 }
 
 .user-last-activity {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #64748b;
   background: rgba(0, 0, 0, 0.05);
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 3px 6px;
+  border-radius: 4px;
 }
 
 .user-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .stat-item {
   text-align: center;
-  padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 6px 8px;
+  background: rgba(148, 163, 184, 0.05);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   color: #64748b;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 5px;
+  letter-spacing: 0.3px;
+  margin-bottom: 3px;
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  color: #1e293b;
+  color: #0f172a;
 }
 
 /* Refresh Button */
 .refresh-section {
   text-align: center;
-  margin-top: 40px;
+  margin-top: 24px;
 }
 
 .refresh-button {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
-  padding: 15px 30px;
-  border-radius: 50px;
+  padding: 10px 20px;
+  border-radius: 25px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
 }
 
 .refresh-button:hover {
@@ -565,29 +565,29 @@
 
 /* User Details Table */
 .user-details-section {
-  margin-top: 40px;
+  margin-top: 24px;
 }
 
 .user-table-container {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
-  margin-top: 15px;
+  margin-top: 12px;
 }
 
 .user-table-header {
-  padding: 25px 30px;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
 }
 
 .user-table-title {
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin: 0;
   display: flex;
   align-items: center;
@@ -595,14 +595,14 @@
 
 .user-table-title::before {
   content: '👥';
-  margin-right: 12px;
-  font-size: 1.5rem;
+  margin-right: 8px;
+  font-size: 1.2rem;
 }
 
 .user-table-subtitle {
   color: #64748b;
-  font-size: 0.9rem;
-  margin-top: 5px;
+  font-size: 0.8rem;
+  margin-top: 4px;
   font-weight: 500;
 }
 
@@ -612,7 +612,7 @@
 }
 
 .user-table-content {
-  max-height: 500px;
+  max-height: 400px;
   overflow-y: auto;
 }
 
@@ -625,12 +625,12 @@
 }
 
 .table-header th {
-  padding: 20px 15px;
+  padding: 12px 10px;
   text-align: left;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -650,8 +650,8 @@
 }
 
 .table-cell {
-  padding: 10px 8px;
-  font-size: 0.8rem;
+  padding: 8px 6px;
+  font-size: 0.7rem;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -662,12 +662,12 @@
 .user-avatar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .avatar-icon {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea, #764ba2);
   display: flex;
@@ -675,7 +675,7 @@
   justify-content: center;
   color: white;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
 }
 
 .user-info {
@@ -684,7 +684,7 @@
 
 .user-name {
   font-weight: 600;
-  color: #1e293b;
+  color: #0f172a;
   margin-bottom: 2px;
 }
 
@@ -695,12 +695,12 @@
 
 .user-type-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .badge-registered {
@@ -715,39 +715,39 @@
 
 .stat-number {
   font-weight: 700;
-  font-size: 1.1rem;
-  color: #1e293b;
+  font-size: 0.9rem;
+  color: #0f172a;
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.6rem;
   color: #64748b;
-  margin-top: 2px;
+  margin-top: 1px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .last-seen {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   color: #64748b;
 }
 
 .recent-badge {
   background: linear-gradient(135deg, #ef4444, #f87171);
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 0.6rem;
   font-weight: 600;
-  margin-left: 8px;
+  margin-left: 6px;
 }
 
 .status-indicator {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  margin-right: 8px;
+  margin-right: 6px;
 }
 
 .status-online {
@@ -825,11 +825,11 @@
 .user-count-badge {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 }
 
 .badge-google {
@@ -865,7 +865,7 @@
 
 .user-name {
   font-weight: 600;
-  color: #1e293b;
+  color: #0f172a;
   margin-bottom: 2px;
 }
 
