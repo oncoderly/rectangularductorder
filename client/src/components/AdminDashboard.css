@@ -640,13 +640,13 @@
 }
 
 /* Sütun genişlikleri */
-.table-header th:nth-child(1) { width: 28%; } /* Kullanıcı Bilgileri */
-.table-header th:nth-child(2) { width: 12%; } /* Kayıt Tipi */
-.table-header th:nth-child(3) { width: 15%; } /* Kayıt Tarihi */
-.table-header th:nth-child(4) { width: 10%; } /* Aktivite */
-.table-header th:nth-child(5) { width: 8%; }  /* PDF */
-.table-header th:nth-child(6) { width: 10%; } /* Tıklama */
-.table-header th:nth-child(7) { width: 17%; } /* Son Görülme */
+.table-header th:nth-child(1) { width: 35%; } /* Kullanıcı Bilgileri - artırıldı */
+.table-header th:nth-child(2) { width: 10%; } /* Kayıt Tipi */
+.table-header th:nth-child(3) { width: 12%; } /* Kayıt Tarihi */
+.table-header th:nth-child(4) { width: 8%; }  /* Aktivite */
+.table-header th:nth-child(5) { width: 7%; }  /* PDF */
+.table-header th:nth-child(6) { width: 8%; }  /* Tıklama */
+.table-header th:nth-child(7) { width: 20%; } /* Son Görülme */
 
 .table-header th:last-child {
   border-right: none;
@@ -686,23 +686,30 @@
 
 /* Diğer metin alanları için boyut optimizasyonu */
 .user-name {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.2;
   margin-bottom: 2px;
+  color: #1f2937;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .user-email {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   color: #6b7280;
   line-height: 1.1;
   margin-bottom: 1px;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .user-id {
   font-size: 0.6rem;
   color: #9ca3af;
   line-height: 1;
+  font-family: monospace;
 }
 
 .stat-number {
@@ -730,13 +737,21 @@
 
 .user-avatar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  width: 100%;
+  min-width: 0; /* Allows flex child to shrink */
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0; /* Prevents overflow */
+  overflow: hidden;
 }
 
 .avatar-icon {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea, #764ba2);
   display: flex;
@@ -745,6 +760,8 @@
   color: white;
   font-weight: 700;
   font-size: 0.9rem;
+  flex-shrink: 0; /* Prevents shrinking */
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
 }
 
 .user-info {
@@ -841,13 +858,13 @@
   }
   
   /* Mobilde sütun genişlikleri */
-  .table-header th:nth-child(1) { width: 35%; } /* Kullanıcı Bilgileri */
+  .table-header th:nth-child(1) { width: 45%; } /* Kullanıcı Bilgileri - artırıldı */
   .table-header th:nth-child(2) { width: 15%; } /* Kayıt Tipi */
   .table-header th:nth-child(3) { width: 0%; display: none; } /* Kayıt Tarihi - gizle */
-  .table-header th:nth-child(4) { width: 12%; } /* Aktivite */
-  .table-header th:nth-child(5) { width: 10%; } /* PDF */
-  .table-header th:nth-child(6) { width: 10%; } /* Tıklama */
-  .table-header th:nth-child(7) { width: 18%; } /* Son Görülme */
+  .table-header th:nth-child(4) { width: 10%; } /* Aktivite */
+  .table-header th:nth-child(5) { width: 8%; }  /* PDF */
+  .table-header th:nth-child(6) { width: 8%; }  /* Tıklama */
+  .table-header th:nth-child(7) { width: 14%; } /* Son Görülme */
   
   .table-cell:nth-child(3) { display: none; } /* Kayıt tarihi hücresini gizle */
   
@@ -856,9 +873,17 @@
   }
   
   .avatar-icon {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     font-size: 0.8rem;
+  }
+  
+  .user-name {
+    font-size: 0.75rem;
+  }
+  
+  .user-email {
+    font-size: 0.65rem;
   }
   
   .user-table-title {
@@ -877,13 +902,13 @@
   }
   
   /* Çok küçük ekranlarda sütun genişlikleri */
-  .table-header th:nth-child(1) { width: 40%; } /* Kullanıcı Bilgileri */
+  .table-header th:nth-child(1) { width: 50%; } /* Kullanıcı Bilgileri - artırıldı */
   .table-header th:nth-child(2) { width: 0%; display: none; } /* Kayıt Tipi - gizle */
   .table-header th:nth-child(3) { width: 0%; display: none; } /* Kayıt Tarihi - gizle */
-  .table-header th:nth-child(4) { width: 15%; } /* Aktivite */
-  .table-header th:nth-child(5) { width: 12%; } /* PDF */
-  .table-header th:nth-child(6) { width: 13%; } /* Tıklama */
-  .table-header th:nth-child(7) { width: 20%; } /* Son Görülme */
+  .table-header th:nth-child(4) { width: 12%; } /* Aktivite */
+  .table-header th:nth-child(5) { width: 10%; } /* PDF */
+  .table-header th:nth-child(6) { width: 10%; } /* Tıklama */
+  .table-header th:nth-child(7) { width: 18%; } /* Son Görülme */
   
   .table-cell:nth-child(2) { display: none; } /* Kayıt tipi hücresini gizle */
   .table-cell:nth-child(3) { display: none; } /* Kayıt tarihi hücresini gizle */
