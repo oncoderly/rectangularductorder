@@ -5,11 +5,22 @@ const path = require('path');
 // Environment variables
 const DATABASE_URL = process.env.DATABASE_URL;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const RENDER_SERVICE_NAME = process.env.RENDER_SERVICE_NAME;
+const isProduction = NODE_ENV === 'production' || !!RENDER_SERVICE_NAME;
 
 console.log('🐘 PostgreSQL Database initializing...');
 console.log('📍 Environment:', NODE_ENV);
+console.log('🏭 Is Production:', isProduction);
+console.log('🚀 Render Service:', RENDER_SERVICE_NAME || 'Not set');
 console.log('🔗 Database URL:', DATABASE_URL ? 'Set' : 'Not set');
 console.log('🔍 First 50 chars of URL:', DATABASE_URL ? DATABASE_URL.substring(0, 50) + '...' : 'Not available');
+
+// CRITICAL: Warn about data persistence
+if (isProduction && DATABASE_URL) {
+    console.log('🛡️ PRODUCTION MODE: PostgreSQL data will be persistent');
+} else if (isProduction && !DATABASE_URL) {
+    console.log('⚠️ WARNING: Production mode but no DATABASE_URL - data may be lost!');
+}
 
 // PostgreSQL connection pool
 let pool;
@@ -63,6 +74,16 @@ async function createTables() {
     try {
         console.log('🏗️ Creating PostgreSQL tables...');
         
+        // First, check if users table exists and has data
+        let existingUserCount = 0;
+        try {
+            const countResult = await pool.query('SELECT COUNT(*) as count FROM users');
+            existingUserCount = parseInt(countResult.rows[0].count);
+            console.log(`📊 Found ${existingUserCount} existing users in PostgreSQL`);
+        } catch (err) {
+            console.log('📊 Users table does not exist yet, will create');
+        }
+        
         // Create users table with consistent naming
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
@@ -77,6 +98,8 @@ async function createTables() {
                 "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        
+        console.log('🛡️ Users table created/verified safely');
         
         // Migration: Add new columns if they don't exist and copy data from old columns
         try {
@@ -163,8 +186,13 @@ async function createTables() {
 
         console.log('✅ PostgreSQL tables created successfully');
 
-        // Migrate from SQLite if needed
-        await migrateFromSQLite();
+        // Only migrate from SQLite if PostgreSQL is empty or has very few users
+        if (existingUserCount === 0) {
+            console.log('🔄 PostgreSQL is empty, performing SQLite migration...');
+            await migrateFromSQLite();
+        } else {
+            console.log(`🔒 PostgreSQL has ${existingUserCount} users, skipping migration to prevent data loss`);
+        }
         
     } catch (error) {
         console.error('❌ Error creating tables:', error);
@@ -189,12 +217,20 @@ async function migrateFromSQLite() {
             console.log(`📊 Found ${sqliteUsers.length} users in SQLite`);
             
             let migrated = 0;
+            let updated = 0;
             for (const user of sqliteUsers) {
                 try {
-                    await pool.query(`
+                    console.log(`🔄 Migrating user: ${user.email}`);
+                    const result = await pool.query(`
                         INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
                         VALUES ($1, $2, $3, $4, $5, $6, $7)
-                        ON CONFLICT (email) DO NOTHING
+                        ON CONFLICT (email) DO UPDATE SET
+                            password = EXCLUDED.password,
+                            "firstName" = EXCLUDED."firstName",
+                            "lastName" = EXCLUDED."lastName",
+                            "googleId" = EXCLUDED."googleId",
+                            "createdAt" = EXCLUDED."createdAt"
+                        RETURNING id, email
                     `, [
                         user.id,
                         user.email,
@@ -204,9 +240,13 @@ async function migrateFromSQLite() {
                         user.googleId,
                         user.createdAt
                     ]);
-                    migrated++;
+                    
+                    if (result.rowCount > 0) {
+                        migrated++;
+                        console.log(`✅ User migrated/updated: ${user.email}`);
+                    }
                 } catch (err) {
-                    console.log(`⚠️ Skipping duplicate user: ${user.email}`);
+                    console.error(`❌ Failed to migrate user ${user.email}:`, err.message);
                 }
             }
             
@@ -290,9 +330,25 @@ const userDB = {
                 createdAt: userData.createdAt
             });
 
+            // First check if user already exists to prevent data loss
+            const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
+            if (existingUser.rows.length > 0) {
+                console.log(`⚠️ User with email ${userData.email} already exists, not overwriting`);
+                return true; // Consider as successful to prevent registration failure
+            }
+
             const result = await pool.query(`
                 INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (email) DO UPDATE SET
+                    password = CASE 
+                        WHEN users.password IS NULL OR users.password = '' 
+                        THEN EXCLUDED.password 
+                        ELSE users.password 
+                    END,
+                    "firstName" = COALESCE(users."firstName", EXCLUDED."firstName"),
+                    "lastName" = COALESCE(users."lastName", EXCLUDED."lastName"),
+                    "googleId" = COALESCE(users."googleId", EXCLUDED."googleId")
                 RETURNING *
             `, [
                 userData.id,
