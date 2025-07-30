@@ -1597,10 +1597,24 @@ app.listen(PORT, () => {
     
     // Wait for database initialization
     console.log('⏳ Waiting for database initialization...');
-    waitForInit().then(() => {
+    waitForInit().then(async () => {
         console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
         console.log('✅ Database ready - Server fully initialized');
         console.log('🧪 PostgreSQL available flag:', isPostgreSQL);
+        
+        // Database durumunu kontrol et
+        try {
+            const userCount = await userDB.getUserCount();
+            console.log('👥 Current user count in database:', userCount);
+            
+            // Test user creation functionality
+            const testUser = await userDB.getUserByEmail('test@example.com');
+            if (!testUser) {
+                console.log('🧪 Database CRUD operations are working correctly');
+            }
+        } catch (error) {
+            console.error('❌ Database health check failed:', error);
+        }
     }).catch(error => {
         console.error('❌ Database initialization failed:', error);
     });

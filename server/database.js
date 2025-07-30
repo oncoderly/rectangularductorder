@@ -20,9 +20,16 @@ function initDatabase() {
             readonly: false
         });
         
-        // Performance optimizations
-        db.pragma('journal_mode = WAL'); // Write-Ahead Logging for better concurrency
-        db.pragma('synchronous = NORMAL'); // Faster writes
+        // Performance optimizations - Production için daha güvenli ayarlar
+        if (process.env.NODE_ENV === 'production') {
+            // Production'da veri kaybını önlemek için daha güvenli ayarlar
+            db.pragma('journal_mode = DELETE'); // WAL yerine DELETE mode (daha güvenli)
+            db.pragma('synchronous = FULL'); // Full sync for data safety
+        } else {
+            // Development'da performans optimizasyonları
+            db.pragma('journal_mode = WAL'); // Write-Ahead Logging for better concurrency
+            db.pragma('synchronous = NORMAL'); // Faster writes
+        }
         db.pragma('cache_size = 1000'); // Cache 1000 pages
         db.pragma('temp_store = memory'); // Store temp tables in memory
         db.pragma('mmap_size = 268435456'); // 256MB memory-mapped I/O
@@ -211,6 +218,11 @@ const userDB = {
                 userData.createdAt
             );
             
+            // Production'da veriyi hemen diske yaz
+            if (process.env.NODE_ENV === 'production') {
+                db.pragma('wal_checkpoint(TRUNCATE)');
+            }
+            
             console.log('✅ User created:', userData.email);
             return result.changes > 0;
         } catch (error) {
@@ -244,6 +256,12 @@ const userDB = {
             `);
             
             const result = stmt.run(...values);
+            
+            // Production'da veriyi hemen diske yaz
+            if (process.env.NODE_ENV === 'production') {
+                db.pragma('wal_checkpoint(TRUNCATE)');
+            }
+            
             console.log('✅ User updated:', id);
             return result.changes > 0;
         } catch (error) {
@@ -337,6 +355,51 @@ initPreparedStatements();
 setInterval(() => {
     tokenDB.cleanupExpiredTokens();
 }, 15 * 60 * 1000); // 15 dakikada bir
+
+// Production'da düzenli checkpoint yap (veri güvenliği için)
+if (process.env.NODE_ENV === 'production') {
+    setInterval(() => {
+        try {
+            db.pragma('wal_checkpoint(TRUNCATE)');
+            console.log('🔄 Production: WAL checkpoint completed');
+        } catch (error) {
+            console.error('❌ WAL checkpoint error:', error);
+        }
+    }, 5 * 60 * 1000); // 5 dakikada bir
+}
+
+// Graceful shutdown için cleanup
+process.on('SIGINT', () => {
+    try {
+        if (db) {
+            console.log('📊 Graceful shutdown: Closing database...');
+            if (process.env.NODE_ENV === 'production') {
+                db.pragma('wal_checkpoint(TRUNCATE)');
+            }
+            db.close();
+            console.log('✅ Database closed successfully');
+        }
+    } catch (error) {
+        console.error('❌ Error closing database:', error);
+    }
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    try {
+        if (db) {
+            console.log('📊 Graceful shutdown: Closing database...');
+            if (process.env.NODE_ENV === 'production') {
+                db.pragma('wal_checkpoint(TRUNCATE)');
+            }
+            db.close();
+            console.log('✅ Database closed successfully');
+        }
+    } catch (error) {
+        console.error('❌ Error closing database:', error);
+    }
+    process.exit(0);
+});
 
 module.exports = {
     db,

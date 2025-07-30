@@ -51,6 +51,10 @@ async function initializeDatabase() {
                 throw new Error('PostgreSQL userDB not properly initialized');
             }
             
+            // Test PostgreSQL connection with a real query
+            const testUsers = await postgres.userDB.getAllUsers();
+            console.log('🧪 PostgreSQL test query successful, users:', testUsers.length);
+            
             db = postgres.pool;
             userDB = postgres.userDB;
             tokenDB = postgres.tokenDB;
@@ -59,14 +63,23 @@ async function initializeDatabase() {
             console.log('✅ PostgreSQL database upgraded successfully');
         } else {
             console.log('📝 Staying with SQLite fallback (already initialized)');
+            postgresAvailable = false;
         }
     } catch (error) {
         console.error('❌ PostgreSQL upgrade failed:', error.message);
         console.log('📝 Continuing with SQLite fallback');
+        postgresAvailable = false;
+        
+        // Ensure SQLite fallback is working
+        if (!userDB || !userDB.getAllUsers) {
+            console.error('❌ Critical: Both PostgreSQL and SQLite failed!');
+            initializeFallback(); // Re-initialize SQLite
+        }
     }
     
     isInitialized = true;
     console.log('✅ Database initialization completed');
+    console.log('🗄️ Final database type:', postgresAvailable ? 'PostgreSQL' : 'SQLite');
 }
 
 // Initialize fallback first - CRITICAL for production
