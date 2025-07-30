@@ -29,7 +29,8 @@
       "Bash(start node server.js)",
       "Bash(sqlite3:*)",
       "Bash(npm test)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
