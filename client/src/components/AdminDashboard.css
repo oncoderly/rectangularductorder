@@ -609,11 +609,13 @@
 .user-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .user-table-content {
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .table-header {
@@ -625,14 +627,26 @@
 }
 
 .table-header th {
-  padding: 12px 10px;
+  padding: 12px 8px;
   text-align: left;
   font-weight: 600;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* Sütun genişlikleri */
+.table-header th:nth-child(1) { width: 28%; } /* Kullanıcı Bilgileri */
+.table-header th:nth-child(2) { width: 12%; } /* Kayıt Tipi */
+.table-header th:nth-child(3) { width: 15%; } /* Kayıt Tarihi */
+.table-header th:nth-child(4) { width: 10%; } /* Aktivite */
+.table-header th:nth-child(5) { width: 8%; }  /* PDF */
+.table-header th:nth-child(6) { width: 10%; } /* Tıklama */
+.table-header th:nth-child(7) { width: 17%; } /* Son Görülme */
 
 .table-header th:last-child {
   border-right: none;
@@ -653,10 +667,65 @@
   padding: 8px 6px;
   font-size: 0.7rem;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
 }
 
 .table-cell:last-child {
   border-right: none;
+}
+
+/* Kullanıcı bilgileri sütunu için özel stil */
+.table-cell:first-child {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+/* Diğer metin alanları için boyut optimizasyonu */
+.user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: 0.65rem;
+  color: #6b7280;
+  line-height: 1.1;
+  margin-bottom: 1px;
+}
+
+.user-id {
+  font-size: 0.6rem;
+  color: #9ca3af;
+  line-height: 1;
+}
+
+.stat-number {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  color: #6b7280;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.date-info {
+  font-size: 0.65rem;
+  line-height: 1.2;
+}
+
+.last-seen {
+  font-size: 0.65rem;
+  line-height: 1.2;
 }
 
 .user-avatar {
@@ -767,43 +836,76 @@
   
   .table-header th,
   .table-cell {
-    padding: 12px 8px;
-    font-size: 0.8rem;
+    padding: 8px 4px;
+    font-size: 0.7rem;
   }
   
+  /* Mobilde sütun genişlikleri */
+  .table-header th:nth-child(1) { width: 35%; } /* Kullanıcı Bilgileri */
+  .table-header th:nth-child(2) { width: 15%; } /* Kayıt Tipi */
+  .table-header th:nth-child(3) { width: 0%; display: none; } /* Kayıt Tarihi - gizle */
+  .table-header th:nth-child(4) { width: 12%; } /* Aktivite */
+  .table-header th:nth-child(5) { width: 10%; } /* PDF */
+  .table-header th:nth-child(6) { width: 10%; } /* Tıklama */
+  .table-header th:nth-child(7) { width: 18%; } /* Son Görülme */
+  
+  .table-cell:nth-child(3) { display: none; } /* Kayıt tarihi hücresini gizle */
+  
   .user-avatar {
-    gap: 8px;
+    gap: 6px;
   }
   
   .avatar-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
   }
   
   .user-table-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
 }
 
 @media (max-width: 480px) {
   .user-table {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
   }
   
   .table-header th,
   .table-cell {
-    padding: 10px 6px;
+    padding: 6px 3px;
   }
   
+  /* Çok küçük ekranlarda sütun genişlikleri */
+  .table-header th:nth-child(1) { width: 40%; } /* Kullanıcı Bilgileri */
+  .table-header th:nth-child(2) { width: 0%; display: none; } /* Kayıt Tipi - gizle */
+  .table-header th:nth-child(3) { width: 0%; display: none; } /* Kayıt Tarihi - gizle */
+  .table-header th:nth-child(4) { width: 15%; } /* Aktivite */
+  .table-header th:nth-child(5) { width: 12%; } /* PDF */
+  .table-header th:nth-child(6) { width: 13%; } /* Tıklama */
+  .table-header th:nth-child(7) { width: 20%; } /* Son Görülme */
+  
+  .table-cell:nth-child(2) { display: none; } /* Kayıt tipi hücresini gizle */
+  .table-cell:nth-child(3) { display: none; } /* Kayıt tarihi hücresini gizle */
+  
   .user-avatar {
-    flex-direction: column;
-    text-align: center;
     gap: 4px;
+    align-items: flex-start;
+  }
+  
+  .avatar-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+    flex-shrink: 0;
   }
   
   .stat-number {
-    font-size: 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .stat-label {
+    font-size: 0.55rem;
   }
 }
 
