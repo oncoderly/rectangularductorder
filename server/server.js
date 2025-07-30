@@ -1502,6 +1502,41 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
+// Debug endpoint - temporary for user investigation
+app.get('/api/debug/user/:email', async (req, res) => {
+    try {
+        await waitForInit();
+        const { email } = req.params;
+        
+        console.log('🔍 Debug: Searching for user:', email);
+        
+        const user = await userDB.getUserByEmail(email);
+        const allUsers = await userDB.getAllUsers();
+        const totalUsers = await userDB.getUserCount();
+        
+        console.log('🔍 Debug: User found:', !!user);
+        console.log('🔍 Debug: Total users in DB:', totalUsers);
+        
+        res.json({
+            email: email,
+            userFound: !!user,
+            userDetails: user ? {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                hasPassword: !!user.password,
+                createdAt: user.createdAt
+            } : null,
+            totalUsersInDB: totalUsers,
+            databaseType: process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'
+        });
+    } catch (error) {
+        console.error('Debug endpoint error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Error handler - en son middleware olmalı
 app.use(errorHandler);
 
