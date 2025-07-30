@@ -63,20 +63,60 @@ async function createTables() {
     try {
         console.log('🏗️ Creating PostgreSQL tables...');
         
-        // Create users table
+        // Create users table with consistent naming
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id VARCHAR(255) PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255),
-                firstname VARCHAR(255),
-                lastname VARCHAR(255),
-                googleid VARCHAR(255),
+                "firstName" VARCHAR(255),
+                "lastName" VARCHAR(255),
+                "googleId" VARCHAR(255),
                 role VARCHAR(50) DEFAULT 'user',
-                createdat TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updatedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        
+        // Migration: Add new columns if they don't exist and copy data from old columns
+        try {
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(255)`);
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(255)`);
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "googleId" VARCHAR(255)`);
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP`);
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP`);
+            
+            // Copy data from lowercase columns to camelCase columns if needed
+            await pool.query(`UPDATE users SET "firstName" = firstname WHERE "firstName" IS NULL AND firstname IS NOT NULL`);
+            await pool.query(`UPDATE users SET "lastName" = lastname WHERE "lastName" IS NULL AND lastname IS NOT NULL`);
+            await pool.query(`UPDATE users SET "googleId" = googleid WHERE "googleId" IS NULL AND googleid IS NOT NULL`);
+            await pool.query(`UPDATE users SET "createdAt" = createdat WHERE "createdAt" IS NULL AND createdat IS NOT NULL`);
+            await pool.query(`UPDATE users SET "updatedAt" = updatedat WHERE "updatedAt" IS NULL AND updatedat IS NOT NULL`);
+            
+            // Drop old lowercase columns if they exist and data has been migrated
+            const columnsToCheck = ['firstname', 'lastname', 'googleid', 'createdat', 'updatedat'];
+            for (const column of columnsToCheck) {
+                try {
+                    // Check if old column exists
+                    const checkColumn = await pool.query(`
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'users' AND column_name = $1
+                    `, [column]);
+                    
+                    if (checkColumn.rows.length > 0) {
+                        await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS ${column}`);
+                        console.log(`🗑️ Dropped old column: ${column}`);
+                    }
+                } catch (dropError) {
+                    console.log(`⚠️ Could not drop column ${column}:`, dropError.message);
+                }
+            }
+            
+            console.log('✅ PostgreSQL column migration completed');
+        } catch (migrationError) {
+            console.log('⚠️ Column migration skipped (might already exist):', migrationError.message);
+        }
 
         // Add role column if it doesn't exist (for existing databases)
         await pool.query(`
@@ -112,8 +152,8 @@ async function createTables() {
         // Create indexes for performance
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-            CREATE INDEX IF NOT EXISTS idx_users_googleid ON users(googleid);
-            CREATE INDEX IF NOT EXISTS idx_users_createdat ON users(createdat);
+            CREATE INDEX IF NOT EXISTS idx_users_googleid ON users("googleId");
+            CREATE INDEX IF NOT EXISTS idx_users_createdat ON users("createdAt");
             CREATE INDEX IF NOT EXISTS idx_reset_tokens_userid ON reset_tokens(userid);
             CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON reset_tokens(expires);
             CREATE INDEX IF NOT EXISTS idx_analytics_userid ON analytics(userid);
@@ -152,7 +192,7 @@ async function migrateFromSQLite() {
             for (const user of sqliteUsers) {
                 try {
                     await pool.query(`
-                        INSERT INTO users (id, email, password, firstname, lastname, googleid, createdat)
+                        INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
                         VALUES ($1, $2, $3, $4, $5, $6, $7)
                         ON CONFLICT (email) DO NOTHING
                     `, [
@@ -187,7 +227,7 @@ const userDB = {
     // Get all users
     getAllUsers: async () => {
         try {
-            const result = await pool.query('SELECT * FROM users ORDER BY createdat DESC');
+            const result = await pool.query('SELECT * FROM users ORDER BY "createdAt" DESC');
             return result.rows;
         } catch (error) {
             console.error('❌ Error getting all users:', error);
@@ -198,10 +238,28 @@ const userDB = {
     // Get user by email
     getUserByEmail: async (email) => {
         try {
+            console.log('🔍 PostgreSQL: Looking for user with email:', email);
             const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-            return result.rows[0] || null;
+            const user = result.rows[0] || null;
+            console.log('🔍 PostgreSQL: User found:', {
+                found: !!user,
+                id: user?.id,
+                email: user?.email,
+                hasPassword: !!user?.password,
+                passwordLength: user?.password ? user.password.length : 0,
+                isGoogleUser: !!user?.googleId || !!user?.googleid,
+                firstName: user?.firstName || user?.firstname,
+                lastName: user?.lastName || user?.lastname,
+                createdAt: user?.createdAt || user?.createdat
+            });
+            return user;
         } catch (error) {
             console.error('❌ Error getting user by email:', error);
+            console.error('❌ PostgreSQL error details:', {
+                message: error.message,
+                code: error.code,
+                detail: error.detail
+            });
             return null;
         }
     },
@@ -221,10 +279,19 @@ const userDB = {
     // Create user
     createUser: async (userData) => {
         try {
-            console.log('📥 DEBUG - createUser called with:', userData); // <-- Ekledik
+            console.log('📝 PostgreSQL: Creating user with data:', {
+                id: userData.id,
+                email: userData.email,
+                hasPassword: !!userData.password,
+                passwordLength: userData.password ? userData.password.length : 0,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                googleId: userData.googleId,
+                createdAt: userData.createdAt
+            });
 
             const result = await pool.query(`
-                INSERT INTO users (id, email, password, firstname, lastname, googleid, createdat)
+                INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
             `, [
@@ -237,15 +304,45 @@ const userDB = {
                 userData.createdAt
             ]);
 
+            console.log('📝 PostgreSQL: Insert result:', {
+                rowCount: result.rowCount,
+                returningData: result.rows[0] ? {
+                    id: result.rows[0].id,
+                    email: result.rows[0].email,
+                    hasPassword: !!result.rows[0].password,
+                    passwordLength: result.rows[0].password ? result.rows[0].password.length : 0
+                } : null
+            });
+
+            // Verify the user was inserted correctly
+            if (result.rowCount > 0) {
+                const insertedUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
+                const user = insertedUser.rows[0];
+                console.log('📝 PostgreSQL: Verification - user retrieved after insert:', {
+                    found: !!user,
+                    id: user?.id,
+                    email: user?.email,
+                    hasPassword: !!user?.password,
+                    passwordLength: user?.password ? user.password.length : 0,
+                    createdAt: user?.createdat
+                });
+            }
+
             console.log('✅ User created in PostgreSQL:', userData.email);
             return result.rowCount > 0;
         } catch (error) {
             console.error('❌ Error creating user:', error.message);
+            console.error('❌ PostgreSQL error details:', {
+                message: error.message,
+                code: error.code,
+                detail: error.detail,
+                constraint: error.constraint
+            });
             console.error('📦 userData:', userData);
             if (error.stack) console.error('🧠 Stack trace:', error.stack);
             return false;
         }
-    }, // ← EKLENMİŞ PARANTEZ VE VİRGÜL
+    },
 
 
 
@@ -256,9 +353,19 @@ const userDB = {
             const values = [];
             let paramIndex = 1;
 
+            // Map field names to quoted camelCase
+            const fieldMap = {
+                firstName: '"firstName"',
+                lastName: '"lastName"',
+                googleId: '"googleId"',
+                createdAt: '"createdAt"',
+                updatedAt: '"updatedAt"'
+            };
+
             Object.keys(updates).forEach(key => {
                 if (updates[key] !== undefined) {
-                    fields.push(`${key.toLowerCase()} = $${paramIndex}`);
+                    const fieldName = fieldMap[key] || key;
+                    fields.push(`${fieldName} = $${paramIndex}`);
                     values.push(updates[key]);
                     paramIndex++;
                 }
@@ -266,7 +373,7 @@ const userDB = {
 
             if (fields.length === 0) return false;
 
-            fields.push(`updatedat = $${paramIndex}`);
+            fields.push(`"updatedAt" = $${paramIndex}`);
             values.push(new Date().toISOString());
             values.push(id);
 

@@ -188,9 +188,25 @@ const userDB = {
     // Email ile kullanıcı bul
     getUserByEmail: (email) => {
         try {
-            return preparedStatements.getUserByEmail.get(email);
+            console.log('🔍 SQLite: Looking for user with email:', email);
+            const user = preparedStatements.getUserByEmail.get(email);
+            console.log('🔍 SQLite: User found:', {
+                found: !!user,
+                id: user?.id,
+                email: user?.email,
+                hasPassword: !!user?.password,
+                passwordLength: user?.password ? user.password.length : 0,
+                isGoogleUser: !!user?.googleId,
+                createdAt: user?.createdAt
+            });
+            return user;
         } catch (error) {
             console.error('❌ Error getting user by email:', error);
+            console.error('❌ SQLite error details:', {
+                message: error.message,
+                code: error.code,
+                errno: error.errno
+            });
             return null;
         }
     },
@@ -208,6 +224,17 @@ const userDB = {
     // Yeni kullanıcı oluştur
     createUser: (userData) => {
         try {
+            console.log('📝 SQLite: Creating user with data:', {
+                id: userData.id,
+                email: userData.email,
+                hasPassword: !!userData.password,
+                passwordLength: userData.password ? userData.password.length : 0,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                googleId: userData.googleId,
+                createdAt: userData.createdAt
+            });
+            
             const result = preparedStatements.createUser.run(
                 userData.id,
                 userData.email,
@@ -218,15 +245,39 @@ const userDB = {
                 userData.createdAt
             );
             
+            console.log('📝 SQLite: Insert result:', {
+                changes: result.changes,
+                lastInsertRowid: result.lastInsertRowid
+            });
+            
+            // Verify the user was inserted correctly
+            if (result.changes > 0) {
+                const insertedUser = preparedStatements.getUserByEmail.get(userData.email);
+                console.log('📝 SQLite: Verification - user retrieved after insert:', {
+                    found: !!insertedUser,
+                    id: insertedUser?.id,
+                    email: insertedUser?.email,
+                    hasPassword: !!insertedUser?.password,
+                    passwordLength: insertedUser?.password ? insertedUser.password.length : 0,
+                    createdAt: insertedUser?.createdAt
+                });
+            }
+            
             // Production'da veriyi hemen diske yaz
             if (process.env.NODE_ENV === 'production') {
                 db.pragma('wal_checkpoint(TRUNCATE)');
+                console.log('📝 SQLite: WAL checkpoint completed for user creation');
             }
             
             console.log('✅ User created:', userData.email);
             return result.changes > 0;
         } catch (error) {
             console.error('❌ Error creating user:', error);
+            console.error('❌ SQLite error details:', {
+                message: error.message,
+                code: error.code,
+                errno: error.errno
+            });
             return false;
         }
     },

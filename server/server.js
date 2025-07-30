@@ -499,7 +499,18 @@ app.post('/api/register',
             return res.status(400).json({ error: 'Bu e-posta adresi zaten kayıtlı' });
         }
         
+        console.log('🔐 REGISTRATION DEBUG:');
+        console.log('🔐 Raw password from request:', password);
+        console.log('🔐 Raw password length:', password ? password.length : 0);
+        
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log('🔐 Generated hash:', hashedPassword);
+        console.log('🔐 Generated hash length:', hashedPassword ? hashedPassword.length : 0);
+        console.log('🔐 Hash starts with $2b$:', hashedPassword ? hashedPassword.startsWith('$2b$') : false);
+        
+        // Immediate verification test
+        const immediateTest = await bcrypt.compare(password, hashedPassword);
+        console.log('🔐 Immediate hash verification test:', immediateTest);
         
         // Check if this is admin email
         const isAdmin = email === 'havakanalsiparis@gmail.com' || email === 'salihosmanli34@gmail.com';
@@ -515,8 +526,39 @@ app.post('/api/register',
         };
         
         // Save to database
-        console.log('⚙️ createUser fonksiyonu çağrılmak üzere:', newUser);
+        console.log('⚙️ USER CREATION DEBUG:');
+        console.log('⚙️ User object to save:', {
+            id: newUser.id,
+            email: newUser.email,
+            hasPassword: !!newUser.password,
+            passwordHash: newUser.password ? newUser.password.substring(0, 20) + '...' : 'NO PASSWORD',
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            role: newUser.role,
+            createdAt: newUser.createdAt
+        });
+        
         const created = await userDB.createUser(newUser);
+        console.log('⚙️ User creation result:', created);
+        
+        // Verify user was saved correctly
+        if (created) {
+            const savedUser = await userDB.getUserByEmail(email);
+            console.log('⚙️ VERIFICATION - Saved user retrieved:', {
+                found: !!savedUser,
+                id: savedUser?.id,
+                email: savedUser?.email,
+                hasPassword: !!savedUser?.password,
+                passwordHash: savedUser?.password ? savedUser.password.substring(0, 20) + '...' : 'NO PASSWORD',
+                createdAt: savedUser?.createdAt
+            });
+            
+            // Test password verification with stored user
+            if (savedUser && savedUser.password) {
+                const verificationTest = await bcrypt.compare(password, savedUser.password);
+                console.log('⚙️ Post-save password verification test:', verificationTest);
+            }
+        }
         
         if (!created) {
             return res.status(500).json({ error: 'Kullanıcı oluşturulamadı' });
@@ -609,10 +651,45 @@ app.post('/api/login',
             return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
         }
         
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-            console.log('❌ Invalid password for user:', email);
-            // Generic error message to prevent user enumeration
+        // Enhanced password debugging
+        console.log('🔐 PASSWORD COMPARISON DEBUG:');
+        console.log('🔐 Raw password from request:', password);
+        console.log('🔐 Raw password length:', password ? password.length : 0);
+        console.log('🔐 Stored hash from DB:', user.password);
+        console.log('🔐 Stored hash length:', user.password ? user.password.length : 0);
+        console.log('🔐 Hash starts with $2b$ (bcrypt):', user.password ? user.password.startsWith('$2b$') : false);
+        console.log('🔐 Hash starts with $2a$ (bcrypt):', user.password ? user.password.startsWith('$2a$') : false);
+        
+        // Check if password exists
+        if (!user.password) {
+            console.log('❌ CRITICAL: User has no password stored in database!');
+            console.log('❌ This user might have been created via Google OAuth without a password');
+            return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
+        }
+        
+        if (!password) {
+            console.log('❌ No password provided in request');
+            return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
+        }
+        
+        try {
+            const isValidPassword = await bcrypt.compare(password, user.password);
+            console.log('🔐 Password comparison result:', isValidPassword);
+            
+            if (!isValidPassword) {
+                console.log('❌ Invalid password for user:', email);
+                console.log('❌ Password mismatch - either wrong password or hash corruption');
+                
+                // Additional debugging for password issues
+                console.log('🔍 Trying to verify hash format...');
+                const testHash = await bcrypt.hash('test123', 10);
+                console.log('🔍 New test hash format:', testHash.substring(0, 20) + '...');
+                
+                return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
+            }
+        } catch (bcryptError) {
+            console.error('❌ BCRYPT COMPARISON ERROR:', bcryptError);
+            console.error('❌ This indicates hash corruption or format issues');
             return res.status(400).json({ error: 'Geçersiz kimlik bilgileri' });
         }
         
