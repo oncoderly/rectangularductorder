@@ -86,7 +86,7 @@ try {
             oauth2Client = new google.auth.OAuth2(
                 OAUTH2_CLIENT_ID,
                 OAUTH2_CLIENT_SECRET,
-                'http://localhost:5050/auth/google/callback'
+                `${SERVER_URL}/auth/google/callback`
             );
             
             oauth2Client.setCredentials({
@@ -1604,7 +1604,7 @@ app.get('/auth/google/callback', async (req, res) => {
         const oauth2Setup = new google.auth.OAuth2(
             OAUTH2_CLIENT_ID, 
             OAUTH2_CLIENT_SECRET, 
-            'http://localhost:5050/auth/google/callback'
+            `${SERVER_URL}/auth/google/callback`
         );
         
         const { tokens } = await oauth2Setup.getToken(code);
@@ -1655,7 +1655,7 @@ app.listen(PORT, () => {
     if (EMAIL_SERVICE === 'oauth2' && !OAUTH2_REFRESH_TOKEN && OAUTH2_CLIENT_ID) {
         console.log('\n📧 OAuth2 Kurulumu Gerekli!');
         console.log('🔗 Bu URL\'ye git:');
-        const oauth2Setup = new google.auth.OAuth2(OAUTH2_CLIENT_ID, OAUTH2_CLIENT_SECRET, 'http://localhost:5050/auth/google/callback');
+        const oauth2Setup = new google.auth.OAuth2(OAUTH2_CLIENT_ID, OAUTH2_CLIENT_SECRET, `${SERVER_URL}/auth/google/callback`);
         const authUrl = oauth2Setup.generateAuthUrl({
             access_type: 'offline',
             scope: ['https://www.googleapis.com/auth/gmail.send'],
