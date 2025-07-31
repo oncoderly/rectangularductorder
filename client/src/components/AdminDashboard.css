@@ -631,7 +631,7 @@
 
 .user-table {
   width: 100%;
-  min-width: 1100px;
+  min-width: 1200px;
   border-collapse: collapse;
   table-layout: fixed;
   background: white;
@@ -672,14 +672,14 @@
   transition: all 0.2s ease;
 }
 
-/* Sütun genişlikleri - Kullanıcı bilgileri için genişletildi */
-.table-header th:nth-child(1) { width: 450px; min-width: 450px; } /* Kullanıcı Bilgileri - daha geniş */
-.table-header th:nth-child(2) { width: 120px; min-width: 120px; } /* Kayıt Tipi */
-.table-header th:nth-child(3) { width: 140px; min-width: 140px; } /* Kayıt Tarihi */
-.table-header th:nth-child(4) { width: 90px; min-width: 90px; }   /* Aktivite */
-.table-header th:nth-child(5) { width: 80px; min-width: 80px; }   /* PDF */
-.table-header th:nth-child(6) { width: 90px; min-width: 90px; }   /* Tıklama */
-.table-header th:nth-child(7) { width: 180px; min-width: 180px; } /* Son Görülme */
+/* Sütun genişlikleri - Kullanıcı bilgileri için daha da genişletildi */
+.table-header th:nth-child(1) { width: 500px; min-width: 500px; } /* Kullanıcı Bilgileri - çok daha geniş */
+.table-header th:nth-child(2) { width: 110px; min-width: 110px; } /* Kayıt Tipi */
+.table-header th:nth-child(3) { width: 130px; min-width: 130px; } /* Kayıt Tarihi */
+.table-header th:nth-child(4) { width: 85px; min-width: 85px; }   /* Aktivite */
+.table-header th:nth-child(5) { width: 75px; min-width: 75px; }   /* PDF */
+.table-header th:nth-child(6) { width: 85px; min-width: 85px; }   /* Tıklama */
+.table-header th:nth-child(7) { width: 170px; min-width: 170px; } /* Son Görülme */
 
 .table-header th:last-child {
   border-right: none;
@@ -726,9 +726,9 @@
   border-left: 3px solid transparent;
   height: auto !important;
   max-height: none !important;
-  width: 450px !important;
-  min-width: 450px !important;
-  max-width: 450px !important;
+  width: 500px !important;
+  min-width: 500px !important;
+  max-width: 500px !important;
 }
 
 .table-row:hover .table-cell:first-child {
@@ -751,7 +751,7 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  max-width: 350px;
+  max-width: 400px;
 }
 
 .user-email {
@@ -775,7 +775,7 @@
   border: 1px solid rgba(71, 85, 105, 0.15) !important;
   margin-top: 4px !important;
   display: block !important;
-  max-width: 330px !important;
+  max-width: 400px !important;
   box-sizing: border-box !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -838,13 +838,13 @@
   width: 100%;
   min-width: 0;
   padding: 6px 0;
-  max-width: 420px;
+  max-width: 470px;
 }
 
 .user-info {
   flex: 1;
-  min-width: 300px;
-  max-width: 380px;
+  min-width: 350px;
+  max-width: 450px;
   overflow: visible !important;
   display: flex !important;
   flex-direction: column !important;
@@ -989,7 +989,7 @@
     min-width: 1000px;
   }
   
-  .table-header th:nth-child(1) { width: 400px; min-width: 400px; }
+  .table-header th:nth-child(1) { width: 450px; min-width: 450px; }
   .table-header th:nth-child(2) { width: 110px; min-width: 110px; }
   .table-header th:nth-child(3) { width: 130px; min-width: 130px; }
   .table-header th:nth-child(4) { width: 85px; min-width: 85px; }
@@ -998,24 +998,24 @@
   .table-header th:nth-child(7) { width: 170px; min-width: 170px; }
   
   .table-cell:first-child {
-    width: 400px !important;
-    min-width: 400px !important;
-    max-width: 400px !important;
+    width: 450px !important;
+    min-width: 450px !important;
+    max-width: 450px !important;
   }
   
   .user-info {
-    min-width: 280px;
-    max-width: 340px;
+    min-width: 320px;
+    max-width: 400px;
   }
   
   .user-name {
-    max-width: 320px;
+    max-width: 370px;
   }
   
   .user-email {
     font-size: 0.75rem;
     padding: 2px 6px;
-    max-width: 300px !important;
+    max-width: 350px !important;
   }
   
   .avatar-icon {
@@ -1047,13 +1047,13 @@
   
   .table-cell:first-child {
     padding: 14px 12px !important;
-    width: 320px !important;
-    min-width: 320px !important;
-    max-width: 320px !important;
+    width: 350px !important;
+    min-width: 350px !important;
+    max-width: 350px !important;
   }
   
   /* Mobilde sütun genişlikleri */
-  .table-header th:nth-child(1) { width: 320px; min-width: 320px; }
+  .table-header th:nth-child(1) { width: 350px; min-width: 350px; }
   .table-header th:nth-child(2) { width: 90px; min-width: 90px; }
   .table-header th:nth-child(3) { width: 0; min-width: 0; display: none; }
   .table-header th:nth-child(4) { width: 70px; min-width: 70px; }
@@ -1065,12 +1065,12 @@
   
   .user-avatar {
     gap: 10px;
-    max-width: 300px;
+    max-width: 330px;
   }
   
   .user-info {
-    min-width: 220px;
-    max-width: 260px;
+    min-width: 250px;
+    max-width: 300px;
   }
   
   .avatar-icon {
@@ -1082,13 +1082,13 @@
   .user-name {
     font-size: 0.85rem !important;
     font-weight: 700 !important;
-    max-width: 240px;
+    max-width: 280px;
   }
   
   .user-email {
     font-size: 0.7rem !important;
     padding: 2px 6px !important;
-    max-width: 240px !important;
+    max-width: 280px !important;
   }
   
   .user-id {
