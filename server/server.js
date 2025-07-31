@@ -1701,6 +1701,9 @@ app.listen(PORT, () => {
     // Wait for database initialization
     console.log('⏳ Waiting for database initialization...');
     waitForInit().then(async () => {
+        console.log('🔍 SERVER.JS: About to check isPostgreSQL...');
+        console.log('🔍 SERVER.JS: typeof isPostgreSQL:', typeof isPostgreSQL);
+        console.log('🔍 SERVER.JS: isPostgreSQL value:', isPostgreSQL);
         console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
         console.log('✅ Database ready - Server fully initialized');
         console.log('🧪 PostgreSQL available flag:', isPostgreSQL);
