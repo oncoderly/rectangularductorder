@@ -62,18 +62,6 @@ async function initializeDatabase() {
             postgresAvailable = true;
             console.log('✅ PostgreSQL database upgraded successfully');
             console.log('🔒 FORCING PostgreSQL usage - SQLite disabled');
-            
-            // DEBUG: Check variables are set
-            console.log('🧪 DEBUG: Variables set - userDB:', !!userDB, 'tokenDB:', !!tokenDB, 'analyticsDB:', !!analyticsDB);
-            
-            // CRITICAL: Force PostgreSQL usage in production
-            if (process.env.NODE_ENV === 'production') {
-                console.log('🚨 PRODUCTION: PostgreSQL is now the ONLY database');
-                isInitialized = true; // CRITICAL: Mark as initialized
-                console.log('✅ Database initialization completed');
-                console.log('🗄️ Final database type: PostgreSQL');
-                return; // Don't initialize SQLite fallback
-            }
         } else {
             console.log('📝 Staying with SQLite fallback (already initialized)');
             postgresAvailable = false;
@@ -83,12 +71,8 @@ async function initializeDatabase() {
         console.log('📝 Continuing with SQLite fallback');
         postgresAvailable = false;
         
-        // CRITICAL: In production, if PostgreSQL fails, we MUST have some database
-        if (process.env.NODE_ENV === 'production') {
-            console.error('🚨 PRODUCTION: PostgreSQL failed! Emergency SQLite initialization...');
-            initializeFallback(); // Emergency SQLite fallback for production
-            console.log('⚠️ PRODUCTION: Using emergency SQLite fallback');
-        } else if (!userDB || !userDB.getAllUsers) {
+        // Ensure SQLite fallback is working ONLY in development
+        if (process.env.NODE_ENV !== 'production' && (!userDB || !userDB.getAllUsers)) {
             console.error('❌ Critical: Both PostgreSQL and SQLite failed!');
             initializeFallback(); // Re-initialize SQLite
         }
@@ -139,23 +123,15 @@ function initializeFallback() {
     console.log('✅ SQLite fallback initialized');
 }
 
-// PRODUCTION: Skip SQLite initialization if PostgreSQL should be used
-if (process.env.NODE_ENV !== 'production') {
-    // Initialize fallback FIRST to ensure userDB is never undefined (development only)
-    initializeFallback();
-}
+// Initialize fallback FIRST to ensure userDB is never undefined
+initializeFallback();
 
 // Then try to upgrade to PostgreSQL
 initializeDatabase().catch(error => {
     console.error('❌ Database initialization failed:', error.message);
     
-    // Only use SQLite fallback in development
-    if (process.env.NODE_ENV !== 'production') {
-        console.log('📝 Development: Using SQLite fallback');
-        if (!userDB) initializeFallback(); // Ensure fallback exists
-    } else {
-        console.error('🚨 PRODUCTION: PostgreSQL failed and SQLite disabled - System will fail!');
-    }
+    // Ensure fallback exists if upgrade fails
+    if (!userDB) initializeFallback();
     
     isInitialized = true;
 });
@@ -178,10 +154,7 @@ function waitForInit() {
 
 module.exports = {
     get db() { return db; },
-    get userDB() { 
-        console.log('🧪 userDB getter called, value:', !!userDB, 'typeof:', typeof userDB);
-        return userDB; 
-    },
+    get userDB() { return userDB; },
     get tokenDB() { return tokenDB; },
     get analyticsDB() { return analyticsDB; },
     get isPostgreSQL() {

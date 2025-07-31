@@ -30,7 +30,8 @@
       "Bash(sqlite3:*)",
       "Bash(npm test)",
       "Bash(true)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
