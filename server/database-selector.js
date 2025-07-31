@@ -4,7 +4,9 @@ const USE_POSTGRESQL = process.env.USE_POSTGRESQL === 'true' || !!DATABASE_URL;
 
 // Test PostgreSQL connection before using it
 let postgresAvailable = false;
-let isInitialized = false;
+let isInitialized = false; // Will be set to true only after complete PostgreSQL initialization
+
+console.log('🔧 DATABASE-SELECTOR: Module loading, isInitialized =', isInitialized);
 
 console.log('🔍 Database selection...');
 console.log('📍 DATABASE_URL:', DATABASE_URL ? 'Set' : 'Not set');
@@ -170,8 +172,11 @@ console.log('🔄 Database selector loading...');
 // Wait for initialization wrapper
 function waitForInit() {
     return new Promise((resolve) => {
+        console.log('🔍 WAITFORINIT: Called, current isInitialized =', isInitialized);
         const checkInit = () => {
+            console.log('🔍 WAITFORINIT: Checking isInitialized =', isInitialized);
             if (isInitialized) {
+                console.log('✅ WAITFORINIT: Resolved! Database is ready');
                 resolve();
             } else {
                 setTimeout(checkInit, 100);
