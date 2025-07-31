@@ -141,12 +141,15 @@ function initializeFallback() {
 initializeFallback();
 
 // Then try to upgrade to PostgreSQL (async but properly awaited)
+console.log('🔧 STARTING: Async wrapper for PostgreSQL initialization...');
 (async () => {
     try {
+        console.log('🔧 CALLING: await initializeDatabase()...');
         await initializeDatabase();
         console.log('🎯 ASYNC: Database initialization completed successfully');
     } catch (error) {
-        console.error('❌ Database initialization failed:', error.message);
+        console.error('❌ ASYNC WRAPPER: Database initialization failed:', error.message);
+        console.error('❌ ASYNC WRAPPER: Error stack:', error.stack);
         
         // Ensure fallback exists if upgrade fails
         if (!userDB) initializeFallback();
@@ -154,8 +157,13 @@ initializeFallback();
     
     // CRITICAL: Only mark as initialized AFTER everything is done
     isInitialized = true;
-    console.log('🎯 ASYNC: isInitialized set to true');
-})();
+    console.log('🎯 ASYNC: isInitialized set to true - waitForInit() will now resolve');
+})().catch(error => {
+    console.error('❌ FATAL: Async wrapper crashed:', error.message);
+    console.error('❌ FATAL: Async wrapper stack:', error.stack);
+    // Emergency fallback
+    isInitialized = true;
+});
 
 console.log('🔄 Database selector loading...');
 
