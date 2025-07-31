@@ -1196,6 +1196,38 @@ app.post('/api/track',
     }
 });
 
+// Debug endpoint for analytics testing
+app.post('/api/debug/track', async (req, res) => {
+    try {
+        const { action, data } = req.body;
+        const userId = 'debug-user';
+        
+        console.log('🔍 DEBUG TRACK: Starting debug track...', { action, data, userId });
+        
+        // Import trackSession directly
+        const { trackSession } = require('./analytics');
+        console.log('🔍 DEBUG TRACK: trackSession imported successfully');
+        
+        // Test trackSession call
+        await trackSession(userId, action || 'debug_test', data || {});
+        console.log('🔍 DEBUG TRACK: trackSession completed successfully');
+        
+        res.json({ 
+            success: true,
+            message: 'Debug tracking successful',
+            details: { userId, action, data }
+        });
+    } catch (error) {
+        console.error('🔍 DEBUG TRACK ERROR:', error);
+        console.error('🔍 DEBUG TRACK ERROR STACK:', error.stack);
+        res.status(500).json({ 
+            error: 'Debug tracking failed',
+            message: error.message,
+            stack: error.stack
+        });
+    }
+});
+
 // Admin analytics endpoint
 app.get('/api/admin/analytics', async (req, res) => {
     try {
