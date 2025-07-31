@@ -171,7 +171,10 @@ function waitForInit() {
 
 module.exports = {
     get db() { return db; },
-    get userDB() { return userDB; },
+    get userDB() { 
+        console.log('🧪 userDB getter called, value:', !!userDB, 'typeof:', typeof userDB);
+        return userDB; 
+    },
     get tokenDB() { return tokenDB; },
     get analyticsDB() { return analyticsDB; },
     get isPostgreSQL() {

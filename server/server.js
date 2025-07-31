@@ -232,6 +232,16 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         // Wait for database initialization
         await waitForInit();
         
+        // DEBUG: Check if userDB is available
+        console.log('🧪 DEBUG: userDB after waitForInit:', !!userDB);
+        console.log('🧪 DEBUG: userDB.getAllUsers function:', !!userDB?.getAllUsers);
+        console.log('🧪 DEBUG: typeof userDB:', typeof userDB);
+        
+        if (!userDB || !userDB.getAllUsers) {
+            console.error('❌ CRITICAL: userDB not available after waitForInit!');
+            return done(new Error('Database not ready'));
+        }
+        
         // Find user by Google ID first
         const allUsers = await userDB.getAllUsers();
         let user = allUsers.find(u => u.googleId === profile.id);
