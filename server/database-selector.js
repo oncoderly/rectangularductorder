@@ -92,7 +92,7 @@ async function initializeDatabase() {
         }
     }
     
-    isInitialized = true;
+    // NOTE: isInitialized is set outside after await
     console.log('✅ Database initialization completed');
     console.log('🗄️ Final database type:', postgresAvailable ? 'PostgreSQL' : 'SQLite');
 }
@@ -140,15 +140,22 @@ function initializeFallback() {
 // Initialize fallback FIRST to ensure userDB is never undefined
 initializeFallback();
 
-// Then try to upgrade to PostgreSQL
-initializeDatabase().catch(error => {
-    console.error('❌ Database initialization failed:', error.message);
+// Then try to upgrade to PostgreSQL (async but properly awaited)
+(async () => {
+    try {
+        await initializeDatabase();
+        console.log('🎯 ASYNC: Database initialization completed successfully');
+    } catch (error) {
+        console.error('❌ Database initialization failed:', error.message);
+        
+        // Ensure fallback exists if upgrade fails
+        if (!userDB) initializeFallback();
+    }
     
-    // Ensure fallback exists if upgrade fails
-    if (!userDB) initializeFallback();
-    
+    // CRITICAL: Only mark as initialized AFTER everything is done
     isInitialized = true;
-});
+    console.log('🎯 ASYNC: isInitialized set to true');
+})();
 
 console.log('🔄 Database selector loading...');
 
@@ -173,6 +180,8 @@ module.exports = {
     get analyticsDB() { return analyticsDB; },
     get isPostgreSQL() {
         console.log('🧪 isPostgreSQL getter called:', postgresAvailable);
+        console.log('🧪 isPostgreSQL getter - userDB type:', userDB ? (userDB.constructor.name || 'Unknown') : 'null');
+        console.log('🧪 isPostgreSQL getter - db type:', db ? (db.constructor.name || 'Unknown') : 'null');
         return postgresAvailable; },
     waitForInit
 };
