@@ -419,12 +419,12 @@ app.get('/api/status', async (req, res) => {
             dbType = isPostgreSQL() ? 'PostgreSQL' : 'SQLite';
             
             // Test database connection
-            if (isPostgreSQL() && db) {
-                const result = await db.query('SELECT 1 as test');
-                dbStatus = 'connected';
-            } else if (userDB) {
+            if (userDB && userDB.getUserCount) {
                 const count = await userDB.getUserCount();
                 dbStatus = 'connected';
+            } else {
+                dbStatus = 'userDB not available';
+                dbError = 'userDB is null or getUserCount method missing';
             }
         } catch (error) {
             dbStatus = 'error';
@@ -824,8 +824,26 @@ app.get('/api/me', async (req, res) => {
         // Wait for database initialization
         await waitForInit();
         
+        // Debug database status
+        console.log('🔍 /api/me: Database debug info:', {
+            userDB_exists: !!userDB,
+            userDB_type: userDB ? userDB.constructor.name : 'null',
+            isPostgreSQL: isPostgreSQL(),
+            sessionUserId: req.session.userId
+        });
+        
         if (!req.session.userId) {
             return res.status(401).json({ error: 'Oturum açılmamış' });
+        }
+        
+        if (!userDB) {
+            console.error('❌ /api/me: userDB is null/undefined');
+            return res.status(500).json({ error: 'Database not available' });
+        }
+        
+        if (!userDB.getUserById) {
+            console.error('❌ /api/me: userDB.getUserById is not a function');
+            return res.status(500).json({ error: 'Database method not available' });
         }
         
         const user = await userDB.getUserById(req.session.userId);
@@ -844,6 +862,8 @@ app.get('/api/me', async (req, res) => {
             } 
         });
     } catch (error) {
+        console.error('❌ /api/me error:', error);
+        console.error('❌ /api/me error stack:', error.stack);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
 });
