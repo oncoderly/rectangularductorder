@@ -76,12 +76,28 @@ async function createTables() {
         
         // First, check if users table exists and has data
         let existingUserCount = 0;
+        let tableExists = false;
+        
         try {
-            const countResult = await pool.query('SELECT COUNT(*) as count FROM users');
-            existingUserCount = parseInt(countResult.rows[0].count);
-            console.log(`📊 Found ${existingUserCount} existing users in PostgreSQL`);
+            // Check if table exists
+            const tableCheck = await pool.query(`
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'users'
+                );
+            `);
+            tableExists = tableCheck.rows[0].exists;
+            
+            if (tableExists) {
+                const countResult = await pool.query('SELECT COUNT(*) as count FROM users');
+                existingUserCount = parseInt(countResult.rows[0].count);
+                console.log(`📊 Found ${existingUserCount} existing users in PostgreSQL`);
+            } else {
+                console.log('📊 Users table does not exist yet, will create');
+            }
         } catch (err) {
-            console.log('📊 Users table does not exist yet, will create');
+            console.log('📊 Users table check failed, will create:', err.message);
         }
         
         // Create users table with consistent naming
@@ -186,12 +202,14 @@ async function createTables() {
 
         console.log('✅ PostgreSQL tables created successfully');
 
-        // Only migrate from SQLite if PostgreSQL is empty or has very few users
-        if (existingUserCount === 0) {
+        // CRITICAL: Only migrate from SQLite if PostgreSQL is completely empty
+        if (existingUserCount === 0 && !tableExists) {
             console.log('🔄 PostgreSQL is empty, performing SQLite migration...');
             await migrateFromSQLite();
-        } else {
+        } else if (existingUserCount > 0) {
             console.log(`🔒 PostgreSQL has ${existingUserCount} users, skipping migration to prevent data loss`);
+        } else {
+            console.log('🔒 PostgreSQL table exists but empty, skipping migration to prevent conflicts');
         }
         
     } catch (error) {
@@ -316,7 +334,6 @@ const userDB = {
     },
 
     // Create user
-    // Create user
     createUser: async (userData) => {
         try {
             console.log('📝 PostgreSQL: Creating user with data:', {
@@ -333,22 +350,39 @@ const userDB = {
             // First check if user already exists to prevent data loss
             const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
             if (existingUser.rows.length > 0) {
-                console.log(`⚠️ User with email ${userData.email} already exists, not overwriting`);
-                return true; // Consider as successful to prevent registration failure
+                console.log(`⚠️ User with email ${userData.email} already exists, updating instead of overwriting`);
+                
+                // Update existing user with new data, preserving existing data
+                const updateResult = await pool.query(`
+                    UPDATE users SET
+                        password = CASE 
+                            WHEN users.password IS NULL OR users.password = '' 
+                            THEN $3 
+                            ELSE users.password 
+                        END,
+                        "firstName" = COALESCE(users."firstName", $4),
+                        "lastName" = COALESCE(users."lastName", $5),
+                        "googleId" = COALESCE(users."googleId", $6),
+                        "updatedAt" = CURRENT_TIMESTAMP
+                    WHERE email = $2
+                    RETURNING *
+                `, [
+                    userData.id,
+                    userData.email,
+                    userData.password,
+                    userData.firstName,
+                    userData.lastName,
+                    userData.googleId || null
+                ]);
+                
+                console.log('✅ Existing user updated in PostgreSQL:', userData.email);
+                return true;
             }
 
+            // Insert new user
             const result = await pool.query(`
                 INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
-                ON CONFLICT (email) DO UPDATE SET
-                    password = CASE 
-                        WHEN users.password IS NULL OR users.password = '' 
-                        THEN EXCLUDED.password 
-                        ELSE users.password 
-                    END,
-                    "firstName" = COALESCE(users."firstName", EXCLUDED."firstName"),
-                    "lastName" = COALESCE(users."lastName", EXCLUDED."lastName"),
-                    "googleId" = COALESCE(users."googleId", EXCLUDED."googleId")
                 RETURNING *
             `, [
                 userData.id,
@@ -357,7 +391,7 @@ const userDB = {
                 userData.firstName,
                 userData.lastName,
                 userData.googleId || null,
-                userData.createdAt
+                userData.createdAt || new Date().toISOString()
             ]);
 
             console.log('📝 PostgreSQL: Insert result:', {
@@ -380,7 +414,7 @@ const userDB = {
                     email: user?.email,
                     hasPassword: !!user?.password,
                     passwordLength: user?.password ? user.password.length : 0,
-                    createdAt: user?.createdat
+                    createdAt: user?.createdAt
                 });
             }
 

@@ -183,7 +183,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Check if running on HTTPS (production)
-const isProduction = process.env.NODE_ENV === 'production' || process.env.SERVER_URL?.startsWith('https://');
+const isProductionEnv = process.env.NODE_ENV === 'production' || process.env.SERVER_URL?.startsWith('https://');
 
 app.use(session({
     secret: SESSION_SECRET,
@@ -191,9 +191,9 @@ app.use(session({
     saveUninitialized: false,
     name: 'sessionId', // Default session name değiştir
     cookie: { 
-        secure: isProduction, // Production'da HTTPS zorunlu
+        secure: isProductionEnv, // Production'da HTTPS zorunlu
         httpOnly: true,
-        sameSite: isProduction ? 'none' : 'lax', // OAuth için 'none' gerekli
+        sameSite: isProductionEnv ? 'none' : 'lax', // OAuth için 'none' gerekli
         maxAge: 24 * 60 * 60 * 1000 // 24 saat
     },
     rolling: true // Her istekte session süresi yenilensin
@@ -212,7 +212,7 @@ console.log('CLIENT_URL:', CLIENT_URL);
 console.log('SERVER_URL:', SERVER_URL);
 console.log('🔧 Environment Check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('Is Production:', isProduction);
+console.log('Is Production:', isProductionEnv);
 console.log('🔧 Expected Production URLs:');
 console.log('Should be CLIENT_URL: https://rectangularductorder.onrender.com'); 
 console.log('Should be SERVER_URL: https://rectangularductorder.onrender.com');
@@ -372,7 +372,6 @@ app.get('/api/status', async (req, res) => {
                 type: dbType,
                 status: dbStatus,
                 error: dbError,
-                initialized: isInitialized,
                 postgresAvailable: isPostgreSQL()
             },
             endpoints: [
@@ -425,7 +424,7 @@ app.get('/api/debug', async (req, res) => {
             DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
             USE_POSTGRESQL: process.env.USE_POSTGRESQL,
             isPostgreSQL: isPostgreSQL,
-            databaseType: isPostgreSQL ? 'PostgreSQL' : 'SQLite',
+            databaseType: isPostgreSQL() ? 'PostgreSQL' : 'SQLite',
             userCount: userCount,
             timestamp: new Date().toISOString(),
             status: 'Database connected and working'
@@ -443,6 +442,15 @@ app.get('/api/debug', async (req, res) => {
 console.log('🔍 ENV DEBUG - DATABASE_URL exists:', !!process.env.DATABASE_URL);
 console.log('🔍 ENV DEBUG - DATABASE_URL first 30 chars:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT SET');
 console.log('🔍 ENV DEBUG - NODE_ENV:', process.env.NODE_ENV);
+console.log('🔍 ENV DEBUG - USE_POSTGRESQL:', process.env.USE_POSTGRESQL);
+
+// CRITICAL: Check for production environment and DATABASE_URL
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER_SERVICE_NAME;
+if (isProduction && !process.env.DATABASE_URL) {
+    console.error('❌ CRITICAL ERROR: Production environment detected but DATABASE_URL is not set!');
+    console.error('❌ This will cause data loss on Render.com!');
+    console.error('❌ Please set DATABASE_URL environment variable in Render.com dashboard');
+}
 
 // Import database module  
 const databaseModule = require('./database-selector');
@@ -646,7 +654,7 @@ app.post('/api/login',
         console.log('🔐 Login attempt:', { email, passwordProvided: !!password });
         
         console.log('👥 Total users in database:', await userDB.getUserCount());
-        console.log('🗄️ Current database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
+        console.log('🗄️ Current database type:', isPostgreSQL() ? 'PostgreSQL' : 'SQLite');
         console.log('🔍 Database connection status:', isPostgreSQL);
         console.log('📧 Looking for user with email:', email);
         

@@ -33,8 +33,24 @@ async function testPostgreSQL() {
         console.log('🐘 Testing PostgreSQL connection...');
         const postgres = require('./database-postgres');
         
-        // Test query
-        const result = await postgres.pool.query('SELECT 1');
+        // Wait for PostgreSQL to initialize
+        if (!postgres.pool) {
+            console.log('⏳ Waiting for PostgreSQL pool to initialize...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        if (!postgres.pool) {
+            throw new Error('PostgreSQL pool not initialized');
+        }
+        
+        // Test query with timeout
+        const testPromise = postgres.pool.query('SELECT 1 as test');
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('PostgreSQL connection timeout')), 10000)
+        );
+        
+        await Promise.race([testPromise, timeoutPromise]);
+        
         setPostgresAvailable(true, 'testPostgreSQL success');
         console.log('✅ PostgreSQL connection successful');
         return true;
@@ -64,6 +80,10 @@ async function initializeDatabase() {
             const testUsers = await postgres.userDB.getAllUsers();
             console.log('🧪 PostgreSQL test query successful, users:', testUsers.length);
             
+            // Verify we can perform basic operations
+            const userCount = await postgres.userDB.getUserCount();
+            console.log('🧪 PostgreSQL user count:', userCount);
+            
             db = postgres.pool;
             userDB = postgres.userDB;
             tokenDB = postgres.tokenDB;
@@ -80,22 +100,17 @@ async function initializeDatabase() {
             console.log('🧪 DEBUG: analyticsDB set:', !!analyticsDB);
             console.log('🧪 DEBUG: postgresAvailable:', postgresAvailable);
         } else {
-            console.log('📝 Staying with SQLite fallback (already initialized)');
-            // DON'T override postgresAvailable if it was set to true by upgrade
-            if (!postgresAvailable) {
-                setPostgresAvailable(false, 'SQLite fallback (not upgraded)');
-                console.log('🔧 Setting postgresAvailable to false (not upgraded)');
-            } else {
-                console.log('🔒 Keeping postgresAvailable true (already upgraded)');
-            }
+            console.log('📝 Staying with SQLite fallback (PostgreSQL not available)');
+            setPostgresAvailable(false, 'SQLite fallback (PostgreSQL not available)');
+            console.log('🔧 Setting postgresAvailable to false (PostgreSQL not available)');
         }
     } catch (error) {
         console.error('❌ PostgreSQL upgrade failed:', error.message);
         console.log('📝 Continuing with SQLite fallback');
         setPostgresAvailable(false, 'PostgreSQL upgrade failed');
         
-        // Ensure SQLite fallback is working ONLY in development
-        if (process.env.NODE_ENV !== 'production' && (!userDB || !userDB.getAllUsers)) {
+        // Ensure SQLite fallback is working
+        if (!userDB || !userDB.getAllUsers) {
             console.error('❌ Critical: Both PostgreSQL and SQLite failed!');
             initializeFallback(); // Re-initialize SQLite
         }
