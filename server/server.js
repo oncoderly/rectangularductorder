@@ -188,59 +188,86 @@ const isProductionEnv = process.env.NODE_ENV === 'production' || process.env.SER
 
 // Session store configuration
 let sessionStore;
-if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
-    try {
-        // Test PostgreSQL connection before using it for sessions
-        const { Pool } = require('pg');
-        const testPool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-        
-        // Test connection
-        const client = await testPool.connect();
-        await client.query('SELECT 1');
-        client.release();
-        testPool.end();
-        
-        // Use PostgreSQL session store in production
-        sessionStore = new pgSession({
-            conObject: {
+
+// Initialize session store asynchronously
+async function initializeSessionStore() {
+    if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+        try {
+            // Test PostgreSQL connection before using it for sessions
+            const { Pool } = require('pg');
+            const testPool = new Pool({
                 connectionString: process.env.DATABASE_URL,
                 ssl: { rejectUnauthorized: false }
-            },
-            tableName: 'sessions'
-        });
-        console.log('✅ PostgreSQL session store configured successfully');
-    } catch (error) {
-        console.error('❌ PostgreSQL session store configuration failed:', error.message);
-        console.log('⚠️ Falling back to memory session store');
+            });
+            
+            // Test connection
+            const client = await testPool.connect();
+            await client.query('SELECT 1');
+            client.release();
+            testPool.end();
+            
+            // Use PostgreSQL session store in production
+            sessionStore = new pgSession({
+                conObject: {
+                    connectionString: process.env.DATABASE_URL,
+                    ssl: { rejectUnauthorized: false }
+                },
+                tableName: 'sessions'
+            });
+            console.log('✅ PostgreSQL session store configured successfully');
+        } catch (error) {
+            console.error('❌ PostgreSQL session store configuration failed:', error.message);
+            console.log('⚠️ Falling back to memory session store');
+            sessionStore = undefined;
+        }
+    } else {
+        // Use memory store in development
         sessionStore = undefined;
+        console.log('⚠️ Using memory session store (development mode)');
     }
-} else {
-    // Use memory store in development
-    sessionStore = undefined;
-    console.log('⚠️ Using memory session store (development mode)');
 }
 
-app.use(session({
-    store: sessionStore,
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    name: 'sessionId', // Default session name değiştir
-    cookie: { 
-        secure: isProductionEnv, // Production'da HTTPS zorunlu
-        httpOnly: true,
-        sameSite: isProductionEnv ? 'none' : 'lax', // OAuth için 'none' gerekli
-        maxAge: 24 * 60 * 60 * 1000 // 24 saat
-    },
-    rolling: true // Her istekte session süresi yenilensin
-}));
+// Initialize session store
+initializeSessionStore().then(() => {
+    app.use(session({
+        store: sessionStore,
+        secret: SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        name: 'sessionId', // Default session name değiştir
+        cookie: { 
+            secure: isProductionEnv, // Production'da HTTPS zorunlu
+            httpOnly: true,
+            sameSite: isProductionEnv ? 'none' : 'lax', // OAuth için 'none' gerekli
+            maxAge: 24 * 60 * 60 * 1000 // 24 saat
+        },
+        rolling: true // Her istekte session süresi yenilensin
+    }));
 
-// Passport initialization
-app.use(passport.initialize());
-app.use(passport.session());
+    // Passport initialization
+    app.use(passport.initialize());
+    app.use(passport.session());
+}).catch(error => {
+    console.error('❌ Session store initialization failed:', error);
+    // Fallback to memory store
+    app.use(session({
+        secret: SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        name: 'sessionId',
+        cookie: { 
+            secure: isProductionEnv,
+            httpOnly: true,
+            sameSite: isProductionEnv ? 'none' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000
+        },
+        rolling: true
+    }));
+
+    // Passport initialization
+    app.use(passport.initialize());
+    app.use(passport.session());
+});
 
 // Debug: Environment variables
 console.log('🔧 Google OAuth Config:');
