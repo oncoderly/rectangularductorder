@@ -83,8 +83,12 @@ async function initializeDatabase() {
         console.log('📝 Continuing with SQLite fallback');
         postgresAvailable = false;
         
-        // Ensure SQLite fallback is working ONLY in development
-        if (process.env.NODE_ENV !== 'production' && (!userDB || !userDB.getAllUsers)) {
+        // CRITICAL: In production, if PostgreSQL fails, we MUST have some database
+        if (process.env.NODE_ENV === 'production') {
+            console.error('🚨 PRODUCTION: PostgreSQL failed! Emergency SQLite initialization...');
+            initializeFallback(); // Emergency SQLite fallback for production
+            console.log('⚠️ PRODUCTION: Using emergency SQLite fallback');
+        } else if (!userDB || !userDB.getAllUsers) {
             console.error('❌ Critical: Both PostgreSQL and SQLite failed!');
             initializeFallback(); // Re-initialize SQLite
         }
