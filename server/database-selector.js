@@ -61,6 +61,13 @@ async function initializeDatabase() {
             analyticsDB = postgres.analyticsDB;
             postgresAvailable = true;
             console.log('✅ PostgreSQL database upgraded successfully');
+            console.log('🔒 FORCING PostgreSQL usage - SQLite disabled');
+            
+            // CRITICAL: Force PostgreSQL usage in production
+            if (process.env.NODE_ENV === 'production') {
+                console.log('🚨 PRODUCTION: PostgreSQL is now the ONLY database');
+                return; // Don't initialize SQLite fallback
+            }
         } else {
             console.log('📝 Staying with SQLite fallback (already initialized)');
             postgresAvailable = false;
@@ -70,8 +77,8 @@ async function initializeDatabase() {
         console.log('📝 Continuing with SQLite fallback');
         postgresAvailable = false;
         
-        // Ensure SQLite fallback is working
-        if (!userDB || !userDB.getAllUsers) {
+        // Ensure SQLite fallback is working ONLY in development
+        if (process.env.NODE_ENV !== 'production' && (!userDB || !userDB.getAllUsers)) {
             console.error('❌ Critical: Both PostgreSQL and SQLite failed!');
             initializeFallback(); // Re-initialize SQLite
         }
@@ -122,13 +129,24 @@ function initializeFallback() {
     console.log('✅ SQLite fallback initialized');
 }
 
-// Initialize fallback FIRST to ensure userDB is never undefined
-initializeFallback();
+// PRODUCTION: Skip SQLite initialization if PostgreSQL should be used
+if (process.env.NODE_ENV !== 'production') {
+    // Initialize fallback FIRST to ensure userDB is never undefined (development only)
+    initializeFallback();
+}
 
 // Then try to upgrade to PostgreSQL
 initializeDatabase().catch(error => {
-    console.error('❌ Database initialization failed, using SQLite fallback:', error.message);
-    // Fallback is already initialized above
+    console.error('❌ Database initialization failed:', error.message);
+    
+    // Only use SQLite fallback in development
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('📝 Development: Using SQLite fallback');
+        if (!userDB) initializeFallback(); // Ensure fallback exists
+    } else {
+        console.error('🚨 PRODUCTION: PostgreSQL failed and SQLite disabled - System will fail!');
+    }
+    
     isInitialized = true;
 });
 

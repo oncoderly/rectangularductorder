@@ -413,6 +413,32 @@ app.get('/api/debug/env', async (req, res) => {
     }
 });
 
+// Main debug endpoint
+app.get('/api/debug', async (req, res) => {
+    try {
+        await waitForInit();
+        
+        const userCount = await userDB.getUserCount();
+        
+        res.json({
+            NODE_ENV: process.env.NODE_ENV,
+            DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+            USE_POSTGRESQL: process.env.USE_POSTGRESQL,
+            isPostgreSQL: isPostgreSQL,
+            databaseType: isPostgreSQL ? 'PostgreSQL' : 'SQLite',
+            userCount: userCount,
+            timestamp: new Date().toISOString(),
+            status: 'Database connected and working'
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            error: error.message,
+            timestamp: new Date().toISOString(),
+            status: 'Database connection failed'
+        });
+    }
+});
+
 // Debug environment variables
 console.log('🔍 ENV DEBUG - DATABASE_URL exists:', !!process.env.DATABASE_URL);
 console.log('🔍 ENV DEBUG - DATABASE_URL first 30 chars:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT SET');
