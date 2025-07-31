@@ -72,7 +72,13 @@ async function initializeDatabase() {
             console.log('🧪 DEBUG: postgresAvailable:', postgresAvailable);
         } else {
             console.log('📝 Staying with SQLite fallback (already initialized)');
-            postgresAvailable = false;
+            // DON'T override postgresAvailable if it was set to true by upgrade
+            if (!postgresAvailable) {
+                postgresAvailable = false;
+                console.log('🔧 Setting postgresAvailable to false (not upgraded)');
+            } else {
+                console.log('🔒 Keeping postgresAvailable true (already upgraded)');
+            }
         }
     } catch (error) {
         console.error('❌ PostgreSQL upgrade failed:', error.message);
