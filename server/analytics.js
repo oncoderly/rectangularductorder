@@ -84,7 +84,7 @@ const trackSession = async (userId, action, data = {}) => {
                 const { analyticsDB } = databaseModule;
                 
                 if (analyticsDB && analyticsDB.saveAnalytics) {
-                    await analyticsDB.saveAnalytics(userId, action, data);
+                    await analyticsDB.saveAnalytics(userId, action, data, null, null);
                     console.log(`📊 PostgreSQL Analytics: Tracked ${action} for user ${userId}`);
                     return;
                 }
