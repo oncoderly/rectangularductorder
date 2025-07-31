@@ -40,11 +40,16 @@ function App() {
         
         // Check Google auth first (faster)
         console.log('🔍 App: Checking Google auth...');
-        await checkGoogleAuth();
+        const googleAuthSuccess = await checkGoogleAuth();
         
-        // Then check regular auth
-        console.log('🔍 App: Checking regular auth...');
-        await checkAuth();
+        // Only check regular auth if Google auth didn't succeed
+        if (!googleAuthSuccess) {
+          console.log('🔍 App: Checking regular auth...');
+          await checkAuth();
+        } else {
+          console.log('✅ App: Google auth successful, skipping regular auth check');
+          setLoading(false);
+        }
         
         console.log('✅ App: Initialization completed');
       } catch (error) {
@@ -89,17 +94,21 @@ function App() {
         setUser(response.data.user);
         // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
+        return true; // Success
       } catch (error) {
         console.error('❌ checkGoogleAuth: Google auth check failed:', error);
+        return false;
       }
     } else if (urlParams.get('error') === 'google_auth_failed') {
       console.log('❌ checkGoogleAuth: Google auth failed');
       alert('Google ile giriş başarısız oldu');
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
+      return false;
     } else {
       console.log('ℹ️ checkGoogleAuth: No Google auth params, continuing normally');
     }
+    return false; // No Google auth detected
   };
 
   const handleLogin = (userData: User) => {
