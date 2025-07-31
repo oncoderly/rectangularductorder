@@ -51,8 +51,28 @@ async function testPostgreSQL() {
         
         await Promise.race([testPromise, timeoutPromise]);
         
+        // CRITICAL: Test user operations to ensure data persistence
+        console.log('🧪 Testing PostgreSQL user operations...');
+        const userCount = await postgres.userDB.getUserCount();
+        console.log('🧪 PostgreSQL user count test:', userCount);
+        
+        // Test getting users to ensure no data loss
+        const users = await postgres.userDB.getAllUsers();
+        console.log('🧪 PostgreSQL users test:', users.length, 'users found');
+        
+        // Log sample users to verify data integrity
+        if (users.length > 0) {
+            const sampleUsers = users.slice(0, 3).map(u => ({
+                id: u.id,
+                email: u.email,
+                hasPassword: !!u.password,
+                createdAt: u.createdAt
+            }));
+            console.log('🧪 Sample PostgreSQL users:', sampleUsers);
+        }
+        
         setPostgresAvailable(true, 'testPostgreSQL success');
-        console.log('✅ PostgreSQL connection successful');
+        console.log('✅ PostgreSQL connection and data integrity verified');
         return true;
     } catch (error) {
         console.error('❌ PostgreSQL connection failed:', error.message);

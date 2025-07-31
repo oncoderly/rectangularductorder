@@ -189,15 +189,34 @@ const isProductionEnv = process.env.NODE_ENV === 'production' || process.env.SER
 // Session store configuration
 let sessionStore;
 if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
-    // Use PostgreSQL session store in production
-    sessionStore = new pgSession({
-        conObject: {
+    try {
+        // Test PostgreSQL connection before using it for sessions
+        const { Pool } = require('pg');
+        const testPool = new Pool({
             connectionString: process.env.DATABASE_URL,
             ssl: { rejectUnauthorized: false }
-        },
-        tableName: 'sessions'
-    });
-    console.log('✅ PostgreSQL session store configured');
+        });
+        
+        // Test connection
+        const client = await testPool.connect();
+        await client.query('SELECT 1');
+        client.release();
+        testPool.end();
+        
+        // Use PostgreSQL session store in production
+        sessionStore = new pgSession({
+            conObject: {
+                connectionString: process.env.DATABASE_URL,
+                ssl: { rejectUnauthorized: false }
+            },
+            tableName: 'sessions'
+        });
+        console.log('✅ PostgreSQL session store configured successfully');
+    } catch (error) {
+        console.error('❌ PostgreSQL session store configuration failed:', error.message);
+        console.log('⚠️ Falling back to memory session store');
+        sessionStore = undefined;
+    }
 } else {
     // Use memory store in development
     sessionStore = undefined;

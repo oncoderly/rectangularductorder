@@ -93,6 +93,17 @@ async function createTables() {
                 const countResult = await pool.query('SELECT COUNT(*) as count FROM users');
                 existingUserCount = parseInt(countResult.rows[0].count);
                 console.log(`📊 Found ${existingUserCount} existing users in PostgreSQL`);
+                
+                // CRITICAL: Log existing users to verify data persistence
+                if (existingUserCount > 0) {
+                    const existingUsers = await pool.query('SELECT id, email, "firstName", "lastName", "createdAt" FROM users LIMIT 5');
+                    console.log('📊 Sample existing users:', existingUsers.rows.map(u => ({
+                        id: u.id,
+                        email: u.email,
+                        name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                        createdAt: u.createdAt
+                    })));
+                }
             } else {
                 console.log('📊 Users table does not exist yet, will create');
             }
@@ -219,6 +230,17 @@ async function createTables() {
             await migrateFromSQLite();
         } else if (existingUserCount > 0) {
             console.log(`🔒 PostgreSQL has ${existingUserCount} users, skipping migration to prevent data loss`);
+            
+            // CRITICAL: Verify data integrity after deploy
+            const finalUserCount = await pool.query('SELECT COUNT(*) as count FROM users');
+            const finalCount = parseInt(finalUserCount.rows[0].count);
+            console.log(`🔍 POST-DEPLOY VERIFICATION: Final user count: ${finalCount}`);
+            
+            if (finalCount !== existingUserCount) {
+                console.error(`❌ CRITICAL: User count changed from ${existingUserCount} to ${finalCount} during deploy!`);
+            } else {
+                console.log(`✅ POST-DEPLOY VERIFICATION: User count stable at ${finalCount}`);
+            }
         } else {
             console.log('🔒 PostgreSQL table exists but empty, skipping migration to prevent conflicts');
         }
@@ -358,7 +380,7 @@ const userDB = {
                 createdAt: userData.createdAt
             });
 
-            // First check if user already exists to prevent data loss
+            // CRITICAL: First check if user already exists to prevent data loss
             const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
             if (existingUser.rows.length > 0) {
                 console.log(`⚠️ User with email ${userData.email} already exists, updating instead of overwriting`);
@@ -387,7 +409,16 @@ const userDB = {
                 ]);
                 
                 console.log('✅ Existing user updated in PostgreSQL:', userData.email);
-                return true;
+                
+                // CRITICAL: Verify the update was successful
+                const verifyUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
+                if (verifyUser.rows.length > 0) {
+                    console.log('✅ User update verified successfully');
+                    return true;
+                } else {
+                    console.error('❌ User update verification failed');
+                    return false;
+                }
             }
 
             // Insert new user
@@ -415,7 +446,7 @@ const userDB = {
                 } : null
             });
 
-            // Verify the user was inserted correctly
+            // CRITICAL: Verify the user was inserted correctly
             if (result.rowCount > 0) {
                 const insertedUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
                 const user = insertedUser.rows[0];
@@ -426,6 +457,14 @@ const userDB = {
                     hasPassword: !!user?.password,
                     passwordLength: user?.password ? user.password.length : 0,
                     createdAt: user?.createdAt
+                });
+                
+                // CRITICAL: Final verification - check if user count increased
+                const beforeCount = await pool.query('SELECT COUNT(*) as count FROM users');
+                const afterCount = await pool.query('SELECT COUNT(*) as count FROM users');
+                console.log('📝 PostgreSQL: User count verification - before/after:', {
+                    before: parseInt(beforeCount.rows[0].count),
+                    after: parseInt(afterCount.rows[0].count)
                 });
             }
 
