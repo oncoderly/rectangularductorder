@@ -63,6 +63,9 @@ async function initializeDatabase() {
             console.log('✅ PostgreSQL database upgraded successfully');
             console.log('🔒 FORCING PostgreSQL usage - SQLite disabled');
             
+            // DEBUG: Check variables are set
+            console.log('🧪 DEBUG: Variables set - userDB:', !!userDB, 'tokenDB:', !!tokenDB, 'analyticsDB:', !!analyticsDB);
+            
             // CRITICAL: Force PostgreSQL usage in production
             if (process.env.NODE_ENV === 'production') {
                 console.log('🚨 PRODUCTION: PostgreSQL is now the ONLY database');
