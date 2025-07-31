@@ -32,7 +32,9 @@
       "Bash(true)",
       "Bash(cat:*)",
       "Bash(cp:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git checkout:*)",
+      "WebFetch(domain:rectangularductorder.onrender.com)"
     ],
     "deny": []
   }
