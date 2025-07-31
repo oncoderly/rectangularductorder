@@ -31,7 +31,8 @@
       "Bash(npm test)",
       "Bash(true)",
       "Bash(cat:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

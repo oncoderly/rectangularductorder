@@ -350,10 +350,10 @@ app.get('/api/status', async (req, res) => {
         
         try {
             await waitForInit();
-            dbType = isPostgreSQL ? 'PostgreSQL' : 'SQLite';
+            dbType = isPostgreSQL() ? 'PostgreSQL' : 'SQLite';
             
             // Test database connection
-            if (isPostgreSQL && db) {
+            if (isPostgreSQL() && db) {
                 const result = await db.query('SELECT 1 as test');
                 dbStatus = 'connected';
             } else if (userDB) {
@@ -373,7 +373,7 @@ app.get('/api/status', async (req, res) => {
                 status: dbStatus,
                 error: dbError,
                 initialized: isInitialized,
-                postgresAvailable: isPostgreSQL
+                postgresAvailable: isPostgreSQL()
             },
             endpoints: [
                 '/api/register', '/api/login', '/api/me', '/api/logout',
@@ -445,7 +445,10 @@ console.log('🔍 ENV DEBUG - DATABASE_URL first 30 chars:', process.env.DATABAS
 console.log('🔍 ENV DEBUG - NODE_ENV:', process.env.NODE_ENV);
 
 // Import database module  
-const { db, userDB, tokenDB, analyticsDB, waitForInit, isPostgreSQL } = require('./database-selector');
+const databaseModule = require('./database-selector');
+const { db, userDB, tokenDB, analyticsDB, waitForInit } = databaseModule;
+// Create a getter proxy for isPostgreSQL
+const isPostgreSQL = () => databaseModule.isPostgreSQL;
 
 // Import analytics module
 const { trackSession, getAnalyticsSummary } = require('./analytics');
@@ -1702,11 +1705,11 @@ app.listen(PORT, () => {
     console.log('⏳ Waiting for database initialization...');
     waitForInit().then(async () => {
         console.log('🔍 SERVER.JS: About to check isPostgreSQL...');
-        console.log('🔍 SERVER.JS: typeof isPostgreSQL:', typeof isPostgreSQL);
-        console.log('🔍 SERVER.JS: isPostgreSQL value:', isPostgreSQL);
-        console.log('🗄️ Database type:', isPostgreSQL ? 'PostgreSQL' : 'SQLite');
+        console.log('🔍 SERVER.JS: typeof isPostgreSQL function:', typeof isPostgreSQL);
+        console.log('🔍 SERVER.JS: isPostgreSQL() value:', isPostgreSQL());
+        console.log('🗄️ Database type:', isPostgreSQL() ? 'PostgreSQL' : 'SQLite');
         console.log('✅ Database ready - Server fully initialized');
-        console.log('🧪 PostgreSQL available flag:', isPostgreSQL);
+        console.log('🧪 PostgreSQL available flag:', isPostgreSQL());
         
         // Database durumunu kontrol et
         try {
