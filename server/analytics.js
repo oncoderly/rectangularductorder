@@ -3,8 +3,28 @@ const path = require('path');
 
 const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
 
-// Load analytics data
+// Check if we're using PostgreSQL
+const isPostgreSQL = () => {
+    return process.env.NODE_ENV === 'production' && process.env.DATABASE_URL;
+};
+
+// Load analytics data (PostgreSQL or file-based)
 const loadAnalytics = async () => {
+    if (isPostgreSQL()) {
+        try {
+            const databaseModule = require('./database-selector');
+            await databaseModule.waitForInit();
+            const { analyticsDB } = databaseModule;
+            
+            if (analyticsDB && analyticsDB.getAnalyticsSummary) {
+                return await analyticsDB.getAnalyticsSummary();
+            }
+        } catch (error) {
+            console.error('PostgreSQL analytics failed, falling back to file:', error.message);
+        }
+    }
+    
+    // Fallback to file-based analytics
     try {
         return await fs.readJson(ANALYTICS_FILE);
     } catch (error) {
@@ -21,8 +41,25 @@ const loadAnalytics = async () => {
     }
 };
 
-// Save analytics data
+// Save analytics data (PostgreSQL or file-based)
 const saveAnalytics = async (data) => {
+    if (isPostgreSQL()) {
+        try {
+            const databaseModule = require('./database-selector');
+            await databaseModule.waitForInit();
+            const { analyticsDB } = databaseModule;
+            
+            if (analyticsDB && analyticsDB.saveAnalytics) {
+                // For PostgreSQL, we don't need to save the entire analytics object
+                // Individual tracking is handled by trackSession
+                return;
+            }
+        } catch (error) {
+            console.error('PostgreSQL analytics save failed, falling back to file:', error.message);
+        }
+    }
+    
+    // Fallback to file-based analytics
     await fs.writeJson(ANALYTICS_FILE, data, { spaces: 2 });
 };
 
@@ -40,6 +77,23 @@ const cleanOldAnalytics = (sessions) => {
 // Track user session/activity
 const trackSession = async (userId, action, data = {}) => {
     try {
+        if (isPostgreSQL()) {
+            try {
+                const databaseModule = require('./database-selector');
+                await databaseModule.waitForInit();
+                const { analyticsDB } = databaseModule;
+                
+                if (analyticsDB && analyticsDB.saveAnalytics) {
+                    await analyticsDB.saveAnalytics(userId, action, data);
+                    console.log(`📊 PostgreSQL Analytics: Tracked ${action} for user ${userId}`);
+                    return;
+                }
+            } catch (error) {
+                console.error('PostgreSQL analytics tracking failed, falling back to file:', error.message);
+            }
+        }
+        
+        // Fallback to file-based analytics
         const analytics = await loadAnalytics();
         
         const sessionData = {
@@ -90,15 +144,31 @@ const trackSession = async (userId, action, data = {}) => {
         
         await saveAnalytics(analytics);
         
-        console.log(`📊 Analytics: Tracked ${action} for user ${userId}`);
+        console.log(`📊 File Analytics: Tracked ${action} for user ${userId}`);
     } catch (error) {
         console.error('Analytics tracking error:', error);
+        // Don't throw error to prevent 500 responses
     }
 };
 
 // Get analytics summary
 const getAnalyticsSummary = async () => {
     try {
+        if (isPostgreSQL()) {
+            try {
+                const databaseModule = require('./database-selector');
+                await databaseModule.waitForInit();
+                const { analyticsDB } = databaseModule;
+                
+                if (analyticsDB && analyticsDB.getAnalyticsSummary) {
+                    return await analyticsDB.getAnalyticsSummary();
+                }
+            } catch (error) {
+                console.error('PostgreSQL analytics summary failed, falling back to file:', error.message);
+            }
+        }
+        
+        // Fallback to file-based analytics
         const analytics = await loadAnalytics();
         
         // Get recent activities (last 50)
@@ -166,6 +236,21 @@ const getAnalyticsSummary = async () => {
 // Get recent activities only
 const getRecentActivities = async () => {
     try {
+        if (isPostgreSQL()) {
+            try {
+                const databaseModule = require('./database-selector');
+                await databaseModule.waitForInit();
+                const { analyticsDB } = databaseModule;
+                
+                if (analyticsDB && analyticsDB.getRecentActivities) {
+                    return await analyticsDB.getRecentActivities();
+                }
+            } catch (error) {
+                console.error('PostgreSQL recent activities failed, falling back to file:', error.message);
+            }
+        }
+        
+        // Fallback to file-based analytics
         const analytics = await loadAnalytics();
         
         return analytics.sessions
