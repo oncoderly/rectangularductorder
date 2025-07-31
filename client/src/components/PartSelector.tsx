@@ -34,8 +34,14 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
   const [checkboxes, setCheckboxes] = useState<PartCheckbox>({});
   const [directions, setDirections] = useState<{ [key: string]: number }>({});
   const [diameters, setDiameters] = useState<{ [key: string]: number }>({});
-  const [materialType, setMaterialType] = useState<string>('galvaniz');
-  const [customMaterial, setCustomMaterial] = useState<string>('');
+  const [materialType, setMaterialType] = useState<string>(() => {
+    // localStorage'dan son seçili malzeme türünü al, yoksa 'galvaniz' kullan
+    return localStorage.getItem('lastSelectedMaterial') || 'galvaniz';
+  });
+  const [customMaterial, setCustomMaterial] = useState<string>(() => {
+    // localStorage'dan son custom malzeme metnini al
+    return localStorage.getItem('lastCustomMaterial') || '';
+  });
   const [quantity, setQuantity] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
   const [imageScrollUp, setImageScrollUp] = useState<boolean>(false);
@@ -264,6 +270,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     onAddPart(newPart);
     
     // Reset measurements but keep default values, checkboxes, directions and quantity
+    // Keep materialType and customMaterial to persist user's choice
     if (selectedPart) {
       const defaultMeasurements: PartMeasurement = {};
       (selectedPart.measurements || []).forEach(m => {
@@ -276,8 +283,7 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
     setCheckboxes({});
     setDirections({});
     setDiameters({});
-    setMaterialType('galvaniz');
-    setCustomMaterial('');
+    // Don't reset materialType and customMaterial - keep user's selection
     setQuantity(1);
     setNotes('');
   };
@@ -647,7 +653,11 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
               <select
                 className="focus-ring"
                 value={materialType}
-                onChange={(e) => setMaterialType(e.target.value)}
+                onChange={(e) => {
+                  setMaterialType(e.target.value);
+                  // Save to localStorage for persistence
+                  localStorage.setItem('lastSelectedMaterial', e.target.value);
+                }}
                 style={{ 
                   minWidth: '120px',
                   fontSize: '14px',
@@ -670,7 +680,11 @@ const PartSelector: React.FC<PartSelectorProps> = ({ onAddPart }) => {
                   placeholder="Malzeme cinsi girin..."
                   value={customMaterial}
                   onFocus={createPlaceholderFocusHandler(customMaterial, 'Malzeme cinsi girin...')}
-                  onChange={(e) => setCustomMaterial(e.target.value)}
+                  onChange={(e) => {
+                    setCustomMaterial(e.target.value);
+                    // Save to localStorage for persistence
+                    localStorage.setItem('lastCustomMaterial', e.target.value);
+                  }}
                   style={{ 
                     minWidth: '150px',
                     fontSize: '14px',
