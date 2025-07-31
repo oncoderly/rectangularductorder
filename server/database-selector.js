@@ -66,6 +66,9 @@ async function initializeDatabase() {
             // CRITICAL: Force PostgreSQL usage in production
             if (process.env.NODE_ENV === 'production') {
                 console.log('🚨 PRODUCTION: PostgreSQL is now the ONLY database');
+                isInitialized = true; // CRITICAL: Mark as initialized
+                console.log('✅ Database initialization completed');
+                console.log('🗄️ Final database type: PostgreSQL');
                 return; // Don't initialize SQLite fallback
             }
         } else {
