@@ -6,6 +6,13 @@ const USE_POSTGRESQL = process.env.USE_POSTGRESQL === 'true' || !!DATABASE_URL;
 let postgresAvailable = false;
 let isInitialized = false; // Will be set to true only after complete PostgreSQL initialization
 
+// Track all assignments to postgresAvailable
+const originalPostgresAvailable = postgresAvailable;
+function setPostgresAvailable(value, reason = 'unknown') {
+    console.log(`🚨 TRACE: postgresAvailable changing from ${postgresAvailable} to ${value} (reason: ${reason})`);
+    postgresAvailable = value;
+}
+
 console.log('🔧 DATABASE-SELECTOR: Module loading, isInitialized =', isInitialized);
 
 console.log('🔍 Database selection...');
@@ -28,12 +35,12 @@ async function testPostgreSQL() {
         
         // Test query
         const result = await postgres.pool.query('SELECT 1');
-        postgresAvailable = true;
+        setPostgresAvailable(true, 'testPostgreSQL success');
         console.log('✅ PostgreSQL connection successful');
         return true;
     } catch (error) {
         console.error('❌ PostgreSQL connection failed:', error.message);
-        postgresAvailable = false;
+        setPostgresAvailable(false, 'testPostgreSQL failed');
         return false;
     }
 }
@@ -61,7 +68,7 @@ async function initializeDatabase() {
             userDB = postgres.userDB;
             tokenDB = postgres.tokenDB;
             analyticsDB = postgres.analyticsDB;
-            postgresAvailable = true;
+            setPostgresAvailable(true, 'PostgreSQL upgrade success');
             console.log('✅ PostgreSQL database upgraded successfully');
             console.log('🔒 FORCING PostgreSQL usage - SQLite disabled');
             
@@ -76,7 +83,7 @@ async function initializeDatabase() {
             console.log('📝 Staying with SQLite fallback (already initialized)');
             // DON'T override postgresAvailable if it was set to true by upgrade
             if (!postgresAvailable) {
-                postgresAvailable = false;
+                setPostgresAvailable(false, 'SQLite fallback (not upgraded)');
                 console.log('🔧 Setting postgresAvailable to false (not upgraded)');
             } else {
                 console.log('🔒 Keeping postgresAvailable true (already upgraded)');
@@ -85,7 +92,7 @@ async function initializeDatabase() {
     } catch (error) {
         console.error('❌ PostgreSQL upgrade failed:', error.message);
         console.log('📝 Continuing with SQLite fallback');
-        postgresAvailable = false;
+        setPostgresAvailable(false, 'PostgreSQL upgrade failed');
         
         // Ensure SQLite fallback is working ONLY in development
         if (process.env.NODE_ENV !== 'production' && (!userDB || !userDB.getAllUsers)) {
