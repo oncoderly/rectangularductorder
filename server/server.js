@@ -1184,6 +1184,14 @@ app.post('/api/track',
         res.json({ message: 'Tracking successful' });
     } catch (error) {
         console.error('Analytics tracking error:', error);
+        console.error('Analytics error stack:', error.stack);
+        console.error('Analytics error details:', {
+            message: error.message,
+            name: error.name,
+            userId,
+            action,
+            data
+        });
         res.status(500).json({ error: 'Tracking failed' });
     }
 });
