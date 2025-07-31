@@ -188,6 +188,16 @@ async function createTables() {
             )
         `);
 
+        // Create sessions table for PostgreSQL session store
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS sessions (
+                sid VARCHAR(255) PRIMARY KEY,
+                sess JSON NOT NULL,
+                expire TIMESTAMP(6) NOT NULL
+            )
+        `);
+        console.log('✅ Sessions table created/verified');
+
         // Create indexes for performance
         await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -198,6 +208,7 @@ async function createTables() {
             CREATE INDEX IF NOT EXISTS idx_analytics_userid ON analytics(userid);
             CREATE INDEX IF NOT EXISTS idx_analytics_action ON analytics(action);
             CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics(timestamp);
+            CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
         `);
 
         console.log('✅ PostgreSQL tables created successfully');

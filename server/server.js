@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const fs = require('fs-extra');
 const axios = require('axios');
 const path = require('path');
@@ -185,7 +186,26 @@ app.use(sanitizeInput);
 // Check if running on HTTPS (production)
 const isProductionEnv = process.env.NODE_ENV === 'production' || process.env.SERVER_URL?.startsWith('https://');
 
+// Session store configuration
+let sessionStore;
+if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+    // Use PostgreSQL session store in production
+    sessionStore = new pgSession({
+        conObject: {
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+        },
+        tableName: 'sessions'
+    });
+    console.log('✅ PostgreSQL session store configured');
+} else {
+    // Use memory store in development
+    sessionStore = undefined;
+    console.log('⚠️ Using memory session store (development mode)');
+}
+
 app.use(session({
+    store: sessionStore,
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
