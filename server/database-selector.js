@@ -62,6 +62,14 @@ async function initializeDatabase() {
             postgresAvailable = true;
             console.log('✅ PostgreSQL database upgraded successfully');
             console.log('🔒 FORCING PostgreSQL usage - SQLite disabled');
+            
+            // DEBUG: Verify variables are set correctly
+            console.log('🧪 DEBUG: Variables after PostgreSQL upgrade:');
+            console.log('🧪 DEBUG: db set:', !!db);
+            console.log('🧪 DEBUG: userDB set:', !!userDB);
+            console.log('🧪 DEBUG: tokenDB set:', !!tokenDB);
+            console.log('🧪 DEBUG: analyticsDB set:', !!analyticsDB);
+            console.log('🧪 DEBUG: postgresAvailable:', postgresAvailable);
         } else {
             console.log('📝 Staying with SQLite fallback (already initialized)');
             postgresAvailable = false;
