@@ -155,7 +155,7 @@ function App() {
   
   return (
     <>
-      <div className="App">
+      <div className="App main-app-content">
         {showAdminDashboard && user && user.role === 'admin' ? (
           <>
             {console.log('📊 App: Rendering AdminDashboard for admin user')}

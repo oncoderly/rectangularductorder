@@ -4,12 +4,19 @@
     box-sizing: border-box;
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
+/* Only apply to main app content, not auth pages */
+.main-app-content {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f5f7fa;
     color: #2c3e50;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Keep basic reset but don't override backgrounds */
+html, body {
+    margin: 0;
+    padding: 0;
     height: 100%;
     overflow-x: hidden;
 }
