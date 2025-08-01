@@ -832,72 +832,72 @@ app.post('/api/login',
 // console.log('🔧 ROUTE REGISTRATION: Registering /api/me endpoint');
 
 // app.get('/api/me', async (req, res) => {
-    console.log('🔍 /api/me: ENDPOINT HIT - Request received');
-    console.log('🔍 /api/me: Request headers:', req.headers);  
-    console.log('🔍 /api/me: Request URL:', req.url);
-    
-    try {
-        // Wait for database initialization
-        await waitForInit();
-        
-        // Debug session and database status
-        console.log('🔍 /api/me: Session debug info:', {
-            sessionExists: !!req.session,
-            sessionID: req.sessionID,
-            sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
-        });
-        
-        console.log('🔍 /api/me: Database debug info:', {
-            userDB_exists: !!userDB,
-            userDB_type: userDB ? userDB.constructor.name : 'null',
-            isPostgreSQL: isPostgreSQL()
-        });
-        
-        if (!req.session) {
-            console.error('❌ /api/me: req.session is undefined - session middleware not working');
-            return res.status(500).json({ error: 'Session not available' });
-        }
-        
-        if (!req.session.userId) {
-            return res.status(401).json({ error: 'Oturum açılmamış' });
-        }
-        
-        if (!userDB) {
-            console.error('❌ /api/me: userDB is null/undefined');
-            return res.status(500).json({ error: 'Database not available' });
-        }
-        
-        if (!userDB.getUserById) {
-            console.error('❌ /api/me: userDB.getUserById is not a function');
-            return res.status(500).json({ error: 'Database method not available' });
-        }
-        
-        const user = await userDB.getUserById(req.session.userId);
-        
-        if (!user) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-        }
-        
-        res.json({ 
-            user: { 
-                id: user.id, 
-                email: user.email, 
-                firstName: user.firstName, 
-                lastName: user.lastName,
-                role: user.role || 'user'
-            } 
-        });
-    } catch (error) {
-        console.error('❌ /api/me error:', error);
-        console.error('❌ /api/me error stack:', error.stack);
-        console.error('❌ /api/me error details:', {
-            message: error.message,
-            name: error.name,
-            sessionExists: !!req.session,
-            sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
-        });
-        res.status(500).json({ error: 'Sunucu hatası' });
-    }
+//     console.log('🔍 /api/me: ENDPOINT HIT - Request received');
+//     console.log('🔍 /api/me: Request headers:', req.headers);  
+//     console.log('🔍 /api/me: Request URL:', req.url);
+//     
+//     try {
+//         // Wait for database initialization
+//         await waitForInit();
+//         
+//         // Debug session and database status
+//         console.log('🔍 /api/me: Session debug info:', {
+//             sessionExists: !!req.session,
+//             sessionID: req.sessionID,
+//             sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
+//         });
+//         
+//         console.log('🔍 /api/me: Database debug info:', {
+//             userDB_exists: !!userDB,
+//             userDB_type: userDB ? userDB.constructor.name : 'null',
+//             isPostgreSQL: isPostgreSQL()
+//         });
+//         
+//         if (!req.session) {
+//             console.error('❌ /api/me: req.session is undefined - session middleware not working');
+//             return res.status(500).json({ error: 'Session not available' });
+//         }
+//         
+//         if (!req.session.userId) {
+//             return res.status(401).json({ error: 'Oturum açılmamış' });
+//         }
+//         
+//         if (!userDB) {
+//             console.error('❌ /api/me: userDB is null/undefined');
+//             return res.status(500).json({ error: 'Database not available' });
+//         }
+//         
+//         if (!userDB.getUserById) {
+//             console.error('❌ /api/me: userDB.getUserById is not a function');
+//             return res.status(500).json({ error: 'Database method not available' });
+//         }
+//         
+//         const user = await userDB.getUserById(req.session.userId);
+//         
+//         if (!user) {
+//             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+//         }
+//         
+//         res.json({ 
+//             user: { 
+//                 id: user.id, 
+//                 email: user.email, 
+//                 firstName: user.firstName, 
+//                 lastName: user.lastName,
+//                 role: user.role || 'user'
+//             } 
+//         });
+//     } catch (error) {
+//         console.error('❌ /api/me error:', error);
+//         console.error('❌ /api/me error stack:', error.stack);
+//         console.error('❌ /api/me error details:', {
+//             message: error.message,
+//             name: error.name,
+//             sessionExists: !!req.session,
+//             sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
+//         });
+//         res.status(500).json({ error: 'Sunucu hatası' });
+//     }
 // }); // END OF COMMENTED /api/me route
 
 app.post('/api/logout', (req, res) => {
@@ -1114,89 +1114,89 @@ app.get('/api/auth/google/status', (req, res) => {
 // console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'MISSING');
 
 // app.get('/api/auth/google', (req, res, next) => {
-    console.log('🔍 Google auth endpoint hit');
-    console.log('🔍 DEBUG - Request URL:', req.url);
-    console.log('🔍 DEBUG - Request method:', req.method);
-    console.log('🔍 DEBUG - Request headers:', req.headers);
-    console.log('🔍 DEBUG - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'NOT FOUND');
-    console.log('🔍 DEBUG - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'NOT FOUND');
-    console.log('🔍 DEBUG - SERVER_URL:', SERVER_URL);
-    console.log('🔍 DEBUG - CLIENT_URL:', CLIENT_URL);
-    console.log('🔍 DEBUG - Callback URL will be:', `${SERVER_URL}/api/auth/google/callback`);
-    
-    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-        console.log('❌ DEBUG - Variables are falsy, returning error');
-        return res.status(500).json({ error: 'Google OAuth not configured' });
-    }
-    console.log('✅ DEBUG - Variables are truthy, proceeding with auth');
-    console.log('✅ DEBUG - Redirecting to Google OAuth...');
-    
-    try {
-        passport.authenticate('google', { 
-            scope: ['profile', 'email'] 
-        })(req, res, next);
-    } catch (error) {
-        console.error('❌ ERROR in passport.authenticate:', error);
-        res.status(500).json({ error: 'Authentication error', details: error.message });
-    }
+//     console.log('🔍 Google auth endpoint hit');
+//     console.log('🔍 DEBUG - Request URL:', req.url);
+//     console.log('🔍 DEBUG - Request method:', req.method);
+//     console.log('🔍 DEBUG - Request headers:', req.headers);
+//     console.log('🔍 DEBUG - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'NOT FOUND');
+//     console.log('🔍 DEBUG - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'NOT FOUND');
+//     console.log('🔍 DEBUG - SERVER_URL:', SERVER_URL);
+//     console.log('🔍 DEBUG - CLIENT_URL:', CLIENT_URL);
+//     console.log('🔍 DEBUG - Callback URL will be:', `${SERVER_URL}/api/auth/google/callback`);
+//     
+//     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+//         console.log('❌ DEBUG - Variables are falsy, returning error');
+//         return res.status(500).json({ error: 'Google OAuth not configured' });
+//     }
+//     console.log('✅ DEBUG - Variables are truthy, proceeding with auth');
+//     console.log('✅ DEBUG - Redirecting to Google OAuth...');
+//     
+//     try {
+//         passport.authenticate('google', { 
+//             scope: ['profile', 'email'] 
+//         })(req, res, next);
+//     } catch (error) {
+//         console.error('❌ ERROR in passport.authenticate:', error);
+//         res.status(500).json({ error: 'Authentication error', details: error.message });
+//     }
 // }); // END OF COMMENTED Google auth route
 
 // MOVED TO registerAllRoutes() function  
 // console.log('🔧 ROUTE REGISTRATION: Registering /api/auth/google/callback endpoint');
 
 // app.get('/api/auth/google/callback', (req, res, next) => {
-    console.log('🔍 OAuth Callback HIT - Query params:', req.query);
-    console.log('🔍 OAuth Callback - Full URL:', req.url);
-    console.log('🔍 OAuth Callback - Headers:', req.headers);
-    
-    passport.authenticate('google', { 
-        failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
-    })(req, res, (err) => {
-        if (err) {
-            console.log('❌ Passport authentication error:', err);
-            return res.redirect(`${CLIENT_URL}/?error=passport_error`);
-        }
-        
-        if (!req.user) {
-            console.log('❌ No user found after authentication');
-            return res.redirect(`${CLIENT_URL}/?error=no_user`);
-        }
-        
-        // Successful authentication, redirect to client  
-        console.log('✅ OAuth Callback - User authenticated:', req.user?.email);
-        console.log('✅ OAuth Callback - User role:', req.user?.role);
-        console.log('✅ OAuth Callback - User object:', JSON.stringify(req.user, null, 2));
-        
-        req.session.userId = req.user.id;
-        console.log('🔍 OAuth Callback - Setting session userId:', req.user.id);
-        console.log('🔍 OAuth Callback - Session before save:', {
-            sessionID: req.sessionID,
-            userId: req.session.userId,
-            sessionKeys: Object.keys(req.session)
-        });
-        
-        // Session'ı kaydet (ÇÖZÜM!)
-        req.session.save((err) => {
-            if (err) {
-                console.error('❌ Session save error:', err);
-                console.error('❌ Session save error details:', err.message);
-                return res.redirect(`${CLIENT_URL}/?error=session_save_failed`);
-            }
-            
-            console.log('✅ Session saved successfully for user:', req.user.id);
-            console.log('✅ Session saved - SessionID:', req.sessionID);
-            console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
-            
-            // Track Google OAuth login
-            trackSession(req.user.id, 'user_login', {
-                method: 'google',
-                email: req.user.email
-            }).catch(err => console.error('Analytics tracking error:', err));
-            
-            res.redirect(`${CLIENT_URL}/?google_auth=success`);
-        });
-    });
-});
+//     console.log('🔍 OAuth Callback HIT - Query params:', req.query);
+//     console.log('🔍 OAuth Callback - Full URL:', req.url);
+//     console.log('🔍 OAuth Callback - Headers:', req.headers);
+//     
+//     passport.authenticate('google', { 
+//         failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
+//     })(req, res, (err) => {
+//         if (err) {
+//             console.log('❌ Passport authentication error:', err);
+//             return res.redirect(`${CLIENT_URL}/?error=passport_error`);
+//         }
+//         
+//         if (!req.user) {
+//             console.log('❌ No user found after authentication');
+//             return res.redirect(`${CLIENT_URL}/?error=no_user`);
+//         }
+//         
+//         // Successful authentication, redirect to client  
+//         console.log('✅ OAuth Callback - User authenticated:', req.user?.email);
+//         console.log('✅ OAuth Callback - User role:', req.user?.role);
+//         console.log('✅ OAuth Callback - User object:', JSON.stringify(req.user, null, 2));
+//         
+//         req.session.userId = req.user.id;
+//         console.log('🔍 OAuth Callback - Setting session userId:', req.user.id);
+//         console.log('🔍 OAuth Callback - Session before save:', {
+//             sessionID: req.sessionID,
+//             userId: req.session.userId,
+//             sessionKeys: Object.keys(req.session)
+//         });
+//         
+//         // Session'ı kaydet (ÇÖZÜM!)
+//         req.session.save((err) => {
+//             if (err) {
+//                 console.error('❌ Session save error:', err);
+//                 console.error('❌ Session save error details:', err.message);
+//                 return res.redirect(`${CLIENT_URL}/?error=session_save_failed`);
+//             }
+//             
+//             console.log('✅ Session saved successfully for user:', req.user.id);
+//             console.log('✅ Session saved - SessionID:', req.sessionID);
+//             console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
+//             
+//             // Track Google OAuth login
+//             trackSession(req.user.id, 'user_login', {
+//                 method: 'google',
+//                 email: req.user.email
+//             }).catch(err => console.error('Analytics tracking error:', err));
+//             
+//             res.redirect(`${CLIENT_URL}/?google_auth=success`);
+//         });
+//     });
+// });
 
 // Google Auth success check endpoint
 app.get('/api/auth/google/success', async (req, res) => {
@@ -2121,5 +2121,4 @@ function startServer() {
             console.error('❌ Database initialization timeout or failed:', error);
         });
     });
-}
 }
