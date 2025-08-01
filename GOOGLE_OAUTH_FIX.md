@@ -19,13 +19,12 @@ Go to [Google Cloud Console](https://console.cloud.google.com/) and update OAuth
 #### **Authorized JavaScript Origins:**
 ```
 https://rectangularductorder.onrender.com
-https://rectangularductorder-server.onrender.com
 ```
 
 #### **Authorized Redirect URIs:**
 ```
-https://rectangularductorder-server.onrender.com/api/auth/google/callback
-https://rectangularductorder-server.onrender.com/auth/google/callback
+https://rectangularductorder.onrender.com/api/auth/google/callback
+https://rectangularductorder.onrender.com/auth/google/callback
 ```
 
 ## 🚀 Render.com Environment Variables
@@ -33,8 +32,8 @@ https://rectangularductorder-server.onrender.com/auth/google/callback
 Ensure these are set in your Render.com backend service:
 
 ```env
-# URLs
-SERVER_URL=https://rectangularductorder-server.onrender.com
+# URLs (Same service - both frontend and backend on same URL)
+SERVER_URL=https://rectangularductorder.onrender.com
 CLIENT_URL=https://rectangularductorder.onrender.com
 
 # Google OAuth
@@ -53,15 +52,15 @@ DEMO_MODE=false
 ## 🔍 Debugging Steps
 
 1. **Check Backend Status:**
-   - Visit: `https://rectangularductorder-server.onrender.com/api/auth/google/status`
+   - Visit: `https://rectangularductorder.onrender.com/api/auth/google/status`
    - Should return: `{"configured": true}`
 
 2. **Check API Health:**
-   - Visit: `https://rectangularductorder-server.onrender.com/api/me`
+   - Visit: `https://rectangularductorder.onrender.com/api/me`
    - Should return user data or 401
 
 3. **Test Google OAuth:**
-   - Visit: `https://rectangularductorder-server.onrender.com/api/auth/google`
+   - Visit: `https://rectangularductorder.onrender.com/api/auth/google`
    - Should redirect to Google login
 
 ## 📋 Checklist

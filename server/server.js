@@ -283,9 +283,10 @@ console.log('SERVER_URL:', SERVER_URL);
 console.log('🔧 Environment Check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('Is Production:', isProductionEnv);
-console.log('🔧 Expected Production URLs:');
+console.log('🔧 Expected Production URLs (Same Service):');
 console.log('Should be CLIENT_URL: https://rectangularductorder.onrender.com'); 
 console.log('Should be SERVER_URL: https://rectangularductorder.onrender.com');
+console.log('🔧 Note: Both frontend and backend run on the same service URL');
 
 // Passport Google Strategy
 console.log('🔧 PASSPORT GOOGLE STRATEGY SETUP:');
