@@ -233,7 +233,7 @@ initializeSessionStore().then(() => {
     console.log('🔧 SESSION SETUP: Store type:', sessionStore ? sessionStore.constructor.name : 'Memory Store');
     console.log('🔧 SESSION SETUP: isProductionEnv:', isProductionEnv);
     console.log('🔧 SESSION SETUP: Cookie secure:', isProductionEnv);
-    console.log('🔧 SESSION SETUP: Cookie sameSite:', isProductionEnv ? 'none' : 'lax');
+    console.log('🔧 SESSION SETUP: Cookie sameSite: lax (same origin)');
     
     app.use(session({
         store: sessionStore,
@@ -244,7 +244,7 @@ initializeSessionStore().then(() => {
         cookie: { 
             secure: isProductionEnv, // Production'da HTTPS zorunlu
             httpOnly: true,
-            sameSite: isProductionEnv ? 'none' : 'lax', // OAuth için 'none' gerekli
+            sameSite: 'lax', // Same origin için 'lax' yeterli (tek serviste çalışıyor)
             maxAge: 24 * 60 * 60 * 1000 // 24 saat
         },
         rolling: true // Her istekte session süresi yenilensin
@@ -267,7 +267,7 @@ initializeSessionStore().then(() => {
         cookie: { 
             secure: isProductionEnv,
             httpOnly: true,
-            sameSite: isProductionEnv ? 'none' : 'lax',
+            sameSite: 'lax', // Same origin için 'lax' yeterli (tek serviste çalışıyor)
             maxAge: 24 * 60 * 60 * 1000
         },
         rolling: true
@@ -1164,15 +1164,22 @@ app.get('/api/auth/google/callback', (req, res, next) => {
         
         req.session.userId = req.user.id;
         console.log('🔍 OAuth Callback - Setting session userId:', req.user.id);
+        console.log('🔍 OAuth Callback - Session before save:', {
+            sessionID: req.sessionID,
+            userId: req.session.userId,
+            sessionKeys: Object.keys(req.session)
+        });
         
         // Session'ı kaydet (ÇÖZÜM!)
         req.session.save((err) => {
             if (err) {
                 console.error('❌ Session save error:', err);
+                console.error('❌ Session save error details:', err.message);
                 return res.redirect(`${CLIENT_URL}/?error=session_save_failed`);
             }
             
             console.log('✅ Session saved successfully for user:', req.user.id);
+            console.log('✅ Session saved - SessionID:', req.sessionID);
             console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
             
             // Track Google OAuth login
