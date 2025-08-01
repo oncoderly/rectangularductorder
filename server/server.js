@@ -1900,20 +1900,25 @@ function startServer() {
         console.log(`📍 Client URL: ${CLIENT_URL}`);
         console.log(`📍 Server URL: ${SERVER_URL}`);
         
-        // DEBUG: List all registered routes
+        // DEBUG: List all registered routes (with safety check)
         console.log('🔍 REGISTERED ROUTES:');
         let routeCount = 0;
-        app._router.stack.forEach((middleware, index) => {
-            if (middleware.route) {
-                const methods = Object.keys(middleware.route.methods).join(', ').toUpperCase();
-                console.log(`   ${methods} ${middleware.route.path}`);
-                routeCount++;
-            } else if (middleware.name === 'router') {
-                console.log(`   Router middleware found at index ${index}`);
-            } else {
-                console.log(`   Middleware: ${middleware.name || 'anonymous'} at index ${index}`);
-            }
-        });
+        
+        if (app._router && app._router.stack) {
+            app._router.stack.forEach((middleware, index) => {
+                if (middleware.route) {
+                    const methods = Object.keys(middleware.route.methods).join(', ').toUpperCase();
+                    console.log(`   ${methods} ${middleware.route.path}`);
+                    routeCount++;
+                } else if (middleware.name === 'router') {
+                    console.log(`   Router middleware found at index ${index}`);
+                } else {
+                    console.log(`   Middleware: ${middleware.name || 'anonymous'} at index ${index}`);
+                }
+            });
+        } else {
+            console.log('   No router stack available yet');
+        }
         console.log(`🔍 Total routes registered: ${routeCount}`);
         
         console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
