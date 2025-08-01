@@ -690,6 +690,10 @@ const userDB = {
     // Update user
     updateUser: async (id, updates) => {
         try {
+            console.log('🔄 [USER-UPDATE-DEBUG] Starting user update...');
+            console.log('🔄 [USER-UPDATE-DEBUG] User ID:', id);
+            console.log('🔄 [USER-UPDATE-DEBUG] Updates:', updates);
+
             const fields = [];
             const values = [];
             let paramIndex = 1;
@@ -712,16 +716,42 @@ const userDB = {
                 }
             });
 
-            if (fields.length === 0) return false;
+            if (fields.length === 0) {
+                console.log('⚠️ [USER-UPDATE-DEBUG] No fields to update');
+                return false;
+            }
 
             fields.push(`"updatedAt" = $${paramIndex}`);
             values.push(new Date().toISOString());
             values.push(id);
 
             const query = `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIndex + 1}`;
+            console.log('🔄 [USER-UPDATE-DEBUG] SQL Query:', query);
+            console.log('🔄 [USER-UPDATE-DEBUG] SQL Values:', values);
+
             const result = await pool.query(query, values);
+            console.log('🔄 [USER-UPDATE-DEBUG] Update result:', {
+                rowCount: result.rowCount,
+                success: result.rowCount > 0
+            });
             
-            console.log('✅ User updated in PostgreSQL:', id);
+            // Verify the update
+            if (result.rowCount > 0) {
+                const verifyResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+                if (verifyResult.rows.length > 0) {
+                    console.log('✅ [USER-UPDATE-DEBUG] Update verified, user data:', {
+                        id: verifyResult.rows[0].id,
+                        email: verifyResult.rows[0].email,
+                        googleId: verifyResult.rows[0].googleId,
+                        role: verifyResult.rows[0].role,
+                        updatedAt: verifyResult.rows[0].updatedAt
+                    });
+                } else {
+                    console.error('❌ [USER-UPDATE-DEBUG] Update verification failed - user not found');
+                }
+            }
+            
+            console.log('✅ [USER-UPDATE-DEBUG] User update completed for:', id);
             return result.rowCount > 0;
         } catch (error) {
             console.error('❌ Error updating user:', error);

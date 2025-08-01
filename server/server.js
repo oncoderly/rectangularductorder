@@ -336,26 +336,44 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             console.log('🔍 GoogleStrategy: User found by email:', !!user);
             
             if (user) {
-                console.log('🔍 GoogleStrategy: Linking Google account to existing user');
-                console.log('🔍 GoogleStrategy: Existing user role:', user.role);
+                console.log('🔄 GoogleStrategy: LINKING - Google account to existing user');
+                console.log('🔄 GoogleStrategy: Existing user ID:', user.id);
+                console.log('🔄 GoogleStrategy: Existing user email:', user.email);
+                console.log('🔄 GoogleStrategy: Existing user role:', user.role);
                 
                 // Link Google account to existing user and update admin role if needed
                 const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
                                profile.emails[0].value === 'salihosmanli34@gmail.com';
-                console.log('🔍 GoogleStrategy: Is admin email?', isAdmin);
+                console.log('🔄 GoogleStrategy: Is admin email?', isAdmin);
                 
                 const updateData = { 
                     googleId: profile.id,
                     role: isAdmin ? 'admin' : (user.role || 'user')
                 };
-                console.log('🔍 GoogleStrategy: Update data:', updateData);
+                console.log('🔄 GoogleStrategy: Update data to save to DB:', updateData);
                 
-                await userDB.updateUser(user.id, updateData);
-                user.googleId = profile.id; // Update local object
-                user.role = updateData.role; // Update local object
+                const updateResult = await userDB.updateUser(user.id, updateData);
+                console.log('🔄 GoogleStrategy: Update result from DB:', updateResult);
                 
-                console.log('🔍 GoogleStrategy: User after update:', user);
-                console.log('🔍 GoogleStrategy: Final user role:', user.role);
+                if (updateResult) {
+                    // Verify update by fetching fresh data from DB
+                    const verifyUser = await userDB.getUserById(user.id);
+                    if (verifyUser) {
+                        user = verifyUser; // Use fresh DB data
+                        console.log('✅ GoogleStrategy: User update verified from DB:', {
+                            id: user.id,
+                            email: user.email,
+                            googleId: user.googleId,
+                            role: user.role
+                        });
+                    } else {
+                        console.error('❌ GoogleStrategy: User update verification failed - user not found');
+                        return done(new Error('User update verification failed'), null);
+                    }
+                } else {
+                    console.error('❌ GoogleStrategy: User update failed in database');
+                    return done(new Error('Failed to update user in database'), null);
+                }
             } else {
                 // Create new user
                 const isAdmin = profile.emails[0].value === 'havakanalsiparis@gmail.com' || 
