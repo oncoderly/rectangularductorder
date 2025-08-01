@@ -370,11 +370,23 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                     createdAt: new Date().toISOString()
                 };
                 
+                console.log('🔄 GoogleStrategy: Creating new user in database...');
                 const created = await userDB.createUser(newUser);
+                console.log('🔍 GoogleStrategy: User creation result:', created);
+                
                 if (created) {
-                    user = newUser;
+                    // Verify user was actually created by fetching from DB
+                    const verifyUser = await userDB.getUserByEmail(newUser.email);
+                    if (verifyUser && verifyUser.id) {
+                        user = verifyUser; // Use actual DB user, not local object
+                        console.log('✅ GoogleStrategy: New user verified in database:', user.email);
+                    } else {
+                        console.error('❌ GoogleStrategy: User creation verification failed');
+                        return done(new Error('User creation verification failed'), null);
+                    }
                 } else {
-                    return done(new Error('Failed to create user'), null);
+                    console.error('❌ GoogleStrategy: Database user creation failed');
+                    return done(new Error('Failed to create user in database'), null);
                 }
             }
         }

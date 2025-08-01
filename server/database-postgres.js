@@ -563,7 +563,8 @@ const userDB = {
     // Create user
     createUser: async (userData) => {
         try {
-            console.log('📝 PostgreSQL: Creating user with data:', {
+            console.log('🔍 [USER-CREATE-DEBUG] Starting user creation...');
+            console.log('🔍 [USER-CREATE-DEBUG] Input data:', {
                 id: userData.id,
                 email: userData.email,
                 hasPassword: !!userData.password,
@@ -573,6 +574,16 @@ const userDB = {
                 googleId: userData.googleId,
                 createdAt: userData.createdAt
             });
+
+            // Validate required fields
+            if (!userData.email) {
+                console.error('❌ [USER-CREATE-DEBUG] Missing required field: email');
+                return false;
+            }
+            if (!userData.id) {
+                console.error('❌ [USER-CREATE-DEBUG] Missing required field: id');
+                return false;
+            }
 
             // CRITICAL: First check if user already exists to prevent data loss
             const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [userData.email]);
@@ -653,13 +664,9 @@ const userDB = {
                     createdAt: user?.createdAt
                 });
                 
-                // CRITICAL: Final verification - check if user count increased
-                const beforeCount = await pool.query('SELECT COUNT(*) as count FROM users');
-                const afterCount = await pool.query('SELECT COUNT(*) as count FROM users');
-                console.log('📝 PostgreSQL: User count verification - before/after:', {
-                    before: parseInt(beforeCount.rows[0].count),
-                    after: parseInt(afterCount.rows[0].count)
-                });
+                // CRITICAL: Final verification - check total user count  
+                const totalCount = await pool.query('SELECT COUNT(*) as count FROM users');
+                console.log('📝 PostgreSQL: Total user count after insert:', parseInt(totalCount.rows[0].count));
             }
 
             console.log('✅ User created in PostgreSQL:', userData.email);
