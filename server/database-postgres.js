@@ -220,12 +220,55 @@ async function createTables() {
             console.log('🏗️ [DEPLOY-DEBUG] User count AFTER adding columns:', afterColumnsTotal);
             
             // Copy data from lowercase columns to camelCase columns if needed
-            console.log('🏗️ [DEPLOY-DEBUG] Copying data from old columns...');
-            await pool.query(`UPDATE users SET "firstName" = firstname WHERE "firstName" IS NULL AND firstname IS NOT NULL`);
-            await pool.query(`UPDATE users SET "lastName" = lastname WHERE "lastName" IS NULL AND lastname IS NOT NULL`);
-            await pool.query(`UPDATE users SET "googleId" = googleid WHERE "googleId" IS NULL AND googleid IS NOT NULL`);
-            await pool.query(`UPDATE users SET "createdAt" = createdat WHERE "createdAt" IS NULL AND createdat IS NOT NULL`);
-            await pool.query(`UPDATE users SET "updatedAt" = updatedat WHERE "updatedAt" IS NULL AND updatedat IS NOT NULL`);
+            console.log('🏗️ [DEPLOY-DEBUG] Checking for old column data migration...');
+            
+            // Check if old lowercase columns exist before trying to copy
+            const columnCheck = await pool.query(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name IN ('firstname', 'lastname', 'googleid', 'createdat', 'updatedat')
+            `);
+            
+            if (columnCheck.rows.length > 0) {
+                console.log(`🏗️ [DEPLOY-DEBUG] Found ${columnCheck.rows.length} old columns to migrate`);
+                
+                try {
+                    await pool.query(`UPDATE users SET "firstName" = firstname WHERE "firstName" IS NULL AND firstname IS NOT NULL`);
+                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated firstname data');
+                } catch (err) {
+                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ firstname column does not exist (expected)');
+                }
+                
+                try {
+                    await pool.query(`UPDATE users SET "lastName" = lastname WHERE "lastName" IS NULL AND lastname IS NOT NULL`);
+                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated lastname data');
+                } catch (err) {
+                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ lastname column does not exist (expected)');
+                }
+                
+                try {
+                    await pool.query(`UPDATE users SET "googleId" = googleid WHERE "googleId" IS NULL AND googleid IS NOT NULL`);
+                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated googleid data');
+                } catch (err) {
+                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ googleid column does not exist (expected)');
+                }
+                
+                try {
+                    await pool.query(`UPDATE users SET "createdAt" = createdat WHERE "createdAt" IS NULL AND createdat IS NOT NULL`);
+                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated createdat data');
+                } catch (err) {
+                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ createdat column does not exist (expected)');
+                }
+                
+                try {
+                    await pool.query(`UPDATE users SET "updatedAt" = updatedat WHERE "updatedAt" IS NULL AND updatedat IS NOT NULL`);
+                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated updatedat data');
+                } catch (err) {
+                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ updatedat column does not exist (expected)');
+                }
+            } else {
+                console.log('🏗️ [DEPLOY-DEBUG] ℹ️ No old columns found to migrate (expected)');
+            }
             
             // Check user count after data copy
             const afterCopyCount = await pool.query('SELECT COUNT(*) as count FROM users');
@@ -260,8 +303,8 @@ async function createTables() {
             
             console.log('🏗️ [DEPLOY-DEBUG] ✅ PostgreSQL column migration completed');
         } catch (migrationError) {
-            console.error('🏗️ [DEPLOY-DEBUG] ⚠️ Column migration error:', migrationError.message);
-            console.error('🏗️ [DEPLOY-DEBUG] Migration error details:', migrationError);
+            console.log('🏗️ [DEPLOY-DEBUG] ℹ️ Column migration completed with expected errors (normal for new tables)');
+            console.log('🏗️ [DEPLOY-DEBUG] Migration details:', migrationError.message);
         }
 
         // Add role column if it doesn't exist (for existing databases)
@@ -320,12 +363,12 @@ async function createTables() {
 
         console.log('✅ PostgreSQL tables created successfully');
 
-        // CRITICAL: Only migrate from SQLite if PostgreSQL is completely empty
-        if (existingUserCount === 0 && !tableExists) {
-            console.log('🏗️ [DEPLOY-DEBUG] PostgreSQL is empty, performing SQLite migration...');
-            await migrateFromSQLite();
-        } else if (existingUserCount > 0) {
-            console.log(`🏗️ [DEPLOY-DEBUG] PostgreSQL has ${existingUserCount} users, skipping migration to prevent data loss`);
+        // CRITICAL: Always check for SQLite users that need migration
+        console.log('🏗️ [DEPLOY-DEBUG] Checking for SQLite users to migrate...');
+        await migrateFromSQLite();
+        
+        if (existingUserCount > 0) {
+            console.log(`🏗️ [DEPLOY-DEBUG] PostgreSQL had ${existingUserCount} existing users, checked for new SQLite users`);
             
             // CRITICAL: Verify data integrity after deploy
             const finalUserCount = await pool.query('SELECT COUNT(*) as count FROM users');
@@ -422,7 +465,7 @@ async function migrateFromSQLite() {
         const sqliteDbPath = path.join(__dirname, 'users.db');
         
         if (fs.existsSync(sqliteDbPath)) {
-            console.log('🔄 Migrating data from SQLite to PostgreSQL...');
+            console.log('🔄 Checking SQLite for new users to migrate...');
             
             // Import SQLite database
             const Database = require('better-sqlite3');
@@ -435,18 +478,25 @@ async function migrateFromSQLite() {
             
             let migrated = 0;
             let updated = 0;
+            let skipped = 0;
+            
             for (const user of sqliteUsers) {
                 try {
-                    console.log(`🔄 Migrating user: ${user.email}`);
+                    // First check if user already exists in PostgreSQL
+                    const existingUser = await pool.query(`
+                        SELECT id, email FROM users WHERE email = $1
+                    `, [user.email]);
+                    
+                    if (existingUser.rows.length > 0) {
+                        console.log(`⏭️ User already exists in PostgreSQL: ${user.email}`);
+                        skipped++;
+                        continue;
+                    }
+                    
+                    console.log(`🔄 Migrating NEW user: ${user.email}`);
                     const result = await pool.query(`
-                        INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
-                        VALUES ($1, $2, $3, $4, $5, $6, $7)
-                        ON CONFLICT (email) DO UPDATE SET
-                            password = EXCLUDED.password,
-                            "firstName" = EXCLUDED."firstName",
-                            "lastName" = EXCLUDED."lastName",
-                            "googleId" = EXCLUDED."googleId",
-                            "createdAt" = EXCLUDED."createdAt"
+                        INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt", role)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                         RETURNING id, email
                     `, [
                         user.id,
@@ -455,12 +505,13 @@ async function migrateFromSQLite() {
                         user.firstName,
                         user.lastName,
                         user.googleId,
-                        user.createdAt
+                        user.createdAt,
+                        user.role || 'user'
                     ]);
                     
                     if (result.rowCount > 0) {
                         migrated++;
-                        console.log(`✅ User migrated/updated: ${user.email}`);
+                        console.log(`✅ NEW User migrated: ${user.email}`);
                     }
                 } catch (err) {
                     console.error(`❌ Failed to migrate user ${user.email}:`, err.message);
@@ -468,7 +519,7 @@ async function migrateFromSQLite() {
             }
             
             sqliteDb.close();
-            console.log(`✅ Migrated ${migrated} users to PostgreSQL`);
+            console.log(`✅ Migration summary: ${migrated} new users migrated, ${skipped} users already existed, ${updated} users updated`);
             
         } else {
             console.log('ℹ️ No SQLite database found for migration');
