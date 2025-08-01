@@ -142,11 +142,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
               ) : user ? (
                 <>
                   <div className="dashboard-user-section">
-                    <span className="dashboard-user-text">
-                      <span className="hidden sm:inline">Hoşgeldin, </span>
-                      <span className="font-bold">{user.firstName}</span>
-                      <span className="hidden sm:inline"> {user.lastName}!</span>
-                    </span>
+                    <div className="dashboard-user-info">
+                      <span className="dashboard-user-name">
+                        <span className="hidden sm:inline">Hoşgeldin, </span>
+                        <span className="font-bold">{user.firstName}</span>
+                        <span className="hidden sm:inline"> {user.lastName}!</span>
+                      </span>
+                      <span className="dashboard-user-email">
+                        {user.email}
+                      </span>
+                    </div>
                   </div>
                   <button
                     onClick={handleLogout}
