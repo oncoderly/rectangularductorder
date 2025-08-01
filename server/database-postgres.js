@@ -72,14 +72,19 @@ function initPostgreSQL() {
 
 async function createTables() {
     try {
-        console.log('🏗️ Creating PostgreSQL tables...');
+        console.log('🏗️ [DEPLOY-DEBUG] Creating PostgreSQL tables...');
+        console.log('🏗️ [DEPLOY-DEBUG] Timestamp:', new Date().toISOString());
+        console.log('🏗️ [DEPLOY-DEBUG] NODE_ENV:', process.env.NODE_ENV);
+        console.log('🏗️ [DEPLOY-DEBUG] Database URL exists:', !!DATABASE_URL);
         
         // First, check if users table exists and has data
         let existingUserCount = 0;
         let tableExists = false;
+        let existingUsers = [];
         
         try {
             // Check if table exists
+            console.log('🏗️ [DEPLOY-DEBUG] Checking if users table exists...');
             const tableCheck = await pool.query(`
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
@@ -88,62 +93,147 @@ async function createTables() {
                 );
             `);
             tableExists = tableCheck.rows[0].exists;
+            console.log('🏗️ [DEPLOY-DEBUG] Users table exists:', tableExists);
             
             if (tableExists) {
+                console.log('🏗️ [DEPLOY-DEBUG] Getting user count...');
                 const countResult = await pool.query('SELECT COUNT(*) as count FROM users');
                 existingUserCount = parseInt(countResult.rows[0].count);
-                console.log(`📊 Found ${existingUserCount} existing users in PostgreSQL`);
+                console.log(`🏗️ [DEPLOY-DEBUG] Found ${existingUserCount} existing users in PostgreSQL`);
                 
-                // CRITICAL: Log existing users to verify data persistence
+                // CRITICAL: Log ALL existing users to verify data persistence
                 if (existingUserCount > 0) {
-                    const existingUsers = await pool.query('SELECT id, email, "firstName", "lastName", "createdAt" FROM users LIMIT 5');
-                    console.log('📊 Sample existing users:', existingUsers.rows.map(u => ({
-                        id: u.id,
-                        email: u.email,
-                        name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
-                        createdAt: u.createdAt
-                    })));
+                    console.log('🏗️ [DEPLOY-DEBUG] Getting all existing users...');
+                    const existingUsersResult = await pool.query('SELECT id, email, "firstName", "lastName", "googleId", "createdAt" FROM users ORDER BY "createdAt" DESC');
+                    existingUsers = existingUsersResult.rows;
+                    console.log('🏗️ [DEPLOY-DEBUG] ALL existing users before table operations:');
+                    existingUsers.forEach((u, index) => {
+                        console.log(`🏗️ [DEPLOY-DEBUG] User ${index + 1}:`, {
+                            id: u.id,
+                            email: u.email,
+                            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                            isGoogleUser: !!u.googleId,
+                            createdAt: u.createdAt
+                        });
+                    });
+                    
+                    // Store user data in memory as backup
+                    console.log('🏗️ [DEPLOY-DEBUG] Creating user data backup in memory...');
+                    global.userBackup = existingUsers;
+                    console.log('🏗️ [DEPLOY-DEBUG] Backup created with', existingUsers.length, 'users');
                 }
             } else {
-                console.log('📊 Users table does not exist yet, will create');
+                console.log('🏗️ [DEPLOY-DEBUG] Users table does not exist yet, will create');
             }
         } catch (err) {
-            console.log('📊 Users table check failed, will create:', err.message);
+            console.error('🏗️ [DEPLOY-DEBUG] Users table check failed:', err.message);
+            console.error('🏗️ [DEPLOY-DEBUG] Error details:', err);
         }
         
-        // Create users table with consistent naming
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id VARCHAR(255) PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255),
-                "firstName" VARCHAR(255),
-                "lastName" VARCHAR(255),
-                "googleId" VARCHAR(255),
-                role VARCHAR(50) DEFAULT 'user',
-                "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+        // Create users table with consistent naming - SAFELY
+        console.log('🏗️ [DEPLOY-DEBUG] About to run CREATE TABLE IF NOT EXISTS...');
+        console.log('🏗️ [DEPLOY-DEBUG] This should NOT delete existing data!');
         
-        console.log('🛡️ Users table created/verified safely');
+        // CRITICAL: Use a transaction to ensure atomicity
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // Check one more time before creating
+            const preCreateCount = await client.query('SELECT COUNT(*) as count FROM users');
+            const preCount = parseInt(preCreateCount.rows[0].count);
+            console.log('🏗️ [DEPLOY-DEBUG] User count BEFORE CREATE TABLE:', preCount);
+            
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS users (
+                    id VARCHAR(255) PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password VARCHAR(255),
+                    "firstName" VARCHAR(255),
+                    "lastName" VARCHAR(255),
+                    "googleId" VARCHAR(255),
+                    role VARCHAR(50) DEFAULT 'user',
+                    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Check immediately after creating
+            const postCreateCount = await client.query('SELECT COUNT(*) as count FROM users');
+            const postCount = parseInt(postCreateCount.rows[0].count);
+            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER CREATE TABLE:', postCount);
+            
+            if (postCount !== preCount) {
+                console.error('🏗️ [DEPLOY-DEBUG] ❌ CRITICAL: CREATE TABLE IF NOT EXISTS deleted data!');
+                console.error('🏗️ [DEPLOY-DEBUG] Rolling back transaction...');
+                await client.query('ROLLBACK');
+                
+                // Try to restore from backup
+                if (global.userBackup && global.userBackup.length > 0) {
+                    console.log('🏗️ [DEPLOY-DEBUG] Emergency restore from backup...');
+                    await restoreUsersFromBackup(global.userBackup);
+                }
+                throw new Error(`CREATE TABLE IF NOT EXISTS deleted ${preCount - postCount} users!`);
+            } else {
+                console.log('🏗️ [DEPLOY-DEBUG] ✅ CREATE TABLE IF NOT EXISTS safe - no data lost');
+                await client.query('COMMIT');
+            }
+            
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+        
+        console.log('🏗️ [DEPLOY-DEBUG] Users table created/verified safely');
+        
+        // CRITICAL: Check if users are still there after table creation
+        const afterTableCreateCount = await pool.query('SELECT COUNT(*) as count FROM users');
+        const afterCount = parseInt(afterTableCreateCount.rows[0].count);
+        console.log('🏗️ [DEPLOY-DEBUG] User count AFTER table creation:', afterCount);
+        
+        if (afterCount !== existingUserCount) {
+            console.error('🏗️ [DEPLOY-DEBUG] ❌ CRITICAL: User count changed from', existingUserCount, 'to', afterCount, 'after table creation!');
+            
+            // Try to restore from backup if we have it
+            if (global.userBackup && global.userBackup.length > 0) {
+                console.log('🏗️ [DEPLOY-DEBUG] Attempting to restore users from backup...');
+                await restoreUsersFromBackup(global.userBackup);
+            }
+        } else {
+            console.log('🏗️ [DEPLOY-DEBUG] ✅ User count stable after table creation');
+        }
         
         // Migration: Add new columns if they don't exist and copy data from old columns
         try {
+            console.log('🏗️ [DEPLOY-DEBUG] Starting column migration...');
             await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(255)`);
             await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(255)`);
             await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "googleId" VARCHAR(255)`);
             await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP`);
             await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP`);
             
+            // Check user count after adding columns
+            const afterColumnsCount = await pool.query('SELECT COUNT(*) as count FROM users');
+            const afterColumnsTotal = parseInt(afterColumnsCount.rows[0].count);
+            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER adding columns:', afterColumnsTotal);
+            
             // Copy data from lowercase columns to camelCase columns if needed
+            console.log('🏗️ [DEPLOY-DEBUG] Copying data from old columns...');
             await pool.query(`UPDATE users SET "firstName" = firstname WHERE "firstName" IS NULL AND firstname IS NOT NULL`);
             await pool.query(`UPDATE users SET "lastName" = lastname WHERE "lastName" IS NULL AND lastname IS NOT NULL`);
             await pool.query(`UPDATE users SET "googleId" = googleid WHERE "googleId" IS NULL AND googleid IS NOT NULL`);
             await pool.query(`UPDATE users SET "createdAt" = createdat WHERE "createdAt" IS NULL AND createdat IS NOT NULL`);
             await pool.query(`UPDATE users SET "updatedAt" = updatedat WHERE "updatedAt" IS NULL AND updatedat IS NOT NULL`);
             
+            // Check user count after data copy
+            const afterCopyCount = await pool.query('SELECT COUNT(*) as count FROM users');
+            const afterCopyTotal = parseInt(afterCopyCount.rows[0].count);
+            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER data copy:', afterCopyTotal);
+            
             // Drop old lowercase columns if they exist and data has been migrated
+            console.log('🏗️ [DEPLOY-DEBUG] Dropping old columns...');
             const columnsToCheck = ['firstname', 'lastname', 'googleid', 'createdat', 'updatedat'];
             for (const column of columnsToCheck) {
                 try {
@@ -156,16 +246,22 @@ async function createTables() {
                     
                     if (checkColumn.rows.length > 0) {
                         await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS ${column}`);
-                        console.log(`🗑️ Dropped old column: ${column}`);
+                        console.log(`🏗️ [DEPLOY-DEBUG] Dropped old column: ${column}`);
                     }
                 } catch (dropError) {
-                    console.log(`⚠️ Could not drop column ${column}:`, dropError.message);
+                    console.error(`🏗️ [DEPLOY-DEBUG] Could not drop column ${column}:`, dropError.message);
                 }
             }
             
-            console.log('✅ PostgreSQL column migration completed');
+            // Final check after dropping columns
+            const finalCount = await pool.query('SELECT COUNT(*) as count FROM users');
+            const finalTotal = parseInt(finalCount.rows[0].count);
+            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER dropping old columns:', finalTotal);
+            
+            console.log('🏗️ [DEPLOY-DEBUG] ✅ PostgreSQL column migration completed');
         } catch (migrationError) {
-            console.log('⚠️ Column migration skipped (might already exist):', migrationError.message);
+            console.error('🏗️ [DEPLOY-DEBUG] ⚠️ Column migration error:', migrationError.message);
+            console.error('🏗️ [DEPLOY-DEBUG] Migration error details:', migrationError);
         }
 
         // Add role column if it doesn't exist (for existing databases)
@@ -226,28 +322,98 @@ async function createTables() {
 
         // CRITICAL: Only migrate from SQLite if PostgreSQL is completely empty
         if (existingUserCount === 0 && !tableExists) {
-            console.log('🔄 PostgreSQL is empty, performing SQLite migration...');
+            console.log('🏗️ [DEPLOY-DEBUG] PostgreSQL is empty, performing SQLite migration...');
             await migrateFromSQLite();
         } else if (existingUserCount > 0) {
-            console.log(`🔒 PostgreSQL has ${existingUserCount} users, skipping migration to prevent data loss`);
+            console.log(`🏗️ [DEPLOY-DEBUG] PostgreSQL has ${existingUserCount} users, skipping migration to prevent data loss`);
             
             // CRITICAL: Verify data integrity after deploy
             const finalUserCount = await pool.query('SELECT COUNT(*) as count FROM users');
             const finalCount = parseInt(finalUserCount.rows[0].count);
-            console.log(`🔍 POST-DEPLOY VERIFICATION: Final user count: ${finalCount}`);
+            console.log(`🏗️ [DEPLOY-DEBUG] POST-DEPLOY VERIFICATION: Final user count: ${finalCount}`);
             
             if (finalCount !== existingUserCount) {
-                console.error(`❌ CRITICAL: User count changed from ${existingUserCount} to ${finalCount} during deploy!`);
+                console.error(`🏗️ [DEPLOY-DEBUG] ❌ CRITICAL: User count changed from ${existingUserCount} to ${finalCount} during deploy!`);
+                
+                // Try to restore from backup
+                if (global.userBackup && global.userBackup.length > 0) {
+                    console.log('🏗️ [DEPLOY-DEBUG] Attempting emergency restore from backup...');
+                    await restoreUsersFromBackup(global.userBackup);
+                    
+                    // Verify restore
+                    const restoredCount = await pool.query('SELECT COUNT(*) as count FROM users');
+                    const restoredTotal = parseInt(restoredCount.rows[0].count);
+                    console.log(`🏗️ [DEPLOY-DEBUG] User count after restore: ${restoredTotal}`);
+                } else {
+                    console.error('🏗️ [DEPLOY-DEBUG] ❌ No backup available for restore!');
+                }
             } else {
-                console.log(`✅ POST-DEPLOY VERIFICATION: User count stable at ${finalCount}`);
+                console.log(`🏗️ [DEPLOY-DEBUG] ✅ POST-DEPLOY VERIFICATION: User count stable at ${finalCount}`);
+                
+                // Log all users to verify they are still there
+                const allUsersAfter = await pool.query('SELECT id, email, "firstName", "lastName", "googleId" FROM users ORDER BY "createdAt" DESC');
+                console.log('🏗️ [DEPLOY-DEBUG] ALL users after deployment:');
+                allUsersAfter.rows.forEach((u, index) => {
+                    console.log(`🏗️ [DEPLOY-DEBUG] User ${index + 1}:`, {
+                        id: u.id,
+                        email: u.email,
+                        name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                        isGoogleUser: !!u.googleId
+                    });
+                });
             }
         } else {
-            console.log('🔒 PostgreSQL table exists but empty, skipping migration to prevent conflicts');
+            console.log('🏗️ [DEPLOY-DEBUG] PostgreSQL table exists but empty, skipping migration to prevent conflicts');
         }
         
     } catch (error) {
         console.error('❌ Error creating tables:', error);
         throw error;
+    }
+}
+
+// Restore users from backup (in case of data loss during deploy)
+async function restoreUsersFromBackup(backupUsers) {
+    try {
+        console.log('🏗️ [DEPLOY-DEBUG] Starting user restore from backup...');
+        console.log('🏗️ [DEPLOY-DEBUG] Backup contains', backupUsers.length, 'users');
+        
+        let restored = 0;
+        for (const user of backupUsers) {
+            try {
+                console.log(`🏗️ [DEPLOY-DEBUG] Restoring user: ${user.email}`);
+                const result = await pool.query(`
+                    INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt")
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    ON CONFLICT (email) DO NOTHING
+                    RETURNING id, email
+                `, [
+                    user.id,
+                    user.email,
+                    user.password,
+                    user.firstName,
+                    user.lastName,
+                    user.googleId,
+                    user.createdAt
+                ]);
+                
+                if (result.rowCount > 0) {
+                    restored++;
+                    console.log(`🏗️ [DEPLOY-DEBUG] ✅ User restored: ${user.email}`);
+                } else {
+                    console.log(`🏗️ [DEPLOY-DEBUG] ⚠️ User already exists, skipped: ${user.email}`);
+                }
+            } catch (err) {
+                console.error(`🏗️ [DEPLOY-DEBUG] ❌ Failed to restore user ${user.email}:`, err.message);
+            }
+        }
+        
+        console.log(`🏗️ [DEPLOY-DEBUG] ✅ Restored ${restored} users from backup`);
+        return restored;
+        
+    } catch (error) {
+        console.error('🏗️ [DEPLOY-DEBUG] ❌ Backup restore error:', error);
+        return 0;
     }
 }
 
@@ -318,10 +484,38 @@ const userDB = {
     // Get all users
     getAllUsers: async () => {
         try {
+            console.log('🔍 [USER-DEBUG] Getting all users from PostgreSQL...');
             const result = await pool.query('SELECT * FROM users ORDER BY "createdAt" DESC');
+            console.log('🔍 [USER-DEBUG] Found', result.rows.length, 'users in PostgreSQL');
+            
+            if (result.rows.length === 0) {
+                console.log('🔍 [USER-DEBUG] ⚠️ No users found! Checking if table exists...');
+                const tableCheck = await pool.query(`
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'users'
+                    );
+                `);
+                console.log('🔍 [USER-DEBUG] Users table exists:', tableCheck.rows[0].exists);
+                
+                // Check if backup exists
+                if (global.userBackup && global.userBackup.length > 0) {
+                    console.log('🔍 [USER-DEBUG] Found backup with', global.userBackup.length, 'users');
+                    console.log('🔍 [USER-DEBUG] Backup users:', global.userBackup.map(u => ({ email: u.email, id: u.id })));
+                }
+            } else {
+                console.log('🔍 [USER-DEBUG] Users found:', result.rows.map(u => ({ 
+                    email: u.email, 
+                    id: u.id,
+                    isGoogleUser: !!u.googleId 
+                })));
+            }
+            
             return result.rows;
         } catch (error) {
-            console.error('❌ Error getting all users:', error);
+            console.error('🔍 [USER-DEBUG] ❌ Error getting all users:', error);
+            console.error('🔍 [USER-DEBUG] Error details:', error.message);
             return [];
         }
     },
@@ -543,10 +737,23 @@ const userDB = {
     // Get user count
     getUserCount: async () => {
         try {
+            console.log('🔍 [USER-DEBUG] Getting user count from PostgreSQL...');
             const result = await pool.query('SELECT COUNT(*) as count FROM users');
-            return parseInt(result.rows[0].count);
+            const count = parseInt(result.rows[0].count);
+            console.log('🔍 [USER-DEBUG] User count:', count);
+            
+            if (count === 0) {
+                console.log('🔍 [USER-DEBUG] ⚠️ User count is 0! Checking backup...');
+                if (global.userBackup && global.userBackup.length > 0) {
+                    console.log('🔍 [USER-DEBUG] Backup exists with', global.userBackup.length, 'users');
+                    console.log('🔍 [USER-DEBUG] Should we restore from backup?');
+                }
+            }
+            
+            return count;
         } catch (error) {
-            console.error('❌ Error getting user count:', error);
+            console.error('🔍 [USER-DEBUG] ❌ Error getting user count:', error);
+            console.error('🔍 [USER-DEBUG] Error details:', error.message);
             return 0;
         }
     }
