@@ -256,6 +256,9 @@ initializeSessionStore().then(() => {
     app.use(passport.initialize());
     app.use(passport.session());
     console.log('✅ Passport middleware initialized');
+    
+    // CRITICAL: All routes are now registered after session middleware is configured
+    console.log('✅ All API routes will be registered after session middleware is configured');
 }).catch(error => {
     console.error('❌ Session store initialization failed:', error);
     // Fallback to memory store
@@ -840,7 +843,13 @@ app.post('/api/login',
     }
 });
 
+console.log('🔧 ROUTE REGISTRATION: Registering /api/me endpoint');
+
 app.get('/api/me', async (req, res) => {
+    console.log('🔍 /api/me: ENDPOINT HIT - Request received');
+    console.log('🔍 /api/me: Request headers:', req.headers);  
+    console.log('🔍 /api/me: Request URL:', req.url);
+    
     try {
         // Wait for database initialization
         await waitForInit();
@@ -895,6 +904,12 @@ app.get('/api/me', async (req, res) => {
     } catch (error) {
         console.error('❌ /api/me error:', error);
         console.error('❌ /api/me error stack:', error.stack);
+        console.error('❌ /api/me error details:', {
+            message: error.message,
+            name: error.name,
+            sessionExists: !!req.session,
+            sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
+        });
         res.status(500).json({ error: 'Sunucu hatası' });
     }
 });
@@ -1138,6 +1153,8 @@ app.get('/api/auth/google', (req, res, next) => {
         res.status(500).json({ error: 'Authentication error', details: error.message });
     }
 });
+
+console.log('🔧 ROUTE REGISTRATION: Registering /api/auth/google/callback endpoint');
 
 app.get('/api/auth/google/callback', (req, res, next) => {
     console.log('🔍 OAuth Callback HIT - Query params:', req.query);
@@ -1877,14 +1894,19 @@ app.listen(PORT, () => {
     
     // DEBUG: List all registered routes
     console.log('🔍 REGISTERED ROUTES:');
+    let routeCount = 0;
     app._router.stack.forEach((middleware, index) => {
         if (middleware.route) {
             const methods = Object.keys(middleware.route.methods).join(', ').toUpperCase();
             console.log(`   ${methods} ${middleware.route.path}`);
+            routeCount++;
         } else if (middleware.name === 'router') {
             console.log(`   Router middleware found at index ${index}`);
+        } else {
+            console.log(`   Middleware: ${middleware.name || 'anonymous'} at index ${index}`);
         }
     });
+    console.log(`🔍 Total routes registered: ${routeCount}`);
     
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
     
