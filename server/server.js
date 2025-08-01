@@ -227,67 +227,47 @@ async function initializeSessionStore() {
     }
 }
 
-// Initialize session store
+// Configure session middleware immediately (synchronously)
+console.log('🔧 SESSION SETUP: Configuring session middleware immediately');
+console.log('🔧 SESSION SETUP: isProductionEnv:', isProductionEnv);
+console.log('🔧 SESSION SETUP: Cookie secure:', isProductionEnv);
+
+// Use memory store for immediate startup, PostgreSQL store will be configured later
+app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    name: 'sessionId',
+    cookie: { 
+        secure: isProductionEnv,
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+    },
+    rolling: true
+}));
+console.log('✅ SESSION SETUP: Express session middleware configured immediately');
+
+// Passport initialization
+console.log('🔧 Initializing Passport middleware...');
+app.use(passport.initialize());
+app.use(passport.session());
+console.log('✅ Passport middleware initialized');
+
+// CRITICAL: Register all routes AFTER session middleware is configured
+console.log('🔧 Registering all API routes after session middleware...');
+registerAllRoutes();
+
+// Initialize session store asynchronously in background (for production optimization)
 initializeSessionStore().then(() => {
-    console.log('🔧 SESSION SETUP: Session store initialized');
-    console.log('🔧 SESSION SETUP: Store type:', sessionStore ? sessionStore.constructor.name : 'Memory Store');
-    console.log('🔧 SESSION SETUP: isProductionEnv:', isProductionEnv);
-    console.log('🔧 SESSION SETUP: Cookie secure:', isProductionEnv);
-    console.log('🔧 SESSION SETUP: Cookie sameSite: lax (same origin)');
-    
-    app.use(session({
-        store: sessionStore,
-        secret: SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        name: 'sessionId', // Default session name değiştir
-        cookie: { 
-            secure: isProductionEnv, // Production'da HTTPS zorunlu
-            httpOnly: true,
-            sameSite: 'lax', // Same origin için 'lax' yeterli (tek serviste çalışıyor)
-            maxAge: 24 * 60 * 60 * 1000 // 24 saat
-        },
-        rolling: true // Her istekte session süresi yenilensin
-    }));
-    console.log('✅ SESSION SETUP: Express session middleware configured');
-
-    // Passport initialization
-    console.log('🔧 Initializing Passport middleware...');
-    app.use(passport.initialize());
-    app.use(passport.session());
-    console.log('✅ Passport middleware initialized');
-    
-    // CRITICAL: All routes are now registered after session middleware is configured
-    console.log('✅ All API routes will be registered after session middleware is configured');
-    
-    // START SERVER AFTER SESSION MIDDLEWARE IS CONFIGURED
-    startServer();
+    console.log('🔧 SESSION STORE: PostgreSQL session store initialized in background');
+    console.log('🔧 SESSION STORE: Store type:', sessionStore ? sessionStore.constructor.name : 'Memory Store');
 }).catch(error => {
-    console.error('❌ Session store initialization failed:', error);
-    // Fallback to memory store
-    app.use(session({
-        secret: SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        name: 'sessionId',
-        cookie: { 
-            secure: isProductionEnv,
-            httpOnly: true,
-            sameSite: 'lax', // Same origin için 'lax' yeterli (tek serviste çalışıyor)
-            maxAge: 24 * 60 * 60 * 1000
-        },
-        rolling: true
-    }));
-
-    // Passport initialization
-    console.log('🔧 Initializing Passport middleware...');
-    app.use(passport.initialize());
-    app.use(passport.session());
-    console.log('✅ Passport middleware initialized');
-    
-    // START SERVER AFTER FALLBACK SESSION MIDDLEWARE IS CONFIGURED
-    startServer();
+    console.error('❌ PostgreSQL session store initialization failed (continuing with memory store):', error.message);
 });
+
+// START SERVER IMMEDIATELY
+startServer();
 
 // Debug: Environment variables
 console.log('🔧 Google OAuth Config:');
@@ -431,10 +411,9 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-app.use('/images', express.static(path.join(__dirname, '../public/images')));
-
-// Serve static files from client/dist
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// MOVED TO registerAllRoutes() function
+// app.use('/images', express.static(path.join(__dirname, '../public/images')));
+// app.use(express.static(path.join(__dirname, '../client/dist')));
 
 console.log('🔧 Registering root route...');
 // API status endpoint
@@ -849,9 +828,10 @@ app.post('/api/login',
     }
 });
 
-console.log('🔧 ROUTE REGISTRATION: Registering /api/me endpoint');
+// MOVED TO registerAllRoutes() function
+// console.log('🔧 ROUTE REGISTRATION: Registering /api/me endpoint');
 
-app.get('/api/me', async (req, res) => {
+// app.get('/api/me', async (req, res) => {
     console.log('🔍 /api/me: ENDPOINT HIT - Request received');
     console.log('🔍 /api/me: Request headers:', req.headers);  
     console.log('🔍 /api/me: Request URL:', req.url);
@@ -918,7 +898,7 @@ app.get('/api/me', async (req, res) => {
         });
         res.status(500).json({ error: 'Sunucu hatası' });
     }
-});
+// }); // END OF COMMENTED /api/me route
 
 app.post('/api/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -1127,12 +1107,13 @@ app.get('/api/auth/google/status', (req, res) => {
 });
 
 // Google Auth Endpoints
-console.log('🔧 Registering Google auth route...');
-console.log('🔧 CRITICAL: About to register /api/auth/google route');
-console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'MISSING');
-console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'MISSING');
+// MOVED TO registerAllRoutes() function  
+// console.log('🔧 Registering Google auth route...');
+// console.log('🔧 CRITICAL: About to register /api/auth/google route');
+// console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'MISSING');
+// console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'MISSING');
 
-app.get('/api/auth/google', (req, res, next) => {
+// app.get('/api/auth/google', (req, res, next) => {
     console.log('🔍 Google auth endpoint hit');
     console.log('🔍 DEBUG - Request URL:', req.url);
     console.log('🔍 DEBUG - Request method:', req.method);
@@ -1158,11 +1139,12 @@ app.get('/api/auth/google', (req, res, next) => {
         console.error('❌ ERROR in passport.authenticate:', error);
         res.status(500).json({ error: 'Authentication error', details: error.message });
     }
-});
+// }); // END OF COMMENTED Google auth route
 
-console.log('🔧 ROUTE REGISTRATION: Registering /api/auth/google/callback endpoint');
+// MOVED TO registerAllRoutes() function  
+// console.log('🔧 ROUTE REGISTRATION: Registering /api/auth/google/callback endpoint');
 
-app.get('/api/auth/google/callback', (req, res, next) => {
+// app.get('/api/auth/google/callback', (req, res, next) => {
     console.log('🔍 OAuth Callback HIT - Query params:', req.query);
     console.log('🔍 OAuth Callback - Full URL:', req.url);
     console.log('🔍 OAuth Callback - Headers:', req.headers);
@@ -1892,12 +1874,177 @@ app.use((req, res, next) => {
 // Error handler - en son middleware olmalı
 app.use(errorHandler);
 
-// Server startup function - called after session middleware is configured
+// Function to register all routes - called after session middleware is ready
+function registerAllRoutes() {
+    console.log('🔧 CRITICAL: Starting route registration AFTER session middleware');
+    
+    // Static files
+    app.use('/images', express.static(path.join(__dirname, '../public/images')));
+    app.use(express.static(path.join(__dirname, '../client/dist')));
+    
+    console.log('🔧 Registering root route...');
+    
+    // CRITICAL: /api/me endpoint - needs session
+    console.log('🔧 ROUTE REGISTRATION: Registering /api/me endpoint');
+    app.get('/api/me', async (req, res) => {
+        console.log('🔍 /api/me: ENDPOINT HIT - Request received');
+        console.log('🔍 /api/me: Request headers:', req.headers);  
+        console.log('🔍 /api/me: Request URL:', req.url);
+        
+        try {
+            // Wait for database initialization
+            await waitForInit();
+            
+            // Debug session and database status
+            console.log('🔍 /api/me: Session debug info:', {
+                sessionExists: !!req.session,
+                sessionID: req.sessionID,
+                sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
+            });
+            
+            console.log('🔍 /api/me: Database debug info:', {
+                userDB_exists: !!userDB,
+                userDB_type: userDB ? userDB.constructor.name : 'null',
+                isPostgreSQL: isPostgreSQL()
+            });
+            
+            if (!req.session) {
+                console.error('❌ /api/me: req.session is undefined - session middleware not working');
+                return res.status(500).json({ error: 'Session not available' });
+            }
+            
+            if (!req.session.userId) {
+                return res.status(401).json({ error: 'Oturum açılmamış' });
+            }
+            
+            if (!userDB) {
+                console.error('❌ /api/me: userDB is null/undefined');
+                return res.status(500).json({ error: 'Database not available' });
+            }
+            
+            if (!userDB.getUserById) {
+                console.error('❌ /api/me: userDB.getUserById is not a function');
+                return res.status(500).json({ error: 'Database method not available' });
+            }
+            
+            const user = await userDB.getUserById(req.session.userId);
+            
+            if (!user) {
+                return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+            }
+            
+            res.json({ 
+                user: { 
+                    id: user.id, 
+                    email: user.email, 
+                    firstName: user.firstName, 
+                    lastName: user.lastName,
+                    role: user.role || 'user'
+                } 
+            });
+        } catch (error) {
+            console.error('❌ /api/me error:', error);
+            console.error('❌ /api/me error stack:', error.stack);
+            console.error('❌ /api/me error details:', {
+                message: error.message,
+                name: error.name,
+                sessionExists: !!req.session,
+                sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
+            });
+            res.status(500).json({ error: 'Sunucu hatası' });
+        }
+    });
+    
+    // Google Auth routes that need session
+    console.log('🔧 Registering Google auth route...');
+    app.get('/api/auth/google', (req, res, next) => {
+        console.log('🔍 Google auth endpoint hit');
+        console.log('🔍 DEBUG - Request URL:', req.url);
+        console.log('🔍 DEBUG - Request method:', req.method);
+        console.log('🔍 DEBUG - Request headers:', req.headers);
+        console.log('🔍 DEBUG - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'NOT FOUND');
+        console.log('🔍 DEBUG - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'NOT FOUND');
+        console.log('🔍 DEBUG - SERVER_URL:', SERVER_URL);
+        console.log('🔍 DEBUG - CLIENT_URL:', CLIENT_URL);
+        console.log('🔍 DEBUG - Callback URL will be:', `${SERVER_URL}/api/auth/google/callback`);
+        
+        if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+            console.log('❌ DEBUG - Variables are falsy, returning error');
+            return res.status(500).json({ error: 'Google OAuth not configured' });
+        }
+        console.log('✅ DEBUG - Variables are truthy, proceeding with auth');
+        console.log('✅ DEBUG - Redirecting to Google OAuth...');
+        
+        try {
+            passport.authenticate('google', { 
+                scope: ['profile', 'email'] 
+            })(req, res, next);
+        } catch (error) {
+            console.error('❌ ERROR in passport.authenticate:', error);
+            res.status(500).json({ error: 'Authentication error', details: error.message });
+        }
+    });
+
+    console.log('🔧 ROUTE REGISTRATION: Registering /api/auth/google/callback endpoint');
+    app.get('/api/auth/google/callback', (req, res, next) => {
+        console.log('🔍 OAuth Callback HIT - Query params:', req.query);
+        console.log('🔍 OAuth Callback - Full URL:', req.url);
+        console.log('🔍 OAuth Callback - Headers:', req.headers);
+        
+        passport.authenticate('google', { 
+            failureRedirect: `${CLIENT_URL}/?error=google_auth_failed` 
+        })(req, res, (err) => {
+            if (err) {
+                console.error('❌ Passport authentication error:', err);
+                return res.redirect(`${CLIENT_URL}/?error=passport_error`);
+            }
+            
+            if (!req.user) {
+                console.error('❌ OAuth Callback - No user data returned');
+                return res.redirect(`${CLIENT_URL}/?error=no_user_data`);  
+            }
+            
+            console.log('✅ OAuth Callback - User authenticated:', req.user?.email);
+            console.log('✅ OAuth Callback - User role:', req.user?.role);
+            console.log('✅ OAuth Callback - User object:', JSON.stringify(req.user, null, 2));
+            
+            req.session.userId = req.user.id;
+            console.log('🔍 OAuth Callback - Setting session userId:', req.user.id);
+            console.log('🔍 OAuth Callback - Session before save:', {
+                sessionID: req.sessionID,
+                userId: req.session.userId,
+                sessionKeys: Object.keys(req.session)
+            });
+            
+            // Session'ı kaydet (ÇÖZÜM!)
+            req.session.save((err) => {
+                if (err) {
+                    console.error('❌ Session save error:', err);
+                    console.error('❌ Session save error details:', err.message);
+                    return res.redirect(`${CLIENT_URL}/?error=session_save_failed`);
+                }
+                
+                console.log('✅ Session saved successfully for user:', req.user.id);
+                console.log('✅ Session saved - SessionID:', req.sessionID);
+                console.log('✅ OAuth Callback - Redirecting to:', `${CLIENT_URL}/?google_auth=success`);
+                
+                // Track Google OAuth login
+                trackSession(req.user.id, 'user_login', {
+                    method: 'google',
+                    email: req.user.email
+                }).catch(err => console.error('Analytics tracking error:', err));
+                
+                res.redirect(`${CLIENT_URL}/?google_auth=success`);
+            });
+        });
+    });
+    
+    console.log('✅ Critical routes registered successfully AFTER session middleware');
+}
+
+// Server startup function - called after session middleware is configured  
 function startServer() {
     app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`📍 Client URL: ${CLIENT_URL}`);
         console.log(`📍 Server URL: ${SERVER_URL}`);
         
         // DEBUG: List all registered routes (with safety check)
@@ -1974,4 +2121,5 @@ function startServer() {
             console.error('❌ Database initialization timeout or failed:', error);
         });
     });
+}
 }
