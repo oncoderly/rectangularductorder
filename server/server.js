@@ -245,8 +245,10 @@ initializeSessionStore().then(() => {
     }));
 
     // Passport initialization
+    console.log('🔧 Initializing Passport middleware...');
     app.use(passport.initialize());
     app.use(passport.session());
+    console.log('✅ Passport middleware initialized');
 }).catch(error => {
     console.error('❌ Session store initialization failed:', error);
     // Fallback to memory store
@@ -265,8 +267,10 @@ initializeSessionStore().then(() => {
     }));
 
     // Passport initialization
+    console.log('🔧 Initializing Passport middleware...');
     app.use(passport.initialize());
     app.use(passport.session());
+    console.log('✅ Passport middleware initialized');
 });
 
 // Debug: Environment variables
@@ -284,7 +288,13 @@ console.log('Should be CLIENT_URL: https://rectangularductorder.onrender.com');
 console.log('Should be SERVER_URL: https://rectangularductorder.onrender.com');
 
 // Passport Google Strategy
+console.log('🔧 PASSPORT GOOGLE STRATEGY SETUP:');
+console.log('🔧 GOOGLE_CLIENT_ID available:', !!GOOGLE_CLIENT_ID);
+console.log('🔧 GOOGLE_CLIENT_SECRET available:', !!GOOGLE_CLIENT_SECRET);
+console.log('🔧 SERVER_URL for callback:', SERVER_URL);
+
 if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+    console.log('✅ Setting up Google Strategy...');
     passport.use(new GoogleStrategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
@@ -381,9 +391,12 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     }
 }));
 
-    console.log('✅ Google OAuth strategy configured');
+    console.log('✅ Google OAuth strategy configured successfully');
+    console.log('✅ Callback URL set to:', `${SERVER_URL}/api/auth/google/callback`);
 } else {
     console.log('❌ Google OAuth not configured - missing CLIENT_ID or CLIENT_SECRET');
+    console.log('❌ Missing GOOGLE_CLIENT_ID:', !GOOGLE_CLIENT_ID);
+    console.log('❌ Missing GOOGLE_CLIENT_SECRET:', !GOOGLE_CLIENT_SECRET);
 }
 
 // Passport serialization
@@ -1076,8 +1089,15 @@ app.get('/api/auth/google/status', (req, res) => {
 
 // Google Auth Endpoints
 console.log('🔧 Registering Google auth route...');
+console.log('🔧 CRITICAL: About to register /api/auth/google route');
+console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'MISSING');
+console.log('🔧 CRITICAL: Current GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'MISSING');
+
 app.get('/api/auth/google', (req, res, next) => {
     console.log('🔍 Google auth endpoint hit');
+    console.log('🔍 DEBUG - Request URL:', req.url);
+    console.log('🔍 DEBUG - Request method:', req.method);
+    console.log('🔍 DEBUG - Request headers:', req.headers);
     console.log('🔍 DEBUG - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID ? 'EXISTS' : 'NOT FOUND');
     console.log('🔍 DEBUG - GOOGLE_CLIENT_SECRET:', GOOGLE_CLIENT_SECRET ? 'EXISTS' : 'NOT FOUND');
     console.log('🔍 DEBUG - SERVER_URL:', SERVER_URL);
@@ -1091,9 +1111,14 @@ app.get('/api/auth/google', (req, res, next) => {
     console.log('✅ DEBUG - Variables are truthy, proceeding with auth');
     console.log('✅ DEBUG - Redirecting to Google OAuth...');
     
-    passport.authenticate('google', { 
-        scope: ['profile', 'email'] 
-    })(req, res, next);
+    try {
+        passport.authenticate('google', { 
+            scope: ['profile', 'email'] 
+        })(req, res, next);
+    } catch (error) {
+        console.error('❌ ERROR in passport.authenticate:', error);
+        res.status(500).json({ error: 'Authentication error', details: error.message });
+    }
 });
 
 app.get('/api/auth/google/callback', (req, res, next) => {
@@ -1812,6 +1837,22 @@ app.use((req, res, next) => {
 app.use(errorHandler);
 
 app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📍 Client URL: ${CLIENT_URL}`);
+    console.log(`📍 Server URL: ${SERVER_URL}`);
+    
+    // DEBUG: List all registered routes
+    console.log('🔍 REGISTERED ROUTES:');
+    app._router.stack.forEach((middleware, index) => {
+        if (middleware.route) {
+            const methods = Object.keys(middleware.route.methods).join(', ').toUpperCase();
+            console.log(`   ${methods} ${middleware.route.path}`);
+        } else if (middleware.name === 'router') {
+            console.log(`   Router middleware found at index ${index}`);
+        }
+    });
+    
     console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
     
     // OAuth2 setup helper
