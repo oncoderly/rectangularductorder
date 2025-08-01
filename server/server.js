@@ -259,6 +259,9 @@ initializeSessionStore().then(() => {
     
     // CRITICAL: All routes are now registered after session middleware is configured
     console.log('✅ All API routes will be registered after session middleware is configured');
+    
+    // START SERVER AFTER SESSION MIDDLEWARE IS CONFIGURED
+    startServer();
 }).catch(error => {
     console.error('❌ Session store initialization failed:', error);
     // Fallback to memory store
@@ -281,6 +284,9 @@ initializeSessionStore().then(() => {
     app.use(passport.initialize());
     app.use(passport.session());
     console.log('✅ Passport middleware initialized');
+    
+    // START SERVER AFTER FALLBACK SESSION MIDDLEWARE IS CONFIGURED
+    startServer();
 });
 
 // Debug: Environment variables
@@ -1886,75 +1892,81 @@ app.use((req, res, next) => {
 // Error handler - en son middleware olmalı
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`📍 Client URL: ${CLIENT_URL}`);
-    console.log(`📍 Server URL: ${SERVER_URL}`);
-    
-    // DEBUG: List all registered routes
-    console.log('🔍 REGISTERED ROUTES:');
-    let routeCount = 0;
-    app._router.stack.forEach((middleware, index) => {
-        if (middleware.route) {
-            const methods = Object.keys(middleware.route.methods).join(', ').toUpperCase();
-            console.log(`   ${methods} ${middleware.route.path}`);
-            routeCount++;
-        } else if (middleware.name === 'router') {
-            console.log(`   Router middleware found at index ${index}`);
-        } else {
-            console.log(`   Middleware: ${middleware.name || 'anonymous'} at index ${index}`);
-        }
-    });
-    console.log(`🔍 Total routes registered: ${routeCount}`);
-    
-    console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
-    
-    // OAuth2 setup helper
-    if (EMAIL_SERVICE === 'oauth2' && !OAUTH2_REFRESH_TOKEN && OAUTH2_CLIENT_ID) {
-        console.log('\n📧 OAuth2 Kurulumu Gerekli!');
-        console.log('🔗 Bu URL\'ye git:');
-        const oauth2Setup = new google.auth.OAuth2(OAUTH2_CLIENT_ID, OAUTH2_CLIENT_SECRET, `${SERVER_URL}/auth/google/callback`);
-        const authUrl = oauth2Setup.generateAuthUrl({
-            access_type: 'offline',
-            scope: ['https://www.googleapis.com/auth/gmail.send'],
-            prompt: 'consent'
-        });
-        console.log(authUrl);
-        console.log('\n✅ Onayladıktan sonra /auth/google/callback sayfasından kodu alın');
-    }
-    
-    console.log('🔍 Testing Google Auth endpoint internally...');
-    
-    // Test if the route exists
-    setTimeout(() => {
-        console.log('Available routes test will be done via external call');
-    }, 1000);
-    
-    // Wait for database initialization
-    console.log('⏳ Waiting for database initialization...');
-    waitForInit().then(async () => {
-        console.log('🔍 SERVER.JS: About to check isPostgreSQL...');
-        console.log('🔍 SERVER.JS: typeof isPostgreSQL function:', typeof isPostgreSQL);
-        console.log('🔍 SERVER.JS: isPostgreSQL() value:', isPostgreSQL());
-        console.log('🗄️ Database type:', isPostgreSQL() ? 'PostgreSQL' : 'SQLite');
-        console.log('✅ Database ready - Server fully initialized');
-        console.log('🧪 PostgreSQL available flag:', isPostgreSQL());
+// Server startup function - called after session middleware is configured
+function startServer() {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`📍 Client URL: ${CLIENT_URL}`);
+        console.log(`📍 Server URL: ${SERVER_URL}`);
         
-        // Database durumunu kontrol et
-        try {
-            const userCount = await userDB.getUserCount();
-            console.log('👥 Current user count in database:', userCount);
-            
-            // Test user creation functionality
-            const testUser = await userDB.getUserByEmail('test@example.com');
-            if (!testUser) {
-                console.log('🧪 Database CRUD operations are working correctly');
+        // DEBUG: List all registered routes
+        console.log('🔍 REGISTERED ROUTES:');
+        let routeCount = 0;
+        app._router.stack.forEach((middleware, index) => {
+            if (middleware.route) {
+                const methods = Object.keys(middleware.route.methods).join(', ').toUpperCase();
+                console.log(`   ${methods} ${middleware.route.path}`);
+                routeCount++;
+            } else if (middleware.name === 'router') {
+                console.log(`   Router middleware found at index ${index}`);
+            } else {
+                console.log(`   Middleware: ${middleware.name || 'anonymous'} at index ${index}`);
             }
-        } catch (error) {
-            console.error('❌ Database health check failed:', error);
+        });
+        console.log(`🔍 Total routes registered: ${routeCount}`);
+        
+        console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
+        
+        // OAuth2 setup helper
+        if (EMAIL_SERVICE === 'oauth2' && !OAUTH2_REFRESH_TOKEN && OAUTH2_CLIENT_ID) {
+            console.log('\n📧 OAuth2 Kurulumu Gerekli!');
+            console.log('🔗 Bu URL\'ye git:');
+            const oauth2Setup = new google.auth.OAuth2(OAUTH2_CLIENT_ID, OAUTH2_CLIENT_SECRET, `${SERVER_URL}/auth/google/callback`);
+            const authUrl = oauth2Setup.generateAuthUrl({
+                access_type: 'offline',
+                scope: ['https://www.googleapis.com/auth/gmail.send'],
+                prompt: 'consent'
+            });
+            console.log(authUrl);
+            console.log('\n✅ Onayladıktan sonra /auth/google/callback sayfasından kodu alın');
         }
-    }).catch(error => {
-        console.error('❌ Database initialization failed:', error);
+        
+        console.log('🔍 Testing Google Auth endpoint internally...');
+        
+        // Server internal testing
+        setTimeout(() => {
+            console.log('Available routes test will be done via external call');
+        }, 1000);
+        
+        // Wait for database initialization
+        console.log('⏳ Waiting for database initialization...');
+        waitForInit().then(async () => {
+            console.log('🔍 SERVER.JS: About to check isPostgreSQL...');
+            console.log('🔍 SERVER.JS: typeof isPostgreSQL function:', typeof isPostgreSQL);
+            console.log('🔍 SERVER.JS: isPostgreSQL() result:', isPostgreSQL());
+            console.log('🔍 SERVER.JS: Final isPostgreSQL call result:', isPostgreSQL());
+            console.log('🔍 SERVER.JS: db type:', isPostgreSQL() ? 'PostgreSQL' : 'SQLite');
+            
+            // Database durumunu kontrol et
+            try {
+                const userCount = await userDB.getUserCount();
+                console.log('👥 Current user count in database:', userCount);
+                
+                // Test user creation functionality
+                const testUser = await userDB.getUserByEmail('test@example.com');
+                if (testUser) {
+                    console.log('🧪 Test user found:', testUser.email);
+                } else {
+                    console.log('🧪 No test user found');
+                }
+                
+                console.log('✅ Database connection test successful');
+            } catch (error) {
+                console.error('❌ Database connection test failed:', error);
+            }
+        }).catch(error => {
+            console.error('❌ Database initialization timeout or failed:', error);
+        });
     });
-});
+}
