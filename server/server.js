@@ -229,6 +229,12 @@ async function initializeSessionStore() {
 
 // Initialize session store
 initializeSessionStore().then(() => {
+    console.log('🔧 SESSION SETUP: Session store initialized');
+    console.log('🔧 SESSION SETUP: Store type:', sessionStore ? sessionStore.constructor.name : 'Memory Store');
+    console.log('🔧 SESSION SETUP: isProductionEnv:', isProductionEnv);
+    console.log('🔧 SESSION SETUP: Cookie secure:', isProductionEnv);
+    console.log('🔧 SESSION SETUP: Cookie sameSite:', isProductionEnv ? 'none' : 'lax');
+    
     app.use(session({
         store: sessionStore,
         secret: SESSION_SECRET,
@@ -243,6 +249,7 @@ initializeSessionStore().then(() => {
         },
         rolling: true // Her istekte session süresi yenilensin
     }));
+    console.log('✅ SESSION SETUP: Express session middleware configured');
 
     // Passport initialization
     console.log('🔧 Initializing Passport middleware...');
@@ -838,13 +845,23 @@ app.get('/api/me', async (req, res) => {
         // Wait for database initialization
         await waitForInit();
         
-        // Debug database status
+        // Debug session and database status
+        console.log('🔍 /api/me: Session debug info:', {
+            sessionExists: !!req.session,
+            sessionID: req.sessionID,
+            sessionUserId: req.session ? req.session.userId : 'NO_SESSION'
+        });
+        
         console.log('🔍 /api/me: Database debug info:', {
             userDB_exists: !!userDB,
             userDB_type: userDB ? userDB.constructor.name : 'null',
-            isPostgreSQL: isPostgreSQL(),
-            sessionUserId: req.session.userId
+            isPostgreSQL: isPostgreSQL()
         });
+        
+        if (!req.session) {
+            console.error('❌ /api/me: req.session is undefined - session middleware not working');
+            return res.status(500).json({ error: 'Session not available' });
+        }
         
         if (!req.session.userId) {
             return res.status(401).json({ error: 'Oturum açılmamış' });
@@ -1220,7 +1237,15 @@ app.post('/api/track',
     async (req, res) => {
     try {
         const { action, data } = req.body;
-        const userId = req.session.userId || 'guest';
+        
+        // Debug session
+        console.log('🔍 TRACK API: req.session exists:', !!req.session);
+        console.log('🔍 TRACK API: req.session value:', req.session);
+        console.log('🔍 TRACK API: req.sessionID:', req.sessionID);
+        
+        // Safe session access
+        const userId = (req.session && req.session.userId) ? req.session.userId : 'guest';
+        console.log('🔍 TRACK API: userId resolved to:', userId);
         
         if (!action) {
             return res.status(400).json({ error: 'Action is required' });
