@@ -651,7 +651,14 @@ app.post('/api/register',
     async (req, res) => {
     try {
         // Wait for database initialization
-        await waitForInit();
+        try {
+            await waitForInit();
+        } catch (initError) {
+            console.error('❌ Database initialization failed:', initError.message);
+            return res.status(500).json({ 
+                error: 'Veritabanı bağlantısı kurulamadı. Lütfen daha sonra tekrar deneyin.' 
+            });
+        }
         
         const { email, password, firstName, lastName } = req.body;
         
@@ -773,7 +780,14 @@ app.post('/api/login',
     async (req, res) => {
     try {
         // Wait for database initialization
-        await waitForInit();
+        try {
+            await waitForInit();
+        } catch (initError) {
+            console.error('❌ Database initialization failed:', initError.message);
+            return res.status(500).json({ 
+                error: 'Veritabanı bağlantısı kurulamadı. Lütfen daha sonra tekrar deneyin.' 
+            });
+        }
         
         const { email, password } = req.body;
         

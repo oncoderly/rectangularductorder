@@ -4,7 +4,13 @@ const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
     console.error('❌ CRITICAL: DATABASE_URL environment variable is required');
     console.error('❌ This application requires PostgreSQL database');
-    process.exit(1);
+    console.error('❌ Please set DATABASE_URL in environment variables');
+    
+    // Don't crash immediately, let the error be handled gracefully
+    setTimeout(() => {
+        console.error('❌ FATAL: Cannot continue without DATABASE_URL');
+        process.exit(1);
+    }, 5000);
 }
 
 let isInitialized = false; // Will be set to true only after complete PostgreSQL initialization
@@ -16,6 +22,12 @@ console.log('📍 DATABASE_URL length:', DATABASE_URL.length);
 console.log('🏁 Starting PostgreSQL initialization...');
 
 let db, userDB, tokenDB, analyticsDB;
+
+// Initialize variables to prevent undefined errors
+db = null;
+userDB = null; 
+tokenDB = null;
+analyticsDB = null;
 
 // Initialize PostgreSQL connection
 async function initializePostgreSQL() {
@@ -98,14 +110,23 @@ console.log('🔄 Database manager loading...');
 
 // Wait for initialization wrapper
 function waitForInit() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         console.log('🔍 WAITFORINIT: Called, current isInitialized =', isInitialized);
+        
+        let attempts = 0;
+        const maxAttempts = 100; // 10 seconds timeout
+        
         const checkInit = () => {
-            console.log('🔍 WAITFORINIT: Checking isInitialized =', isInitialized);
+            console.log('🔍 WAITFORINIT: Checking isInitialized =', isInitialized, `(attempt ${attempts + 1}/${maxAttempts})`);
+            
             if (isInitialized) {
                 console.log('✅ WAITFORINIT: Resolved! Database is ready');
                 resolve();
+            } else if (attempts >= maxAttempts) {
+                console.error('❌ WAITFORINIT: Timeout! Database initialization took too long');
+                reject(new Error('Database initialization timeout'));
             } else {
+                attempts++;
                 setTimeout(checkInit, 100);
             }
         };
