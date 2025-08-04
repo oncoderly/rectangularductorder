@@ -120,20 +120,21 @@ async function initializeDatabase() {
             console.log('🧪 DEBUG: analyticsDB set:', !!analyticsDB);
             console.log('🧪 DEBUG: postgresAvailable:', postgresAvailable);
         } else {
-            console.log('📝 Staying with SQLite fallback (PostgreSQL not available)');
+            console.log('📝 PostgreSQL not available, using SQLite fallback');
             setPostgresAvailable(false, 'SQLite fallback (PostgreSQL not available)');
-            console.log('🔧 Setting postgresAvailable to false (PostgreSQL not available)');
+            
+            // Initialize SQLite fallback ONLY when PostgreSQL is not available
+            console.log('🔄 PostgreSQL not available, initializing SQLite fallback...');
+            initializeFallback();
         }
     } catch (error) {
         console.error('❌ PostgreSQL upgrade failed:', error.message);
-        console.log('📝 Continuing with SQLite fallback');
+        console.log('📝 Fallback to SQLite');
         setPostgresAvailable(false, 'PostgreSQL upgrade failed');
         
-        // Ensure SQLite fallback is working
-        if (!userDB || !userDB.getAllUsers) {
-            console.error('❌ Critical: Both PostgreSQL and SQLite failed!');
-            initializeFallback(); // Re-initialize SQLite
-        }
+        // Initialize SQLite fallback ONLY when PostgreSQL fails
+        console.log('🔄 PostgreSQL failed, initializing SQLite fallback...');
+        initializeFallback();
     }
     
     // NOTE: isInitialized is set outside after await
@@ -181,8 +182,8 @@ function initializeFallback() {
     console.log('✅ SQLite fallback initialized');
 }
 
-// Initialize fallback FIRST to ensure userDB is never undefined
-initializeFallback();
+// Initialize fallback ONLY if PostgreSQL fails
+// initializeFallback(); // REMOVED - This caused SQLite to always run alongside PostgreSQL
 
 // Then try to upgrade to PostgreSQL (async but properly awaited)
 console.log('🔧 STARTING: Async wrapper for PostgreSQL initialization...');

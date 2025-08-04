@@ -78,8 +78,8 @@ function initPostgreSQL() {
         };
         
         // Run connection test and create tables
-        return testConnection().then(() => {
-            createTables();
+        return testConnection().then(async () => {
+            await createTables(); // CRITICAL: Added await!
             return pool;
         });
         
