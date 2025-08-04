@@ -1987,16 +1987,7 @@ OAUTH2_REFRESH_TOKEN=${tokens.refresh_token}
     }
 });
 
-// Handle client-side routing - catch-all route (must be last!)
-app.use((req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    
-    console.log('📄 Serving index.html for path:', req.path);
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-});
+// Moved to registerAllRoutes() function
 
 
 // Error handler - en son middleware olmalı
@@ -2165,6 +2156,17 @@ function registerAllRoutes() {
                 res.redirect(`${CLIENT_URL}/?google_auth=success`);
             });
         });
+    });
+    
+    // Handle client-side routing - catch-all route (MUST BE LAST!)
+    app.use((req, res, next) => {
+        // Skip API routes
+        if (req.path.startsWith('/api/')) {
+            return res.status(404).json({ error: 'API endpoint not found' });
+        }
+        
+        console.log('📄 Serving index.html for path:', req.path);
+        res.sendFile(path.join(__dirname, '../client/dist/index.html'));
     });
     
     console.log('✅ Critical routes registered successfully AFTER session middleware');
