@@ -202,10 +202,10 @@ async function initializeSessionStore() {
             console.log('🔧 SESSION STORE: Database ready, configuring PostgreSQL session store...');
             
             // Use the same connection pool as the main database
-            const { db } = databaseModule;
+            const dbInstance = db();
             
             // Create sessions table if it doesn't exist
-            await db.query(`
+            await dbInstance.query(`
                 CREATE TABLE IF NOT EXISTS sessions (
                     sid VARCHAR NOT NULL PRIMARY KEY,
                     sess JSON NOT NULL,
@@ -216,7 +216,7 @@ async function initializeSessionStore() {
             
             // Use PostgreSQL session store in production
             sessionStore = new pgSession({
-                pool: db,  // Use existing connection pool
+                pool: dbInstance,  // Use existing connection pool
                 tableName: 'sessions',
                 createTableIfMissing: false  // We created it manually above
             });
@@ -340,13 +340,13 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         await waitForInit();
         
         // Find user by Google ID first
-        const allUsers = await userDB.getAllUsers();
+        const allUsers = await userDB().getAllUsers();
         let user = allUsers.find(u => u.googleId === profile.id);
         console.log('🔍 GoogleStrategy: User found by Google ID:', !!user);
         
         // If user found, get fresh data from database to ensure role is current
         if (user) {
-            user = await userDB.getUserById(user.id);
+            user = await userDB().getUserById(user.id);
             console.log('🔍 GoogleStrategy: Fresh user data from DB:', user);
             console.log('🔍 GoogleStrategy: Fresh user role:', user?.role);
             
@@ -357,7 +357,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
             
             if (isAdmin && user.role !== 'admin') {
                 console.log('🔄 GoogleStrategy: Updating existing user to admin');
-                await userDB.updateUser(user.id, { role: 'admin' });
+                await userDB().updateUser(user.id, { role: 'admin' });
                 user.role = 'admin';
                 console.log('✅ GoogleStrategy: User updated to admin');
             }
@@ -366,7 +366,7 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
         if (!user) {
             console.log('🔍 GoogleStrategy: No user found by Google ID, checking by email');
             // Check if user exists with same email
-            user = await userDB.getUserByEmail(profile.emails[0].value);
+            user = await userDB().getUserByEmail(profile.emails[0].value);
             console.log('🔍 GoogleStrategy: User found by email:', !!user);
             
             if (user) {
@@ -386,12 +386,12 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                 };
                 console.log('🔄 GoogleStrategy: Update data to save to DB:', updateData);
                 
-                const updateResult = await userDB.updateUser(user.id, updateData);
+                const updateResult = await userDB().updateUser(user.id, updateData);
                 console.log('🔄 GoogleStrategy: Update result from DB:', updateResult);
                 
                 if (updateResult) {
                     // Verify update by fetching fresh data from DB
-                    const verifyUser = await userDB.getUserById(user.id);
+                    const verifyUser = await userDB().getUserById(user.id);
                     if (verifyUser) {
                         user = verifyUser; // Use fresh DB data
                         console.log('✅ GoogleStrategy: User update verified from DB:', {
@@ -423,12 +423,12 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
                 };
                 
                 console.log('🔄 GoogleStrategy: Creating new user in database...');
-                const created = await userDB.createUser(newUser);
+                const created = await userDB().createUser(newUser);
                 console.log('🔍 GoogleStrategy: User creation result:', created);
                 
                 if (created) {
                     // Verify user was actually created by fetching from DB
-                    const verifyUser = await userDB.getUserByEmail(newUser.email);
+                    const verifyUser = await userDB().getUserByEmail(newUser.email);
                     if (verifyUser && verifyUser.id) {
                         user = verifyUser; // Use actual DB user, not local object
                         console.log('✅ GoogleStrategy: New user verified in database:', user.email);
@@ -468,7 +468,7 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
     try {
         await waitForInit();
-        const user = await userDB.getUserById(id);
+        const user = await userDB().getUserById(id);
         done(null, user);
     } catch (error) {
         done(error, null);
@@ -492,8 +492,8 @@ app.get('/api/status', async (req, res) => {
             dbType = isPostgreSQL() ? 'PostgreSQL' : 'SQLite';
             
             // Test database connection
-            if (userDB && userDB.getUserCount) {
-                const count = await userDB.getUserCount();
+            if (userDB() && userDB().getUserCount) {
+                const count = await userDB().getUserCount();
                 dbStatus = 'connected';
             } else {
                 dbStatus = 'userDB not available';
@@ -556,7 +556,7 @@ app.get('/api/debug', async (req, res) => {
     try {
         await waitForInit();
         
-        const userCount = await userDB.getUserCount();
+        const userCount = await userDB().getUserCount();
         
         res.json({
             NODE_ENV: process.env.NODE_ENV,
@@ -614,8 +614,12 @@ const { deploymentMonitor } = require('./deployment-monitor');
 
 // Import database module  
 const databaseModule = require('./database-selector');
-const { db, userDB, tokenDB, analyticsDB, waitForInit } = databaseModule;
-// Create a getter proxy for isPostgreSQL
+const { waitForInit } = databaseModule;
+// Create getter proxies for database objects to handle async initialization
+const db = () => databaseModule.db;
+const userDB = () => databaseModule.userDB;
+const tokenDB = () => databaseModule.tokenDB;
+const analyticsDB = () => databaseModule.analyticsDB;
 const isPostgreSQL = () => databaseModule.isPostgreSQL;
 
 // Import analytics module
@@ -624,7 +628,7 @@ const { trackSession, getAnalyticsSummary } = require('./analytics');
 const loadUsers = async () => {
     try {
         await waitForInit();
-        const users = await userDB.getAllUsers();
+        const users = await userDB().getAllUsers();
         console.log(`📊 Loaded ${users.length} users from database`);
         return users;
     } catch (error) {
@@ -697,7 +701,7 @@ app.post('/api/register',
         const { email, password, firstName, lastName } = req.body;
         
         // Check if user already exists
-        const existingUser = await userDB.getUserByEmail(email);
+        const existingUser = await userDB().getUserByEmail(email);
         
         if (existingUser) {
             return res.status(400).json({ error: 'Bu e-posta adresi zaten kayıtlı' });
@@ -742,12 +746,12 @@ app.post('/api/register',
             createdAt: newUser.createdAt
         });
         
-        const created = await userDB.createUser(newUser);
+        const created = await userDB().createUser(newUser);
         console.log('⚙️ User creation result:', created);
         
         // Verify user was saved correctly
         if (created) {
-            const savedUser = await userDB.getUserByEmail(email);
+            const savedUser = await userDB().getUserByEmail(email);
             console.log('⚙️ VERIFICATION - Saved user retrieved:', {
                 found: !!savedUser,
                 id: savedUser?.id,
@@ -827,13 +831,13 @@ app.post('/api/login',
         
         console.log('🔐 Login attempt:', { email, passwordProvided: !!password });
         
-        console.log('👥 Total users in database:', await userDB.getUserCount());
+        console.log('👥 Total users in database:', await userDB().getUserCount());
         console.log('🗄️ Current database type:', isPostgreSQL() ? 'PostgreSQL' : 'SQLite');
         console.log('🔍 Database connection status:', isPostgreSQL);
         console.log('📧 Looking for user with email:', email);
         
         // Debug: List all users for troubleshooting
-        const allUsers = await userDB.getAllUsers();
+        const allUsers = await userDB().getAllUsers();
         console.log('🔍 All users in database:', allUsers.map(u => ({ 
             email: u.email, 
             id: u.id, 
@@ -841,7 +845,7 @@ app.post('/api/login',
             createdAt: u.createdAt 
         })));
         
-        const user = await userDB.getUserByEmail(email);
+        const user = await userDB().getUserByEmail(email);
         console.log('🔍 User found:', !!user);
         
         if (user) {
@@ -948,7 +952,7 @@ app.post('/api/login',
 //         
 //         console.log('🔍 /api/me: Database debug info:', {
 //             userDB_exists: !!userDB,
-//             userDB_type: userDB ? userDB.constructor.name : 'null',
+//             userDB_type: userDB ? userDB().constructor.name : 'null',
 //             isPostgreSQL: isPostgreSQL()
 //         });
 //         
@@ -966,12 +970,12 @@ app.post('/api/login',
 //             return res.status(500).json({ error: 'Database not available' });
 //         }
 //         
-//         if (!userDB.getUserById) {
-//             console.error('❌ /api/me: userDB.getUserById is not a function');
+//         if (!userDB().getUserById) {
+//             console.error('❌ /api/me: userDB().getUserById is not a function');
 //             return res.status(500).json({ error: 'Database method not available' });
 //         }
 //         
-//         const user = await userDB.getUserById(req.session.userId);
+//         const user = await userDB().getUserById(req.session.userId);
 //         
 //         if (!user) {
 //             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
@@ -1311,7 +1315,7 @@ app.get('/api/auth/google/success', async (req, res) => {
         // Wait for database initialization
         await waitForInit();
         
-        const user = await userDB.getUserById(req.session.userId);
+        const user = await userDB().getUserById(req.session.userId);
         console.log('👤 Google Success: User from DB:', user);
         console.log('🔑 Google Success: User role from DB:', user?.role);
         
@@ -1423,7 +1427,7 @@ app.get('/api/admin/analytics', async (req, res) => {
         const summary = await getAnalyticsSummary();
         
         // Get all users to enrich the data with user details
-        const allUsers = await userDB.getAllUsers();
+        const allUsers = await userDB().getAllUsers();
         const userMap = {};
         allUsers.forEach(user => {
             userMap[user.id] = {
@@ -1515,7 +1519,7 @@ app.get('/api/admin/users', async (req, res) => {
         console.log('🔍 Admin users list requested by user:', req.session.userId);
         
         // Get all users from database
-        const users = await userDB.getAllUsers();
+        const users = await userDB().getAllUsers();
         
         // Remove sensitive info and format the data  
         const safeUsers = users.map(user => ({
@@ -1571,7 +1575,7 @@ app.post('/api/forgot-password',
             return res.status(400).json({ error: 'E-posta adresi gerekli' });
         }
         
-        const user = await userDB.getUserByEmail(email);
+        const user = await userDB().getUserByEmail(email);
         
         if (!user) {
             // Security: Don't reveal if email exists or not
@@ -1748,7 +1752,7 @@ app.post('/api/forgot-password-otp',
             return res.status(400).json({ error: 'E-posta adresi gerekli' });
         }
         
-        const user = await userDB.getUserByEmail(email);
+        const user = await userDB().getUserByEmail(email);
         
         if (!user) {
             // Security: Don't reveal if email exists or not
@@ -1846,7 +1850,7 @@ app.post('/api/reset-password-otp',
         }
         
         // Get user and update password
-        const user = await userDB.getUserById(otpData.userId);
+        const user = await userDB().getUserById(otpData.userId);
         
         if (!user) {
             return res.status(400).json({ error: 'Kullanıcı bulunamadı' });
@@ -1856,7 +1860,7 @@ app.post('/api/reset-password-otp',
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
         // Update password
-        const updated = await userDB.updateUser(user.id, { 
+        const updated = await userDB().updateUser(user.id, { 
             password: hashedPassword,
             updatedAt: new Date().toISOString()
         });
@@ -1907,7 +1911,7 @@ app.post('/api/reset-password',
         }
         
         // Get user and update password
-        const user = await userDB.getUserById(tokenData.userId);
+        const user = await userDB().getUserById(tokenData.userId);
         
         if (!user) {
             return res.status(400).json({ error: 'Kullanıcı bulunamadı' });
@@ -1917,7 +1921,7 @@ app.post('/api/reset-password',
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
         // Update user password in database
-        const updated = await userDB.updateUser(user.id, { 
+        const updated = await userDB().updateUser(user.id, { 
             password: hashedPassword,
             updatedAt: new Date().toISOString()
         });
@@ -2022,8 +2026,8 @@ function registerAllRoutes() {
             });
             
             console.log('🔍 /api/me: Database debug info:', {
-                userDB_exists: !!userDB,
-                userDB_type: userDB ? userDB.constructor.name : 'null',
+                userDB_exists: !!userDB(),
+                userDB_type: userDB() ? userDB().constructor.name : 'null',
                 isPostgreSQL: isPostgreSQL()
             });
             
@@ -2036,17 +2040,17 @@ function registerAllRoutes() {
                 return res.status(401).json({ error: 'Oturum açılmamış' });
             }
             
-            if (!userDB) {
+            if (!userDB()) {
                 console.error('❌ /api/me: userDB is null/undefined');
                 return res.status(500).json({ error: 'Database not available' });
             }
             
-            if (!userDB.getUserById) {
-                console.error('❌ /api/me: userDB.getUserById is not a function');
+            if (!userDB().getUserById) {
+                console.error('❌ /api/me: userDB().getUserById is not a function');
                 return res.status(500).json({ error: 'Database method not available' });
             }
             
-            const user = await userDB.getUserById(req.session.userId);
+            const user = await userDB().getUserById(req.session.userId);
             
             if (!user) {
                 return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
