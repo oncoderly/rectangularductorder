@@ -2,7 +2,10 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const DATABASE_URL = process.env.DATABASE_URL;
+// Load environment variables
+require('dotenv').config({ path: '../.env' });
+
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://rectangularduct_user:WvlaSwkbrZlDVBV1gc34RCKCO5PF3aGC@dpg-d23m9kali9vc73f85n40-a.frankfurt-postgres.render.com/rectangularductorder_db';
 
 if (!DATABASE_URL) {
     console.error('DATABASE_URL not set!');
