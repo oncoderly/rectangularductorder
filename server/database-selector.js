@@ -33,14 +33,14 @@ async function testPostgreSQL() {
         console.log('🐘 Testing PostgreSQL connection...');
         const postgres = require('./database-postgres');
         
-        // Wait for PostgreSQL to initialize (it initializes automatically)
+        // Wait for PostgreSQL to initialize
         if (!postgres.pool) {
             console.log('⏳ Waiting for PostgreSQL pool to initialize...');
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
         if (!postgres.pool) {
-            throw new Error('PostgreSQL pool not initialized - check DATABASE_URL');
+            throw new Error('PostgreSQL pool not initialized');
         }
         
         // Test query with timeout
@@ -182,8 +182,8 @@ function initializeFallback() {
     console.log('✅ SQLite fallback initialized');
 }
 
-// Initialize fallback ONLY if PostgreSQL fails
-// initializeFallback(); // REMOVED - This caused SQLite to always run alongside PostgreSQL
+// Initialize fallback FIRST to ensure userDB is never undefined
+initializeFallback();
 
 // Then try to upgrade to PostgreSQL (async but properly awaited)
 console.log('🔧 STARTING: Async wrapper for PostgreSQL initialization...');
