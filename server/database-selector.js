@@ -33,14 +33,14 @@ async function testPostgreSQL() {
         console.log('🐘 Testing PostgreSQL connection...');
         const postgres = require('./database-postgres');
         
-        // Wait for PostgreSQL to initialize
+        // Wait for PostgreSQL to initialize (it initializes automatically)
         if (!postgres.pool) {
             console.log('⏳ Waiting for PostgreSQL pool to initialize...');
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 3000));
         }
         
         if (!postgres.pool) {
-            throw new Error('PostgreSQL pool not initialized');
+            throw new Error('PostgreSQL pool not initialized - check DATABASE_URL');
         }
         
         // Test query with timeout

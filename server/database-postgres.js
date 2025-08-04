@@ -26,7 +26,7 @@ if (isProduction && DATABASE_URL) {
 // PostgreSQL connection pool
 let pool;
 
-function initPostgreSQL() {
+async function initPostgreSQL() {
     try {
         // Connection configuration
         if (!DATABASE_URL) {
@@ -78,10 +78,9 @@ function initPostgreSQL() {
         };
         
         // Run connection test and create tables
-        return testConnection().then(async () => {
-            await createTables(); // CRITICAL: Added await!
-            return pool;
-        });
+        await testConnection();
+        await createTables();
+        return pool;
         
     } catch (error) {
         console.error('❌ PostgreSQL initialization failed:', error);
@@ -1271,12 +1270,17 @@ const analyticsDB = {
     }
 };
 
-// Initialize PostgreSQL
+// Initialize PostgreSQL automatically when module is loaded
 if (DATABASE_URL || process.env.USE_POSTGRESQL === 'true') {
-    initPostgreSQL();
-    console.log('🐘 Using PostgreSQL database');
-} else {
-    console.log('📝 PostgreSQL not configured, using SQLite fallback');
+    // Start initialization in background, don't block module loading
+    process.nextTick(async () => {
+        try {
+            await initPostgreSQL();
+            console.log('🐘 PostgreSQL initialized successfully');
+        } catch (error) {
+            console.error('❌ PostgreSQL initialization failed:', error.message);
+        }
+    });
 }
 
 module.exports = {
