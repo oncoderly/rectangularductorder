@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Auth Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4285F4;
+            text-align: center;
+        }
+        .auth-form {
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4285F4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #3367D6;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .google-btn {
+            background: #db4437;
+        }
+        .google-btn:hover {
+            background: #c23321;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Auth Test</h1>
+        
+        <div class="auth-form">
+            <h3>Giriş / Kayıt</h3>
+            
+            <!-- Google Sign In -->
+            <button id="googleSignIn" class="google-btn">
+                🌐 Google ile Giriş Yap
+            </button>
+            
+            <!-- Email/Password Form -->
+            <div class="form-group">
+                <label for="email">E-posta:</label>
+                <input type="email" id="email" placeholder="ornek@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Şifre:</label>
+                <input type="password" id="password" placeholder="En az 6 karakter">
+            </div>
+            
+            <div class="form-group">
+                <label for="displayName">Ad Soyad (sadece kayıt için):</label>
+                <input type="text" id="displayName" placeholder="Ad Soyad">
+            </div>
+            
+            <button id="signUp">📝 Kayıt Ol</button>
+            <button id="signIn">🚀 Giriş Yap</button>
+            <button id="resetPassword">🔐 Şifre Sıfırla</button>
+            <button id="signOut" style="display:none;">🚪 Çıkış Yap</button>
+        </div>
+        
+        <div id="status"></div>
+        <div id="userInfo" style="display:none;">
+            <h3>👤 Kullanıcı Bilgileri</h3>
+            <div id="userDetails"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            signOut,
+            sendPasswordResetEmail,
+            updateProfile,
+            onAuthStateChanged
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNNQVBlR0ODKicHPv2hYQFaS3t3oEBIWw",
+            authDomain: "ductorder-bd79a.firebaseapp.com",
+            projectId: "ductorder-bd79a",
+            storageBucket: "ductorder-bd79a.firebasestorage.app",
+            messagingSenderId: "770259223189",
+            appId: "1:770259223189:web:5a06c47783926aad9bd19c",
+            measurementId: "G-DWTW5Q7RC1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // UI Elements
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const displayNameInput = document.getElementById('displayName');
+        const statusDiv = document.getElementById('status');
+        const userInfoDiv = document.getElementById('userInfo');
+        const userDetailsDiv = document.getElementById('userDetails');
+        const signUpBtn = document.getElementById('signUp');
+        const signInBtn = document.getElementById('signIn');
+        const googleSignInBtn = document.getElementById('googleSignIn');
+        const resetPasswordBtn = document.getElementById('resetPassword');
+        const signOutBtn = document.getElementById('signOut');
+
+        // Utility functions
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showUserInfo(user) {
+            userDetailsDiv.innerHTML = `
+                <p><strong>UID:</strong> ${user.uid}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Görünen Ad:</strong> ${user.displayName || 'Belirtilmemiş'}</p>
+                <p><strong>Email Doğrulandı:</strong> ${user.emailVerified ? 'Evet' : 'Hayır'}</p>
+                <p><strong>Son Giriş:</strong> ${user.metadata.lastSignInTime}</p>
+            `;
+            userInfoDiv.style.display = 'block';
+            signOutBtn.style.display = 'inline-block';
+        }
+
+        function hideUserInfo() {
+            userInfoDiv.style.display = 'none';
+            signOutBtn.style.display = 'none';
+        }
+
+        // Auth state observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                showStatus(`Giriş yapıldı: ${user.email}`, 'success');
+                showUserInfo(user);
+            } else {
+                showStatus('Oturum sonlandırıldı', 'info');
+                hideUserInfo();
+            }
+        });
+
+        // Event listeners
+        signUpBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const displayName = displayNameInput.value;
+
+            if (!email || !password) {
+                showStatus('E-posta ve şifre gerekli', 'error');
+                return;
+            }
+
+            try {
+                signUpBtn.disabled = true;
+                showStatus('Kayıt oluşturuluyor...', 'info');
+                
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                
+                if (displayName) {
+                    await updateProfile(userCredential.user, {
+                        displayName: displayName
+                    });
+                }
+                
+                showStatus('Hesap başarıyla oluşturuldu!', 'success');
+            } catch (error) {
+                console.error('Kayıt hatası:', error);
+                showStatus(`Kayıt hatası: ${error.message}`, 'error');
+            } finally {
+                signUpBtn.disabled = false;
+            }
+        });
+
+        signInBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showStatus('E-posta ve şifre gerekli', 'error');
+                return;
+            }
+
+            try {
+                signInBtn.disabled = true;
+                showStatus('Giriş yapılıyor...', 'info');
+                
+                await signInWithEmailAndPassword(auth, email, password);
+                showStatus('Giriş başarılı!', 'success');
+            } catch (error) {
+                console.error('Giriş hatası:', error);
+                showStatus(`Giriş hatası: ${error.message}`, 'error');
+            } finally {
+                signInBtn.disabled = false;
+            }
+        });
+
+        googleSignInBtn.addEventListener('click', async () => {
+            try {
+                googleSignInBtn.disabled = true;
+                showStatus('Google ile giriş yapılıyor...', 'info');
+                
+                const result = await signInWithPopup(auth, provider);
+                showStatus(`Google ile giriş başarılı: ${result.user.email}`, 'success');
+            } catch (error) {
+                console.error('Google giriş hatası:', error);
+                showStatus(`Google giriş hatası: ${error.message}`, 'error');
+            } finally {
+                googleSignInBtn.disabled = false;
+            }
+        });
+
+        resetPasswordBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+
+            if (!email) {
+                showStatus('Şifre sıfırlama için e-posta adresi gerekli', 'error');
+                return;
+            }
+
+            try {
+                resetPasswordBtn.disabled = true;
+                showStatus('Şifre sıfırlama e-postası gönderiliyor...', 'info');
+                
+                await sendPasswordResetEmail(auth, email);
+                showStatus('Şifre sıfırlama e-postası gönderildi!', 'success');
+            } catch (error) {
+                console.error('Şifre sıfırlama hatası:', error);
+                showStatus(`Şifre sıfırlama hatası: ${error.message}`, 'error');
+            } finally {
+                resetPasswordBtn.disabled = false;
+            }
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showStatus('Çıkış yapıldı', 'info');
+            } catch (error) {
+                console.error('Çıkış hatası:', error);
+                showStatus(`Çıkış hatası: ${error.message}`, 'error');
+            }
+        });
+
+        // Initial status
+        showStatus('Firebase Auth sistemi hazır. Test etmeye başlayabilirsiniz!', 'success');
+    </script>
+</body>
+</html>

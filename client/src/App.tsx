@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import Auth from './components/Auth';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { auth } from './firebase/config';
+import FirebaseAuth from './components/FirebaseAuth';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import ResetPassword from './components/ResetPassword';
 import './index.css';
 
-const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
+// const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
 
 interface User {
   id: string;
@@ -25,90 +26,56 @@ function App() {
   
   console.log('📊 App: Current state - loading:', loading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
 
-  // Initialize app - useEffect MUST be before any conditional returns
+  // Firebase Auth State Listener
   useEffect(() => {
-    const initializeApp = async () => {
-      console.log('🚀 App: Starting initialization...');
-      try {
-        // Check URL for different routes
-        const path = window.location.pathname;
-        console.log('🔍 App: Current path:', path);
-        if (path === '/admin-dashboard' || path.includes('admin')) {
-          console.log('📊 App: Admin dashboard requested via URL');
-          setShowAdminDashboard(true);
-        }
-        
-        // Check Google auth first (faster)
-        console.log('🔍 App: Checking Google auth...');
-        const googleAuthSuccess = await checkGoogleAuth();
-        
-        // Only check regular auth if Google auth didn't succeed
-        if (!googleAuthSuccess) {
-          console.log('🔍 App: Checking regular auth...');
-          await checkAuth();
-        } else {
-          console.log('✅ App: Google auth successful, skipping regular auth check');
-          setLoading(false);
-        }
-        
-        console.log('✅ App: Initialization completed');
-      } catch (error) {
-        console.error('❌ App: Initialization failed:', error);
-        setLoading(false); // Ensure loading is set to false even on error
-      }
-    };
+    console.log('🚀 App: Setting up Firebase auth listener...');
     
-    initializeApp();
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      console.log('🔥 App: Firebase auth state changed:', !!firebaseUser);
+      
+      if (firebaseUser) {
+        // Firebase kullanıcısını uygulama kullanıcısına dönüştür
+        const user: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          firstName: firebaseUser.displayName?.split(' ')[0] || '',
+          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+          role: 'user' // Varsayılan rol, Firebase'den gelen custom claims'e göre değiştirilebilir
+        };
+        
+        console.log('✅ App: Setting user from Firebase:', user);
+        setUser(user);
+      } else {
+        console.log('❌ App: No Firebase user, clearing user state');
+        setUser(null);
+      }
+      
+      setLoading(false);
+    });
+
+    // Check URL for admin dashboard
+    const path = window.location.pathname;
+    if (path === '/admin-dashboard' || path.includes('admin')) {
+      console.log('📊 App: Admin dashboard requested via URL');
+      setShowAdminDashboard(true);
+    }
+
+    return () => {
+      console.log('🧹 App: Cleaning up Firebase auth listener');
+      unsubscribe();
+    };
   }, []);
 
-  const checkAuth = async () => {
+  // Firebase tabanlı logout
+  const handleLogout = async () => {
     try {
-      console.log('🔍 checkAuth: API_URL =', API_URL);
-      console.log('🔍 checkAuth: Checking /api/me...');
-      const response = await axios.get(`${API_URL}/api/me`, {
-        withCredentials: true
-      });
-      console.log('✅ checkAuth: User authenticated', response.data.user);
-      setUser(response.data.user);
-    } catch (error: any) {
-      console.log('❌ checkAuth: User not authenticated', error.response?.status, error.response?.data);
-      // User not authenticated - misafir modu zaten açık
-    } finally {
-      console.log('🏁 checkAuth: Setting loading to false');
-      setLoading(false);
+      const { logout } = await import('./firebase/auth');
+      await logout();
+      setUser(null);
+      console.log('✅ App: User logged out successfully');
+    } catch (error) {
+      console.error('❌ App: Logout failed:', error);
     }
-  };
-
-  const checkGoogleAuth = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    console.log('🔍 checkGoogleAuth: URL params:', window.location.search);
-    console.log('🔍 checkGoogleAuth: google_auth param:', urlParams.get('google_auth'));
-    
-    if (urlParams.get('google_auth') === 'success') {
-      console.log('✅ checkGoogleAuth: Google auth success detected, calling success endpoint');
-      try {
-        const response = await axios.get(`${API_URL}/api/auth/google/success`, {
-          withCredentials: true
-        });
-        console.log('✅ checkGoogleAuth: User data received:', response.data.user);
-        setUser(response.data.user);
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return true; // Success
-      } catch (error) {
-        console.error('❌ checkGoogleAuth: Google auth check failed:', error);
-        return false;
-      }
-    } else if (urlParams.get('error') === 'google_auth_failed') {
-      console.log('❌ checkGoogleAuth: Google auth failed');
-      alert('Google ile giriş başarısız oldu');
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return false;
-    } else {
-      console.log('ℹ️ checkGoogleAuth: No Google auth params, continuing normally');
-    }
-    return false; // No Google auth detected
   };
 
   const handleLogin = (userData: User) => {
@@ -116,10 +83,6 @@ function App() {
     console.log('🔑 App: User role in handleLogin:', userData?.role);
     setUser(userData);
     setShowAuthModal(false);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
   };
 
   const handleRequireAuth = () => {
@@ -222,7 +185,7 @@ function App() {
             onClick={(e) => e.stopPropagation()}
             style={{ zIndex: 1000000 }}
           >
-            <Auth onLogin={handleLogin} isModal={true} onClose={closeAuthModal} />
+            <FirebaseAuth onLogin={handleLogin} isModal={true} onClose={closeAuthModal} />
           </div>
         </div>
       )}

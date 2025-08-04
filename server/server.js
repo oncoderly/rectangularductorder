@@ -30,6 +30,9 @@ const {
     requestLogger
 } = require('./middleware/security');
 
+// Firebase routes import
+const firebaseAuthRoutes = require('./routes/firebase-auth');
+
 const app = express();
 const PORT = process.env.PORT || 5050;
 
@@ -2172,6 +2175,10 @@ function registerAllRoutes() {
         console.log('📄 Serving index.html for path:', req.path);
         res.sendFile(path.join(__dirname, '../client/dist/index.html'));
     });
+    
+    // Firebase Auth Routes
+    console.log('🔥 Registering Firebase Auth routes...');
+    app.use('/api/firebase', firebaseAuthRoutes);
     
     console.log('✅ Critical routes registered successfully AFTER session middleware');
 }
