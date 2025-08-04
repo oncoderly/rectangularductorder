@@ -1003,14 +1003,7 @@ app.post('/api/login',
 //     }
 // }); // END OF COMMENTED /api/me route
 
-app.post('/api/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Çıkış yapılırken hata oluştu' });
-        }
-        res.json({ message: 'Başarıyla çıkış yapıldı' });
-    });
-});
+// Moved to registerAllRoutes()
 
 // Phone Auth Endpoints
 app.post('/api/phone/send-otp', 
@@ -1301,48 +1294,7 @@ app.get('/api/auth/google/status', (req, res) => {
 //     });
 // });
 
-// Google Auth success check endpoint
-app.get('/api/auth/google/success', async (req, res) => {
-    try {
-        console.log('🔍 Google Success: Endpoint called');
-        console.log('🔍 Google Success: Session userId:', req.session.userId);
-        
-        if (!req.session.userId) {
-            console.log('❌ Google Success: No session userId');
-            return res.status(401).json({ error: 'Oturum açılmamış' });
-        }
-        
-        // Wait for database initialization
-        await waitForInit();
-        
-        const user = await userDB().getUserById(req.session.userId);
-        console.log('👤 Google Success: User from DB:', user);
-        console.log('🔑 Google Success: User role from DB:', user?.role);
-        
-        if (!user) {
-            console.log('❌ Google Success: User not found in DB');
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-        }
-        
-        const userResponse = { 
-            id: user.id, 
-            email: user.email,
-            firstName: user.firstName, 
-            lastName: user.lastName,
-            role: user.role || 'user'
-        };
-        
-        console.log('✅ Google Success: Sending user response:', userResponse);
-        
-        res.json({ 
-            message: 'Google ile giriş başarılı',
-            user: userResponse
-        });
-    } catch (error) {
-        console.error('❌ Google Success: Error:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
-    }
-});
+// Moved to registerAllRoutes()
 
 // Analytics tracking endpoint
 app.post('/api/track', 
@@ -2159,6 +2111,54 @@ function registerAllRoutes() {
                 
                 res.redirect(`${CLIENT_URL}/?google_auth=success`);
             });
+        });
+    });
+    
+    // Google Auth success check endpoint
+    app.get('/api/auth/google/success', async (req, res) => {
+        try {
+            console.log('🔍 Google Success: Endpoint called');
+            console.log('🔍 Google Success: Session userId:', req.session.userId);
+            
+            if (!req.session.userId) {
+                console.log('❌ Google Success: No session userId');
+                return res.status(401).json({ error: 'Oturum açılmamış' });
+            }
+            
+            // Wait for database initialization
+            await waitForInit();
+            
+            const user = await userDB().getUserById(req.session.userId);
+            console.log('👤 Google Success: User from DB:', user);
+            console.log('🔑 Google Success: User role from DB:', user?.role);
+            
+            if (!user) {
+                console.log('❌ Google Success: User not found in DB');
+                return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+            }
+            
+            res.json({ 
+                user: { 
+                    id: user.id, 
+                    email: user.email, 
+                    firstName: user.firstName, 
+                    lastName: user.lastName,
+                    role: user.role
+                } 
+            });
+        } catch (error) {
+            console.error('❌ Google Success: Error:', error);
+            res.status(500).json({ error: 'Sunucu hatası' });
+        }
+    });
+
+    // Logout endpoint
+    app.post('/api/logout', (req, res) => {
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Çıkış yapılırken hata oluştu' });
+            }
+            res.json({ message: 'Başarıyla çıkış yapıldı' });
         });
     });
     

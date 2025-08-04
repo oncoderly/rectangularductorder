@@ -23,7 +23,7 @@ interface AuthProps {
 
 const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('email');
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone' | 'google'>('google');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -199,8 +199,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
             </p>
           </div>
 
-          {/* Auth Method Selection */}
-          <div className="flex justify-center mb-6">
+          {/* Auth Method Selection - HIDDEN */}
+          {false && <div className="flex justify-center mb-6">
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 type="button"
@@ -225,7 +225,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
                 📱 Telefon
               </button>
             </div>
-          </div>
+          </div>}
 
           {/* Auth Buttons */}
           <div className="auth-buttons-container">
@@ -246,15 +246,15 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) =
               <span>Google ile {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</span>
             </button>
 
-            {/* Email Login Button */}
-            <button
+            {/* Email Login Button - DISABLED */}
+            {false && <button
               type="button"
               onClick={() => setAuthMethod('email')}
               className={`auth-btn auth-btn-email ${authMethod === 'email' ? '' : 'inactive'}`}
             >
               <div className="auth-btn-icon">✉️</div>
               <span>E-posta ile {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</span>
-            </button>
+            </button>}
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>
