@@ -557,6 +557,27 @@ if (isProduction && !process.env.DATABASE_URL) {
     console.error('❌ Please set DATABASE_URL environment variable in Render.com dashboard');
 }
 
+// Initialize deployment monitoring
+const { deploymentMonitor } = require('./deployment-monitor');
+(async () => {
+    try {
+        console.log('🔍 Running deployment safety checks...');
+        await deploymentMonitor.checkDeploymentSafety();
+        const report = await deploymentMonitor.generateDeploymentReport();
+        
+        if (report && report.unresolvedAlerts > 0) {
+            console.warn(`⚠️ DEPLOYMENT WARNING: ${report.unresolvedAlerts} unresolved alerts detected`);
+            report.alerts.forEach(alert => {
+                console.warn(`⚠️ ${alert.type}: ${alert.summary}`);
+            });
+        } else {
+            console.log('✅ Deployment safety checks passed');
+        }
+    } catch (error) {
+        console.error('❌ Deployment safety check failed:', error.message);
+    }
+})();
+
 // Import database module  
 const databaseModule = require('./database-selector');
 const { db, userDB, tokenDB, analyticsDB, waitForInit } = databaseModule;
@@ -1403,6 +1424,35 @@ app.get('/api/admin/analytics', async (req, res) => {
     } catch (error) {
         console.error('Analytics summary error:', error);
         res.status(500).json({ error: 'Failed to get analytics' });
+    }
+});
+
+// Admin deployment status endpoint
+app.get('/api/admin/deployment', async (req, res) => {
+    try {
+        // Check if user is authenticated (basic check)
+        if (!req.session.userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        console.log('🔍 Admin deployment status requested by user:', req.session.userId);
+
+        // Generate deployment report
+        const report = await deploymentMonitor.generateDeploymentReport();
+        const alerts = await deploymentMonitor.getUnresolvedAlerts();
+        const userHistory = await deploymentMonitor.getUserCountHistory(20);
+
+        res.json({
+            success: true,
+            report,
+            alerts,
+            userHistory,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Admin deployment status error:', error);
+        res.status(500).json({ error: 'Failed to get deployment status' });
     }
 });
 

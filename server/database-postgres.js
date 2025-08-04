@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
+const { deploymentMonitor } = require('./deployment-monitor');
 
 // Environment variables
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -32,14 +33,32 @@ function initPostgreSQL() {
             throw new Error('DATABASE_URL environment variable is required');
         }
         
+        // Optimized connection pool configuration
         const config = {
             connectionString: DATABASE_URL,
             ssl: {
                 rejectUnauthorized: false
             },
-            connectionTimeoutMillis: 10000,
-            idleTimeoutMillis: 30000,
-            max: 10
+            // Connection timeouts - optimized for production
+            connectionTimeoutMillis: 15000, // Increased for slower connections
+            idleTimeoutMillis: 60000, // Keep connections alive longer
+            query_timeout: 30000, // Query timeout
+            
+            // Pool size optimization
+            max: isProduction ? 15 : 5, // More connections in production
+            min: isProduction ? 2 : 1,  // Minimum idle connections
+            
+            // Advanced settings for reliability
+            application_name: 'rectangular_duct_order',
+            statement_timeout: 30000,
+            idle_in_transaction_session_timeout: 60000,
+            
+            // Connection validation
+            allowExitOnIdle: true,
+            
+            // Error handling
+            keepAlive: true,
+            keepAliveInitialDelayMillis: 10000,
         };
 
         pool = new Pool(config);
@@ -72,19 +91,23 @@ function initPostgreSQL() {
 
 async function createTables() {
     try {
-        console.log('🏗️ [DEPLOY-DEBUG] Creating PostgreSQL tables...');
-        console.log('🏗️ [DEPLOY-DEBUG] Timestamp:', new Date().toISOString());
-        console.log('🏗️ [DEPLOY-DEBUG] NODE_ENV:', process.env.NODE_ENV);
-        console.log('🏗️ [DEPLOY-DEBUG] Database URL exists:', !!DATABASE_URL);
+        console.log('🏗️ [DEPLOY-SAFE] Creating PostgreSQL tables SAFELY...');
+        console.log('🏗️ [DEPLOY-SAFE] Timestamp:', new Date().toISOString());
+        console.log('🏗️ [DEPLOY-SAFE] NODE_ENV:', process.env.NODE_ENV);
+        console.log('🏗️ [DEPLOY-SAFE] Database URL exists:', !!DATABASE_URL);
         
-        // First, check if users table exists and has data
+        // CRITICAL: First create a persistent file-based backup
+        console.log('🏗️ [DEPLOY-SAFE] Creating persistent backup...');
+        await createPersistentBackup();
+        
+        // Check if users table exists and has data
         let existingUserCount = 0;
         let tableExists = false;
         let existingUsers = [];
         
         try {
             // Check if table exists
-            console.log('🏗️ [DEPLOY-DEBUG] Checking if users table exists...');
+            console.log('🏗️ [DEPLOY-SAFE] Checking if users table exists...');
             const tableCheck = await pool.query(`
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
@@ -93,227 +116,401 @@ async function createTables() {
                 );
             `);
             tableExists = tableCheck.rows[0].exists;
-            console.log('🏗️ [DEPLOY-DEBUG] Users table exists:', tableExists);
+            console.log('🏗️ [DEPLOY-SAFE] Users table exists:', tableExists);
             
             if (tableExists) {
-                console.log('🏗️ [DEPLOY-DEBUG] Getting user count...');
+                console.log('🏗️ [DEPLOY-SAFE] Getting user count...');
                 const countResult = await pool.query('SELECT COUNT(*) as count FROM users');
                 existingUserCount = parseInt(countResult.rows[0].count);
-                console.log(`🏗️ [DEPLOY-DEBUG] Found ${existingUserCount} existing users in PostgreSQL`);
+                console.log(`🏗️ [DEPLOY-SAFE] Found ${existingUserCount} existing users in PostgreSQL`);
                 
-                // CRITICAL: Log ALL existing users to verify data persistence
+                // Track user count for monitoring
+                await deploymentMonitor.trackUserCount(existingUserCount, 'before_table_operations');
+                
+                // If users exist, DO NOT recreate tables!
                 if (existingUserCount > 0) {
-                    console.log('🏗️ [DEPLOY-DEBUG] Getting all existing users...');
-                    const existingUsersResult = await pool.query('SELECT id, email, "firstName", "lastName", "googleId", "createdAt" FROM users ORDER BY "createdAt" DESC');
-                    existingUsers = existingUsersResult.rows;
-                    console.log('🏗️ [DEPLOY-DEBUG] ALL existing users before table operations:');
-                    existingUsers.forEach((u, index) => {
-                        console.log(`🏗️ [DEPLOY-DEBUG] User ${index + 1}:`, {
-                            id: u.id,
-                            email: u.email,
-                            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
-                            isGoogleUser: !!u.googleId,
-                            createdAt: u.createdAt
-                        });
-                    });
+                    console.log('🏗️ [DEPLOY-SAFE] ✅ USERS EXIST - SKIPPING TABLE RECREATION');
+                    console.log('🏗️ [DEPLOY-SAFE] ✅ DATA SAFETY: Preserving existing user data');
                     
-                    // Store user data in memory as backup
-                    console.log('🏗️ [DEPLOY-DEBUG] Creating user data backup in memory...');
-                    global.userBackup = existingUsers;
-                    console.log('🏗️ [DEPLOY-DEBUG] Backup created with', existingUsers.length, 'users');
+                    // Only create missing tables, not existing ones
+                    await createMissingTablesOnly();
+                    console.log('🏗️ [DEPLOY-SAFE] ✅ Only missing tables created, user data preserved');
+                    
+                    // Final verification
+                    const verifyCount = await pool.query('SELECT COUNT(*) as count FROM users');
+                    const finalVerifyCount = parseInt(verifyCount.rows[0].count);
+                    await deploymentMonitor.trackUserCount(finalVerifyCount, 'after_missing_tables_only');
+                    
+                    return;
                 }
+                
+                // Get all existing users for backup
+                console.log('🏗️ [DEPLOY-SAFE] Getting all existing users for backup...');
+                const existingUsersResult = await pool.query('SELECT * FROM users ORDER BY "createdAt" DESC');
+                existingUsers = existingUsersResult.rows;
+                console.log('🏗️ [DEPLOY-SAFE] Backed up existing users:', existingUsers.length);
+                
+                // Store user data in memory as backup
+                global.userBackup = existingUsers;
             } else {
-                console.log('🏗️ [DEPLOY-DEBUG] Users table does not exist yet, will create');
+                console.log('🏗️ [DEPLOY-SAFE] Users table does not exist yet, safe to create');
             }
         } catch (err) {
-            console.error('🏗️ [DEPLOY-DEBUG] Users table check failed:', err.message);
-            console.error('🏗️ [DEPLOY-DEBUG] Error details:', err);
+            console.error('🏗️ [DEPLOY-SAFE] Users table check failed:', err.message);
+            // Try to restore from persistent backup if possible
+            await restoreFromPersistentBackup();
         }
         
-        // Create users table with consistent naming - SAFELY
-        console.log('🏗️ [DEPLOY-DEBUG] About to run CREATE TABLE IF NOT EXISTS...');
-        console.log('🏗️ [DEPLOY-DEBUG] This should NOT delete existing data!');
+        // Only create tables if no users exist
+        if (existingUserCount === 0) {
+            console.log('🏗️ [DEPLOY-SAFE] Safe to create tables - no existing users');
+            await createAllTablesFromScratch();
+        }
         
-        // CRITICAL: Use a transaction to ensure atomicity
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-            
-            // Check one more time before creating
-            const preCreateCount = await client.query('SELECT COUNT(*) as count FROM users');
-            const preCount = parseInt(preCreateCount.rows[0].count);
-            console.log('🏗️ [DEPLOY-DEBUG] User count BEFORE CREATE TABLE:', preCount);
-            
-            await client.query(`
-                CREATE TABLE IF NOT EXISTS users (
-                    id VARCHAR(255) PRIMARY KEY,
-                    email VARCHAR(255) UNIQUE NOT NULL,
-                    password VARCHAR(255),
-                    "firstName" VARCHAR(255),
-                    "lastName" VARCHAR(255),
-                    "googleId" VARCHAR(255),
-                    role VARCHAR(50) DEFAULT 'user',
-                    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        // Always ensure all required tables exist
+        await ensureAllRequiredTablesExist();
+        
+        console.log('🏗️ [DEPLOY-SAFE] ✅ Tables created/verified safely');
+        
+        // CRITICAL: Final verification - Check if users are still there
+        const finalUserCount = await pool.query('SELECT COUNT(*) as count FROM users');
+        const finalCount = parseInt(finalUserCount.rows[0].count);
+        console.log('🏗️ [DEPLOY-SAFE] POST-DEPLOY VERIFICATION: Final user count:', finalCount);
+        
+        // Track final user count
+        await deploymentMonitor.trackUserCount(finalCount, 'post_deploy_verification');
+        
+        // Verify data integrity
+        if (existingUserCount > 0) {
+            if (finalCount < existingUserCount) {
+                console.error(`🏗️ [DEPLOY-SAFE] ❌ CRITICAL: User count dropped from ${existingUserCount} to ${finalCount}!`);
+                
+                // Create deployment alert
+                await deploymentMonitor.createAlert('CRITICAL_USER_DATA_LOSS', {
+                    previous: existingUserCount,
+                    current: finalCount,
+                    lost: existingUserCount - finalCount,
+                    context: 'post_deploy_verification'
+                });
+                
+                // Try to restore from persistent backup
+                const restored = await restoreFromPersistentBackup();
+                if (restored) {
+                    console.log('🏗️ [DEPLOY-SAFE] ✅ Users restored from persistent backup');
+                    
+                    // Verify restore
+                    const afterRestoreCount = await pool.query('SELECT COUNT(*) as count FROM users');
+                    const restoredCount = parseInt(afterRestoreCount.rows[0].count);
+                    await deploymentMonitor.trackUserCount(restoredCount, 'after_backup_restore');
+                } else {
+                    console.error('🏗️ [DEPLOY-SAFE] ❌ Failed to restore from persistent backup');
+                }
+            } else {
+                console.log(`🏗️ [DEPLOY-SAFE] ✅ User data integrity verified: ${finalCount} users preserved`);
+            }
+        }
+        
+        // CRITICAL: Always check for SQLite users that need migration (only new ones)
+        console.log('🏗️ [DEPLOY-SAFE] Checking for new SQLite users to migrate...');
+        await migrateFromSQLiteNewUsersOnly();
+        
+    } catch (error) {
+        console.error('❌ Error creating tables:', error);
+        throw error;
+    }
+}
+
+// Create persistent file-based backup
+async function createPersistentBackup() {
+    try {
+        console.log('💾 [BACKUP] Creating persistent backup...');
+        
+        // Check if users table exists first
+        const tableCheck = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'users'
+            );
+        `);
+        
+        if (!tableCheck.rows[0].exists) {
+            console.log('💾 [BACKUP] No users table exists yet, skipping backup');
+            return;
+        }
+        
+        // Get all users
+        const result = await pool.query('SELECT * FROM users ORDER BY "createdAt" DESC');
+        const users = result.rows;
+        
+        if (users.length === 0) {
+            console.log('💾 [BACKUP] No users to backup');
+            return;
+        }
+        
+        // Save to file with timestamp
+        const backupFile = path.join(__dirname, `user_backup_${Date.now()}.json`);
+        await fs.writeFile(backupFile, JSON.stringify(users, null, 2));
+        
+        // Also save to a standard backup file (overwrite previous)
+        const standardBackupFile = path.join(__dirname, 'users_backup.json');
+        await fs.writeFile(standardBackupFile, JSON.stringify(users, null, 2));
+        
+        console.log(`💾 [BACKUP] ✅ Backup created: ${users.length} users saved to ${backupFile}`);
+        console.log(`💾 [BACKUP] ✅ Standard backup updated: ${standardBackupFile}`);
+        
+        // Keep only last 5 backup files
+        await cleanupOldBackups();
+        
+    } catch (error) {
+        console.error('💾 [BACKUP] ❌ Failed to create persistent backup:', error);
+    }
+}
+
+// Restore from persistent backup if available
+async function restoreFromPersistentBackup() {
+    try {
+        console.log('🔄 [RESTORE] Attempting to restore from persistent backup...');
+        
+        const standardBackupFile = path.join(__dirname, 'users_backup.json');
+        
+        if (!fs.existsSync(standardBackupFile)) {
+            console.log('🔄 [RESTORE] No persistent backup file found');
+            return false;
+        }
+        
+        const backupData = await fs.readFile(standardBackupFile, 'utf8');
+        const backupUsers = JSON.parse(backupData);
+        
+        if (!Array.isArray(backupUsers) || backupUsers.length === 0) {
+            console.log('🔄 [RESTORE] Backup file is empty or invalid');
+            return false;
+        }
+        
+        console.log(`🔄 [RESTORE] Found backup with ${backupUsers.length} users`);
+        
+        // Restore users
+        let restored = 0;
+        for (const user of backupUsers) {
+            try {
+                const result = await pool.query(`
+                    INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", role, "createdAt", "updatedAt")
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    ON CONFLICT (email) DO UPDATE SET
+                        password = EXCLUDED.password,
+                        "firstName" = EXCLUDED."firstName",
+                        "lastName" = EXCLUDED."lastName",
+                        "googleId" = EXCLUDED."googleId",
+                        role = EXCLUDED.role,
+                        "updatedAt" = EXCLUDED."updatedAt"
+                    RETURNING id
+                `, [
+                    user.id,
+                    user.email,
+                    user.password,
+                    user.firstName,
+                    user.lastName,
+                    user.googleId,
+                    user.role || 'user',
+                    user.createdAt,
+                    user.updatedAt || new Date().toISOString()
+                ]);
+                
+                if (result.rowCount > 0) {
+                    restored++;
+                }
+            } catch (err) {
+                console.error(`🔄 [RESTORE] Failed to restore user ${user.email}:`, err.message);
+            }
+        }
+        
+        console.log(`🔄 [RESTORE] ✅ Restored ${restored} users from persistent backup`);
+        return restored > 0;
+        
+    } catch (error) {
+        console.error('🔄 [RESTORE] ❌ Failed to restore from persistent backup:', error);
+        return false;
+    }
+}
+
+// Clean up old backup files
+async function cleanupOldBackups() {
+    try {
+        const files = await fs.readdir(__dirname);
+        const backupFiles = files
+            .filter(file => file.startsWith('user_backup_') && file.endsWith('.json'))
+            .map(file => ({
+                name: file,
+                path: path.join(__dirname, file),
+                time: parseInt(file.match(/user_backup_(\d+)\.json/)?.[1] || '0')
+            }))
+            .sort((a, b) => b.time - a.time); // newest first
+        
+        // Keep only last 5 backups
+        const toDelete = backupFiles.slice(5);
+        
+        for (const backup of toDelete) {
+            try {
+                await fs.unlink(backup.path);
+                console.log(`💾 [CLEANUP] Deleted old backup: ${backup.name}`);
+            } catch (err) {
+                console.error(`💾 [CLEANUP] Failed to delete ${backup.name}:`, err.message);
+            }
+        }
+        
+    } catch (error) {
+        console.error('💾 [CLEANUP] ❌ Failed to cleanup old backups:', error);
+    }
+}
+
+// Create only missing tables (safe approach)
+async function createMissingTablesOnly() {
+    try {
+        console.log('🏗️ [SAFE-CREATE] Creating only missing tables...');
+        
+        // Check and create reset_tokens table
+        const resetTokensExists = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'reset_tokens'
+            );
+        `);
+        
+        if (!resetTokensExists.rows[0].exists) {
+            await pool.query(`
+                CREATE TABLE reset_tokens (
+                    token VARCHAR(255) PRIMARY KEY,
+                    userid VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    expires BIGINT NOT NULL,
+                    createdat TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (userid) REFERENCES users (id) ON DELETE CASCADE
                 )
             `);
-            
-            // Check immediately after creating
-            const postCreateCount = await client.query('SELECT COUNT(*) as count FROM users');
-            const postCount = parseInt(postCreateCount.rows[0].count);
-            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER CREATE TABLE:', postCount);
-            
-            if (postCount !== preCount) {
-                console.error('🏗️ [DEPLOY-DEBUG] ❌ CRITICAL: CREATE TABLE IF NOT EXISTS deleted data!');
-                console.error('🏗️ [DEPLOY-DEBUG] Rolling back transaction...');
-                await client.query('ROLLBACK');
-                
-                // Try to restore from backup
-                if (global.userBackup && global.userBackup.length > 0) {
-                    console.log('🏗️ [DEPLOY-DEBUG] Emergency restore from backup...');
-                    await restoreUsersFromBackup(global.userBackup);
-                }
-                throw new Error(`CREATE TABLE IF NOT EXISTS deleted ${preCount - postCount} users!`);
-            } else {
-                console.log('🏗️ [DEPLOY-DEBUG] ✅ CREATE TABLE IF NOT EXISTS safe - no data lost');
-                await client.query('COMMIT');
-            }
-            
-        } catch (err) {
-            await client.query('ROLLBACK');
-            throw err;
-        } finally {
-            client.release();
+            console.log('🏗️ [SAFE-CREATE] Created reset_tokens table');
         }
         
-        console.log('🏗️ [DEPLOY-DEBUG] Users table created/verified safely');
-        
-        // CRITICAL: Check if users are still there after table creation
-        const afterTableCreateCount = await pool.query('SELECT COUNT(*) as count FROM users');
-        const afterCount = parseInt(afterTableCreateCount.rows[0].count);
-        console.log('🏗️ [DEPLOY-DEBUG] User count AFTER table creation:', afterCount);
-        
-        if (afterCount !== existingUserCount) {
-            console.error('🏗️ [DEPLOY-DEBUG] ❌ CRITICAL: User count changed from', existingUserCount, 'to', afterCount, 'after table creation!');
-            
-            // Try to restore from backup if we have it
-            if (global.userBackup && global.userBackup.length > 0) {
-                console.log('🏗️ [DEPLOY-DEBUG] Attempting to restore users from backup...');
-                await restoreUsersFromBackup(global.userBackup);
-            }
-        } else {
-            console.log('🏗️ [DEPLOY-DEBUG] ✅ User count stable after table creation');
-        }
-        
-        // Migration: Add new columns if they don't exist and copy data from old columns
-        try {
-            console.log('🏗️ [DEPLOY-DEBUG] Starting column migration...');
-            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "firstName" VARCHAR(255)`);
-            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "lastName" VARCHAR(255)`);
-            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "googleId" VARCHAR(255)`);
-            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP`);
-            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP`);
-            
-            // Check user count after adding columns
-            const afterColumnsCount = await pool.query('SELECT COUNT(*) as count FROM users');
-            const afterColumnsTotal = parseInt(afterColumnsCount.rows[0].count);
-            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER adding columns:', afterColumnsTotal);
-            
-            // Copy data from lowercase columns to camelCase columns if needed
-            console.log('🏗️ [DEPLOY-DEBUG] Checking for old column data migration...');
-            
-            // Check if old lowercase columns exist before trying to copy
-            const columnCheck = await pool.query(`
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'users' AND column_name IN ('firstname', 'lastname', 'googleid', 'createdat', 'updatedat')
-            `);
-            
-            if (columnCheck.rows.length > 0) {
-                console.log(`🏗️ [DEPLOY-DEBUG] Found ${columnCheck.rows.length} old columns to migrate`);
-                
-                try {
-                    await pool.query(`UPDATE users SET "firstName" = firstname WHERE "firstName" IS NULL AND firstname IS NOT NULL`);
-                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated firstname data');
-                } catch (err) {
-                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ firstname column does not exist (expected)');
-                }
-                
-                try {
-                    await pool.query(`UPDATE users SET "lastName" = lastname WHERE "lastName" IS NULL AND lastname IS NOT NULL`);
-                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated lastname data');
-                } catch (err) {
-                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ lastname column does not exist (expected)');
-                }
-                
-                try {
-                    await pool.query(`UPDATE users SET "googleId" = googleid WHERE "googleId" IS NULL AND googleid IS NOT NULL`);
-                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated googleid data');
-                } catch (err) {
-                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ googleid column does not exist (expected)');
-                }
-                
-                try {
-                    await pool.query(`UPDATE users SET "createdAt" = createdat WHERE "createdAt" IS NULL AND createdat IS NOT NULL`);
-                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated createdat data');
-                } catch (err) {
-                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ createdat column does not exist (expected)');
-                }
-                
-                try {
-                    await pool.query(`UPDATE users SET "updatedAt" = updatedat WHERE "updatedAt" IS NULL AND updatedat IS NOT NULL`);
-                    console.log('🏗️ [DEPLOY-DEBUG] ✅ Migrated updatedat data');
-                } catch (err) {
-                    console.log('🏗️ [DEPLOY-DEBUG] ℹ️ updatedat column does not exist (expected)');
-                }
-            } else {
-                console.log('🏗️ [DEPLOY-DEBUG] ℹ️ No old columns found to migrate (expected)');
-            }
-            
-            // Check user count after data copy
-            const afterCopyCount = await pool.query('SELECT COUNT(*) as count FROM users');
-            const afterCopyTotal = parseInt(afterCopyCount.rows[0].count);
-            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER data copy:', afterCopyTotal);
-            
-            // Drop old lowercase columns if they exist and data has been migrated
-            console.log('🏗️ [DEPLOY-DEBUG] Dropping old columns...');
-            const columnsToCheck = ['firstname', 'lastname', 'googleid', 'createdat', 'updatedat'];
-            for (const column of columnsToCheck) {
-                try {
-                    // Check if old column exists
-                    const checkColumn = await pool.query(`
-                        SELECT column_name 
-                        FROM information_schema.columns 
-                        WHERE table_name = 'users' AND column_name = $1
-                    `, [column]);
-                    
-                    if (checkColumn.rows.length > 0) {
-                        await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS ${column}`);
-                        console.log(`🏗️ [DEPLOY-DEBUG] Dropped old column: ${column}`);
-                    }
-                } catch (dropError) {
-                    console.error(`🏗️ [DEPLOY-DEBUG] Could not drop column ${column}:`, dropError.message);
-                }
-            }
-            
-            // Final check after dropping columns
-            const finalCount = await pool.query('SELECT COUNT(*) as count FROM users');
-            const finalTotal = parseInt(finalCount.rows[0].count);
-            console.log('🏗️ [DEPLOY-DEBUG] User count AFTER dropping old columns:', finalTotal);
-            
-            console.log('🏗️ [DEPLOY-DEBUG] ✅ PostgreSQL column migration completed');
-        } catch (migrationError) {
-            console.log('🏗️ [DEPLOY-DEBUG] ℹ️ Column migration completed with expected errors (normal for new tables)');
-            console.log('🏗️ [DEPLOY-DEBUG] Migration details:', migrationError.message);
-        }
-
-        // Add role column if it doesn't exist (for existing databases)
-        await pool.query(`
-            ALTER TABLE users 
-            ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'
+        // Check and create analytics table
+        const analyticsExists = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'analytics'
+            );
         `);
+        
+        if (!analyticsExists.rows[0].exists) {
+            await pool.query(`
+                CREATE TABLE analytics (
+                    id SERIAL PRIMARY KEY,
+                    userid VARCHAR(255),
+                    action VARCHAR(255) NOT NULL,
+                    data JSONB,
+                    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    ip VARCHAR(45),
+                    useragent TEXT
+                )
+            `);
+            console.log('🏗️ [SAFE-CREATE] Created analytics table');
+        }
+        
+        // Check and create sessions table
+        const sessionsExists = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'sessions'
+            );
+        `);
+        
+        if (!sessionsExists.rows[0].exists) {
+            await pool.query(`
+                CREATE TABLE sessions (
+                    sid VARCHAR(255) PRIMARY KEY,
+                    sess JSON NOT NULL,
+                    expire TIMESTAMP(6) NOT NULL
+                )
+            `);
+            console.log('🏗️ [SAFE-CREATE] Created sessions table');
+        }
+        
+        // Add any missing columns to users table
+        await addMissingColumnsToUsers();
+        
+        // Create indexes
+        await createIndexesSafely();
+        
+        console.log('🏗️ [SAFE-CREATE] ✅ All missing tables and columns created');
+        
+    } catch (error) {
+        console.error('🏗️ [SAFE-CREATE] ❌ Error creating missing tables:', error);
+        throw error;
+    }
+}
 
-        // Create reset_tokens table
+// Add missing columns to existing users table
+async function addMissingColumnsToUsers() {
+    try {
+        console.log('🏗️ [COLUMN-ADD] Adding missing columns to users table...');
+        
+        // Check which columns exist
+        const columnsResult = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND table_schema = 'public'
+        `);
+        
+        const existingColumns = columnsResult.rows.map(row => row.column_name);
+        console.log('🏗️ [COLUMN-ADD] Existing columns:', existingColumns);
+        
+        // Add missing columns one by one
+        const requiredColumns = [
+            { name: 'firstName', type: 'VARCHAR(255)' },
+            { name: 'lastName', type: 'VARCHAR(255)' },
+            { name: 'googleId', type: 'VARCHAR(255)' },
+            { name: 'role', type: 'VARCHAR(50) DEFAULT \'user\'' },
+            { name: 'createdAt', type: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' },
+            { name: 'updatedAt', type: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP' }
+        ];
+        
+        for (const column of requiredColumns) {
+            if (!existingColumns.includes(column.name)) {
+                try {
+                    await pool.query(`ALTER TABLE users ADD COLUMN "${column.name}" ${column.type}`);
+                    console.log(`🏗️ [COLUMN-ADD] Added column: ${column.name}`);
+                } catch (err) {
+                    console.error(`🏗️ [COLUMN-ADD] Failed to add column ${column.name}:`, err.message);
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('🏗️ [COLUMN-ADD] ❌ Error adding missing columns:', error);
+    }
+}
+
+// Create all tables from scratch (only when no users exist)
+async function createAllTablesFromScratch() {
+    try {
+        console.log('🏗️ [FROM-SCRATCH] Creating all tables from scratch...');
+        
+        // Users table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id VARCHAR(255) PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255),
+                "firstName" VARCHAR(255),
+                "lastName" VARCHAR(255),
+                "googleId" VARCHAR(255),
+                role VARCHAR(50) DEFAULT 'user',
+                "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Reset tokens table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS reset_tokens (
                 token VARCHAR(255) PRIMARY KEY,
@@ -324,8 +521,8 @@ async function createTables() {
                 FOREIGN KEY (userid) REFERENCES users (id) ON DELETE CASCADE
             )
         `);
-
-        // Create analytics table
+        
+        // Analytics table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS analytics (
                 id SERIAL PRIMARY KEY,
@@ -337,8 +534,8 @@ async function createTables() {
                 useragent TEXT
             )
         `);
-
-        // Create sessions table for PostgreSQL session store
+        
+        // Sessions table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS sessions (
                 sid VARCHAR(255) PRIMARY KEY,
@@ -346,72 +543,88 @@ async function createTables() {
                 expire TIMESTAMP(6) NOT NULL
             )
         `);
-        console.log('✅ Sessions table created/verified');
-
-        // Create indexes for performance
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-            CREATE INDEX IF NOT EXISTS idx_users_googleid ON users("googleId");
-            CREATE INDEX IF NOT EXISTS idx_users_createdat ON users("createdAt");
-            CREATE INDEX IF NOT EXISTS idx_reset_tokens_userid ON reset_tokens(userid);
-            CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON reset_tokens(expires);
-            CREATE INDEX IF NOT EXISTS idx_analytics_userid ON analytics(userid);
-            CREATE INDEX IF NOT EXISTS idx_analytics_action ON analytics(action);
-            CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics(timestamp);
-            CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
-        `);
-
-        console.log('✅ PostgreSQL tables created successfully');
-
-        // CRITICAL: Always check for SQLite users that need migration
-        console.log('🏗️ [DEPLOY-DEBUG] Checking for SQLite users to migrate...');
-        await migrateFromSQLite();
         
-        if (existingUserCount > 0) {
-            console.log(`🏗️ [DEPLOY-DEBUG] PostgreSQL had ${existingUserCount} existing users, checked for new SQLite users`);
-            
-            // CRITICAL: Verify data integrity after deploy
-            const finalUserCount = await pool.query('SELECT COUNT(*) as count FROM users');
-            const finalCount = parseInt(finalUserCount.rows[0].count);
-            console.log(`🏗️ [DEPLOY-DEBUG] POST-DEPLOY VERIFICATION: Final user count: ${finalCount}`);
-            
-            if (finalCount !== existingUserCount) {
-                console.error(`🏗️ [DEPLOY-DEBUG] ❌ CRITICAL: User count changed from ${existingUserCount} to ${finalCount} during deploy!`);
-                
-                // Try to restore from backup
-                if (global.userBackup && global.userBackup.length > 0) {
-                    console.log('🏗️ [DEPLOY-DEBUG] Attempting emergency restore from backup...');
-                    await restoreUsersFromBackup(global.userBackup);
-                    
-                    // Verify restore
-                    const restoredCount = await pool.query('SELECT COUNT(*) as count FROM users');
-                    const restoredTotal = parseInt(restoredCount.rows[0].count);
-                    console.log(`🏗️ [DEPLOY-DEBUG] User count after restore: ${restoredTotal}`);
-                } else {
-                    console.error('🏗️ [DEPLOY-DEBUG] ❌ No backup available for restore!');
-                }
-            } else {
-                console.log(`🏗️ [DEPLOY-DEBUG] ✅ POST-DEPLOY VERIFICATION: User count stable at ${finalCount}`);
-                
-                // Log all users to verify they are still there
-                const allUsersAfter = await pool.query('SELECT id, email, "firstName", "lastName", "googleId" FROM users ORDER BY "createdAt" DESC');
-                console.log('🏗️ [DEPLOY-DEBUG] ALL users after deployment:');
-                allUsersAfter.rows.forEach((u, index) => {
-                    console.log(`🏗️ [DEPLOY-DEBUG] User ${index + 1}:`, {
-                        id: u.id,
-                        email: u.email,
-                        name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
-                        isGoogleUser: !!u.googleId
-                    });
-                });
-            }
-        } else {
-            console.log('🏗️ [DEPLOY-DEBUG] PostgreSQL table exists but empty, skipping migration to prevent conflicts');
-        }
+        console.log('🏗️ [FROM-SCRATCH] ✅ All tables created from scratch');
         
     } catch (error) {
-        console.error('❌ Error creating tables:', error);
+        console.error('🏗️ [FROM-SCRATCH] ❌ Error creating tables from scratch:', error);
         throw error;
+    }
+}
+
+// Ensure all required tables exist
+async function ensureAllRequiredTablesExist() {
+    try {
+        console.log('🏗️ [ENSURE] Ensuring all required tables exist...');
+        
+        // List of required tables
+        const requiredTables = ['users', 'reset_tokens', 'analytics', 'sessions'];
+        
+        for (const tableName of requiredTables) {
+            const tableExists = await pool.query(`
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = $1
+                );
+            `, [tableName]);
+            
+            if (!tableExists.rows[0].exists) {
+                console.log(`🏗️ [ENSURE] Table ${tableName} missing, creating...`);
+                
+                switch (tableName) {
+                    case 'users':
+                        await createAllTablesFromScratch();
+                        break;
+                    case 'reset_tokens':
+                    case 'analytics':
+                    case 'sessions':
+                        await createMissingTablesOnly();
+                        break;
+                }
+            }
+        }
+        
+        // Create indexes
+        await createIndexesSafely();
+        
+        console.log('🏗️ [ENSURE] ✅ All required tables verified');
+        
+    } catch (error) {
+        console.error('🏗️ [ENSURE] ❌ Error ensuring tables exist:', error);
+    }
+}
+
+// Create indexes safely
+async function createIndexesSafely() {
+    try {
+        console.log('🏗️ [INDEX] Creating indexes safely...');
+        
+        const indexes = [
+            'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+            'CREATE INDEX IF NOT EXISTS idx_users_googleid ON users("googleId")',
+            'CREATE INDEX IF NOT EXISTS idx_users_createdat ON users("createdAt")',
+            'CREATE INDEX IF NOT EXISTS idx_reset_tokens_userid ON reset_tokens(userid)',
+            'CREATE INDEX IF NOT EXISTS idx_reset_tokens_expires ON reset_tokens(expires)',
+            'CREATE INDEX IF NOT EXISTS idx_analytics_userid ON analytics(userid)',
+            'CREATE INDEX IF NOT EXISTS idx_analytics_action ON analytics(action)',
+            'CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics(timestamp)',
+            'CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire)'
+        ];
+        
+        for (const indexSql of indexes) {
+            try {
+                await pool.query(indexSql);
+            } catch (err) {
+                // Ignore index creation errors (they might already exist)
+                console.log('🏗️ [INDEX] Index already exists or failed to create:', err.message);
+            }
+        }
+        
+        console.log('🏗️ [INDEX] ✅ Indexes created safely');
+        
+    } catch (error) {
+        console.error('🏗️ [INDEX] ❌ Error creating indexes:', error);
     }
 }
 
@@ -460,73 +673,97 @@ async function restoreUsersFromBackup(backupUsers) {
     }
 }
 
-async function migrateFromSQLite() {
+// Safe migration - only migrate new users, never overwrite existing ones
+async function migrateFromSQLiteNewUsersOnly() {
     try {
         const sqliteDbPath = path.join(__dirname, 'users.db');
         
-        if (fs.existsSync(sqliteDbPath)) {
-            console.log('🔄 Checking SQLite for new users to migrate...');
-            
-            // Import SQLite database
-            const Database = require('better-sqlite3');
-            const sqliteDb = new Database(sqliteDbPath, { readonly: true });
-            
-            // Get all users from SQLite
-            const sqliteUsers = sqliteDb.prepare('SELECT * FROM users').all();
-            
-            console.log(`📊 Found ${sqliteUsers.length} users in SQLite`);
-            
-            let migrated = 0;
-            let updated = 0;
-            let skipped = 0;
-            
-            for (const user of sqliteUsers) {
-                try {
-                    // First check if user already exists in PostgreSQL
-                    const existingUser = await pool.query(`
-                        SELECT id, email FROM users WHERE email = $1
-                    `, [user.email]);
-                    
-                    if (existingUser.rows.length > 0) {
-                        console.log(`⏭️ User already exists in PostgreSQL: ${user.email}`);
-                        skipped++;
-                        continue;
-                    }
-                    
-                    console.log(`🔄 Migrating NEW user: ${user.email}`);
-                    const result = await pool.query(`
-                        INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt", role)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                        RETURNING id, email
-                    `, [
-                        user.id,
-                        user.email,
-                        user.password,
-                        user.firstName,
-                        user.lastName,
-                        user.googleId,
-                        user.createdAt,
-                        user.role || 'user'
-                    ]);
-                    
-                    if (result.rowCount > 0) {
-                        migrated++;
-                        console.log(`✅ NEW User migrated: ${user.email}`);
-                    }
-                } catch (err) {
-                    console.error(`❌ Failed to migrate user ${user.email}:`, err.message);
-                }
-            }
-            
-            sqliteDb.close();
-            console.log(`✅ Migration summary: ${migrated} new users migrated, ${skipped} users already existed, ${updated} users updated`);
-            
-        } else {
-            console.log('ℹ️ No SQLite database found for migration');
+        if (!fs.existsSync(sqliteDbPath)) {
+            console.log('ℹ️ [MIGRATE] No SQLite database found for migration');
+            return;
         }
         
+        console.log('🔄 [MIGRATE] Checking SQLite for NEW users to migrate...');
+        
+        // Import SQLite database safely
+        const Database = require('better-sqlite3');
+        let sqliteDb;
+        
+        try {
+            sqliteDb = new Database(sqliteDbPath, { readonly: true });
+        } catch (err) {
+            console.error('❌ [MIGRATE] Failed to open SQLite database:', err.message);
+            return;
+        }
+        
+        // Get all users from SQLite
+        let sqliteUsers;
+        try {
+            sqliteUsers = sqliteDb.prepare('SELECT * FROM users').all();
+        } catch (err) {
+            console.error('❌ [MIGRATE] Failed to read SQLite users:', err.message);
+            sqliteDb.close();
+            return;
+        }
+        
+        console.log(`📊 [MIGRATE] Found ${sqliteUsers.length} users in SQLite`);
+        
+        if (sqliteUsers.length === 0) {
+            sqliteDb.close();
+            console.log('ℹ️ [MIGRATE] No users to migrate from SQLite');
+            return;
+        }
+        
+        let migrated = 0;
+        let skipped = 0;
+        
+        for (const user of sqliteUsers) {
+            try {
+                // CRITICAL: Only add NEW users, never overwrite existing ones
+                const existingUser = await pool.query(`
+                    SELECT id, email FROM users WHERE email = $1
+                `, [user.email]);
+                
+                if (existingUser.rows.length > 0) {
+                    console.log(`⏭️ [MIGRATE] User already exists in PostgreSQL: ${user.email}`);
+                    skipped++;
+                    continue;
+                }
+                
+                console.log(`🔄 [MIGRATE] Migrating NEW user: ${user.email}`);
+                const result = await pool.query(`
+                    INSERT INTO users (id, email, password, "firstName", "lastName", "googleId", "createdAt", role)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ON CONFLICT (email) DO NOTHING
+                    RETURNING id, email
+                `, [
+                    user.id,
+                    user.email,
+                    user.password,
+                    user.firstName,
+                    user.lastName,
+                    user.googleId,
+                    user.createdAt,
+                    user.role || 'user'
+                ]);
+                
+                if (result.rowCount > 0) {
+                    migrated++;
+                    console.log(`✅ [MIGRATE] NEW User migrated: ${user.email}`);
+                } else {
+                    console.log(`⏭️ [MIGRATE] User already exists (conflict): ${user.email}`);
+                    skipped++;
+                }
+            } catch (err) {
+                console.error(`❌ [MIGRATE] Failed to migrate user ${user.email}:`, err.message);
+            }
+        }
+        
+        sqliteDb.close();
+        console.log(`✅ [MIGRATE] Migration summary: ${migrated} new users migrated, ${skipped} users already existed`);
+        
     } catch (error) {
-        console.error('⚠️ Migration error:', error);
+        console.error('⚠️ [MIGRATE] Migration error:', error);
     }
 }
 
