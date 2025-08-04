@@ -63,6 +63,37 @@ function initPostgreSQL() {
 
         pool = new Pool(config);
 
+        // Connection pool error handling
+        pool.on('error', (err, client) => {
+            console.error('❌ PostgreSQL pool error:', err.message);
+            console.error('❌ Pool error stack:', err.stack);
+            
+            // If it's a connection error, try to reconnect
+            if (err.code === 'ECONNRESET' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
+                console.log('🔄 Connection lost, attempting to reconnect...');
+                setTimeout(async () => {
+                    try {
+                        await testConnection();
+                        console.log('✅ Reconnection successful');
+                    } catch (reconnectError) {
+                        console.error('❌ Reconnection failed:', reconnectError.message);
+                    }
+                }, 5000);
+            }
+        });
+
+        pool.on('connect', (client) => {
+            console.log('🔗 New PostgreSQL client connected');
+        });
+
+        pool.on('acquire', (client) => {
+            console.log('📝 PostgreSQL client acquired from pool');
+        });
+
+        pool.on('remove', (client) => {
+            console.log('🗑️ PostgreSQL client removed from pool');
+        });
+
         // Test connection with timeout
         const testConnection = async () => {
             try {

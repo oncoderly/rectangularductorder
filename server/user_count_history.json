@@ -58,5 +58,17 @@
     "count": 4,
     "context": "after_missing_tables_only",
     "environment": "development"
+  },
+  {
+    "timestamp": "2025-08-04T10:27:17.192Z",
+    "count": 4,
+    "context": "before_table_operations",
+    "environment": "development"
+  },
+  {
+    "timestamp": "2025-08-04T10:27:17.844Z",
+    "count": 4,
+    "context": "after_missing_tables_only",
+    "environment": "development"
   }
 ]

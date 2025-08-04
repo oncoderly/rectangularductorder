@@ -34,7 +34,8 @@
       "Bash(cp:*)",
       "Bash(sed:*)",
       "Bash(git checkout:*)",
-      "WebFetch(domain:rectangularductorder.onrender.com)"
+      "WebFetch(domain:rectangularductorder.onrender.com)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }

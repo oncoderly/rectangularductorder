@@ -189,41 +189,51 @@ const isProductionEnv = process.env.NODE_ENV === 'production' || process.env.SER
 // Session store configuration
 let sessionStore;
 
-// Initialize session store asynchronously
+// Initialize session store asynchronously with database wait
 async function initializeSessionStore() {
     if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
         try {
-            // Test PostgreSQL connection before using it for sessions
-            const { Pool } = require('pg');
-            const testPool = new Pool({
-                connectionString: process.env.DATABASE_URL,
-                ssl: { rejectUnauthorized: false }
-            });
+            console.log('🔧 SESSION STORE: Waiting for database initialization...');
             
-            // Test connection
-            const client = await testPool.connect();
-            await client.query('SELECT 1');
-            client.release();
-            testPool.end();
+            // Wait for database to be ready
+            const databaseModule = require('./database-selector');
+            await databaseModule.waitForInit();
+            
+            console.log('🔧 SESSION STORE: Database ready, configuring PostgreSQL session store...');
+            
+            // Use the same connection pool as the main database
+            const { db } = databaseModule;
+            
+            // Create sessions table if it doesn't exist
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS sessions (
+                    sid VARCHAR NOT NULL PRIMARY KEY,
+                    sess JSON NOT NULL,
+                    expire TIMESTAMP(6) NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS "IDX_sessions_expire" ON sessions("expire");
+            `);
             
             // Use PostgreSQL session store in production
             sessionStore = new pgSession({
-                conObject: {
-                    connectionString: process.env.DATABASE_URL,
-                    ssl: { rejectUnauthorized: false }
-                },
-                tableName: 'sessions'
+                pool: db,  // Use existing connection pool
+                tableName: 'sessions',
+                createTableIfMissing: false  // We created it manually above
             });
-            console.log('✅ PostgreSQL session store configured successfully');
+            
+            console.log('✅ PostgreSQL session store configured successfully with shared connection pool');
+            return true;
         } catch (error) {
             console.error('❌ PostgreSQL session store configuration failed:', error.message);
             console.log('⚠️ Falling back to memory session store');
             sessionStore = undefined;
+            return false;
         }
     } else {
         // Use memory store in development
         sessionStore = undefined;
         console.log('⚠️ Using memory session store (development mode)');
+        return true;
     }
 }
 
@@ -232,42 +242,66 @@ console.log('🔧 SESSION SETUP: Configuring session middleware immediately');
 console.log('🔧 SESSION SETUP: isProductionEnv:', isProductionEnv);
 console.log('🔧 SESSION SETUP: Cookie secure:', isProductionEnv);
 
-// Use memory store for immediate startup, PostgreSQL store will be configured later
-app.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    name: 'sessionId',
-    cookie: { 
-        secure: isProductionEnv,
-        httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000
-    },
-    rolling: true
-}));
-console.log('✅ SESSION SETUP: Express session middleware configured immediately');
+// Session configuration function
+function createSessionMiddleware() {
+    return session({
+        secret: SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        name: 'sessionId',
+        store: sessionStore, // Will use current sessionStore value
+        cookie: { 
+            secure: isProductionEnv,
+            httpOnly: true,
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000
+        },
+        rolling: true
+    });
+}
 
-// Passport initialization
-console.log('🔧 Initializing Passport middleware...');
-app.use(passport.initialize());
-app.use(passport.session());
-console.log('✅ Passport middleware initialized');
+// Initialize session store synchronously for production
+async function setupApplication() {
+    try {
+        // Initialize session store first in production
+        if (process.env.NODE_ENV === 'production') {
+            console.log('🔧 Production mode: Initializing session store before middleware setup...');
+            await initializeSessionStore();
+        }
+        
+        // Configure session middleware with proper store
+        app.use(createSessionMiddleware());
+        console.log('✅ SESSION SETUP: Express session middleware configured with store:', 
+                   sessionStore ? sessionStore.constructor.name : 'Memory Store');
 
-// CRITICAL: Register all routes AFTER session middleware is configured
-console.log('🔧 Registering all API routes after session middleware...');
-registerAllRoutes();
+        // Passport initialization
+        console.log('🔧 Initializing Passport middleware...');
+        app.use(passport.initialize());
+        app.use(passport.session());
+        console.log('✅ Passport middleware initialized');
 
-// Initialize session store asynchronously in background (for production optimization)
-initializeSessionStore().then(() => {
-    console.log('🔧 SESSION STORE: PostgreSQL session store initialized in background');
-    console.log('🔧 SESSION STORE: Store type:', sessionStore ? sessionStore.constructor.name : 'Memory Store');
-}).catch(error => {
-    console.error('❌ PostgreSQL session store initialization failed (continuing with memory store):', error.message);
-});
+        // CRITICAL: Register all routes AFTER session middleware is configured
+        console.log('🔧 Registering all API routes after session middleware...');
+        registerAllRoutes();
 
-// START SERVER IMMEDIATELY
-startServer();
+        // START SERVER
+        startServer();
+        
+    } catch (error) {
+        console.error('❌ Application setup failed:', error.message);
+        console.log('⚠️ Continuing with memory session store...');
+        
+        // Fallback setup without PostgreSQL session store
+        app.use(createSessionMiddleware());
+        app.use(passport.initialize());
+        app.use(passport.session());
+        registerAllRoutes();
+        startServer();
+    }
+}
+
+// Start application setup
+setupApplication();
 
 // Debug: Environment variables
 console.log('🔧 Google OAuth Config:');
@@ -2136,9 +2170,12 @@ function registerAllRoutes() {
     console.log('✅ Critical routes registered successfully AFTER session middleware');
 }
 
-// Server startup function - called after session middleware is configured  
+
+// Graceful shutdown handling
+let serverInstance;
+
 function startServer() {
-    app.listen(PORT, () => {
+    serverInstance = app.listen(PORT, () => {
         console.log(`📍 Server URL: ${SERVER_URL}`);
         
         // DEBUG: List all registered routes (with safety check)
@@ -2164,55 +2201,45 @@ function startServer() {
         
         console.log(`Sunucu http://localhost:${PORT} portunda çalışıyor`);
         
-        // OAuth2 setup helper
-        if (EMAIL_SERVICE === 'oauth2' && !OAUTH2_REFRESH_TOKEN && OAUTH2_CLIENT_ID) {
-            console.log('\n📧 OAuth2 Kurulumu Gerekli!');
-            console.log('🔗 Bu URL\'ye git:');
-            const oauth2Setup = new google.auth.OAuth2(OAUTH2_CLIENT_ID, OAUTH2_CLIENT_SECRET, `${SERVER_URL}/auth/google/callback`);
-            const authUrl = oauth2Setup.generateAuthUrl({
-                access_type: 'offline',
-                scope: ['https://www.googleapis.com/auth/gmail.send'],
-                prompt: 'consent'
-            });
-            console.log(authUrl);
-            console.log('\n✅ Onayladıktan sonra /auth/google/callback sayfasından kodu alın');
-        }
-        
-        console.log('🔍 Testing Google Auth endpoint internally...');
-        
-        // Server internal testing
-        setTimeout(() => {
-            console.log('Available routes test will be done via external call');
-        }, 1000);
-        
-        // Wait for database initialization
-        console.log('⏳ Waiting for database initialization...');
-        waitForInit().then(async () => {
-            console.log('🔍 SERVER.JS: About to check isPostgreSQL...');
-            console.log('🔍 SERVER.JS: typeof isPostgreSQL function:', typeof isPostgreSQL);
-            console.log('🔍 SERVER.JS: isPostgreSQL() result:', isPostgreSQL());
-            console.log('🔍 SERVER.JS: Final isPostgreSQL call result:', isPostgreSQL());
-            console.log('🔍 SERVER.JS: db type:', isPostgreSQL() ? 'PostgreSQL' : 'SQLite');
-            
-            // Database durumunu kontrol et
-            try {
-                const userCount = await userDB.getUserCount();
-                console.log('👥 Current user count in database:', userCount);
-                
-                // Test user creation functionality
-                const testUser = await userDB.getUserByEmail('test@example.com');
-                if (testUser) {
-                    console.log('🧪 Test user found:', testUser.email);
-                } else {
-                    console.log('🧪 No test user found');
-                }
-                
-                console.log('✅ Database connection test successful');
-            } catch (error) {
-                console.error('❌ Database connection test failed:', error);
-            }
-        }).catch(error => {
-            console.error('❌ Database initialization timeout or failed:', error);
-        });
+        // Setup graceful shutdown handlers
+        setupGracefulShutdown();
     });
+}
+
+// Graceful shutdown function
+function setupGracefulShutdown() {
+    process.on('SIGTERM', gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', gracefulShutdown('SIGINT'));
+}
+
+function gracefulShutdown(signal) {
+    return () => {
+        console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+        
+        if (serverInstance) {
+            serverInstance.close(() => {
+                console.log('✅ HTTP server closed');
+                
+                // Close database connections
+                const databaseModule = require('./database-selector');
+                if (databaseModule.db && databaseModule.db.end) {
+                    databaseModule.db.end(() => {
+                        console.log('✅ Database connection closed');
+                        process.exit(0);
+                    });
+                } else {
+                    console.log('✅ No database connection to close');
+                    process.exit(0);
+                }
+            });
+            
+            // Force close after 10 seconds
+            setTimeout(() => {
+                console.error('❌ Graceful shutdown timeout, forcing exit');
+                process.exit(1);
+            }, 10000);
+        } else {
+            process.exit(0);
+        }
+    };
 }
