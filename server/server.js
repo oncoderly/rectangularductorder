@@ -2175,7 +2175,7 @@ function registerAllRoutes() {
 let serverInstance;
 
 function startServer() {
-    serverInstance = app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
         console.log(`📍 Server URL: ${SERVER_URL}`);
         
         // DEBUG: List all registered routes (with safety check)
@@ -2204,6 +2204,8 @@ function startServer() {
         // Setup graceful shutdown handlers
         setupGracefulShutdown();
     });
+    
+    serverInstance = server;
 }
 
 // Graceful shutdown function
