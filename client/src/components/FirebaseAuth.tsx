@@ -17,7 +17,12 @@ interface FirebaseAuthProps {
   onClose?: () => void;
 }
 
-const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ onLogin, onGuestMode, isModal, onClose }) => {
+const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ 
+  onLogin: _onLogin, // Firebase auth listener in App.tsx handles user state
+  onGuestMode, 
+  isModal, 
+  onClose 
+}) => {
   const [authMethod, setAuthMethod] = useState<'email' | 'google'>('email');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -58,6 +63,7 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ onLogin, onGuestMode, isMod
         setError(result.error || 'Bir hata oluştu');
       } else {
         console.log('✅ FirebaseAuth: Email auth successful');
+        // App.tsx Firebase auth listener will handle the user state
       }
     } catch (error: any) {
       console.error('❌ FirebaseAuth: Email auth error:', error);
@@ -86,6 +92,7 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ onLogin, onGuestMode, isMod
         }
       } else {
         console.log('✅ FirebaseAuth: Google auth successful');
+        // App.tsx Firebase auth listener will handle the user state
       }
     } catch (error: any) {
       console.error('❌ FirebaseAuth: Google auth error:', error);
