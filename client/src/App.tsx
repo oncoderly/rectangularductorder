@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from './firebase/config';
+import { type User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChange } from './firebase/auth';
 import FirebaseAuth from './components/FirebaseAuth';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
@@ -26,79 +26,51 @@ function App() {
   
   console.log('📊 App: Current state - loading:', loading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
 
-  // Firebase Auth State Listener
+  // Firebase Auth State Listener - Basitleştirilmiş
   useEffect(() => {
     console.log('🚀 App: Setting up Firebase auth listener...');
     
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      console.log('🔥 App: Firebase auth state changed:', {
-        hasUser: !!firebaseUser,
-        email: firebaseUser?.email,
-        displayName: firebaseUser?.displayName,
-        uid: firebaseUser?.uid
-      });
+    const unsubscribe = onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
+      console.log('🔥 App: Auth state changed:', !!firebaseUser, firebaseUser?.email);
       
       if (firebaseUser) {
+        // Firebase kullanıcısını app user'a dönüştür
+        const user: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
+          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+          role: 'user'
+        };
+        
+        console.log('✅ App: User logged in:', user.email);
+        setUser(user);
+        
+        // Server session oluştur (background)
         try {
-          console.log('🔑 App: Getting Firebase ID token...');
           const idToken = await firebaseUser.getIdToken();
-          console.log('🔑 App: Got Firebase ID token (length):', idToken.length);
-          
-          // Server'a ID token gönder ve session oluştur
-          console.log('📡 App: Sending request to /api/auth/firebase...');
-          const response = await fetch('/api/auth/firebase', {
+          fetch('/api/auth/firebase', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken })
-          });
-          
-          console.log('📡 App: Server response status:', response.status);
-          
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('✅ App: Server session created:', userData);
-            
-            // Firebase kullanıcısını uygulama kullanıcısına dönüştür
-            const user: User = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              firstName: firebaseUser.displayName?.split(' ')[0] || '',
-              lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-              role: userData.user?.role || 'user'
-            };
-            
-            console.log('✅ App: Setting user from Firebase:', user);
-            setUser(user);
-          } else {
-            const errorData = await response.text();
-            console.error('❌ App: Failed to create server session:', response.status, errorData);
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('❌ App: Firebase ID token error:', error);
-          setUser(null);
+          }).catch(err => console.log('⚠️ Server session failed:', err));
+        } catch (err) {
+          console.log('⚠️ ID token failed:', err);
         }
       } else {
-        console.log('❌ App: No Firebase user, clearing user state');
+        console.log('❌ App: User logged out');
         setUser(null);
       }
       
       setLoading(false);
     });
 
-    // Check URL for admin dashboard
-    const path = window.location.pathname;
-    if (path === '/admin-dashboard' || path.includes('admin')) {
-      console.log('📊 App: Admin dashboard requested via URL');
+    // Admin dashboard URL check
+    if (window.location.pathname.includes('admin')) {
       setShowAdminDashboard(true);
     }
 
-    return () => {
-      console.log('🧹 App: Cleaning up Firebase auth listener');
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   // Firebase tabanlı logout

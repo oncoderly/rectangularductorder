@@ -1,138 +1,93 @@
 import { 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPhoneNumber,
-  GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-  signOut,
-  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
   updateProfile,
-  RecaptchaVerifier,
-  // User
+  User
 } from 'firebase/auth';
 import { auth } from './config';
 
-// Email/Password ile giriş
-export const signInWithEmail = async (email: string, password: string) => {
+// Google Auth Provider (singleton)
+const googleProvider = new GoogleAuthProvider();
+
+// Email ile giriş
+export const loginWithEmail = async (email: string, password: string) => {
   try {
+    console.log('🔐 Auth: Email login started');
     const result = await signInWithEmailAndPassword(auth, email, password);
+    console.log('✅ Auth: Email login successful');
     return { success: true, user: result.user };
   } catch (error: any) {
+    console.error('❌ Auth: Email login failed:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Email/Password ile kayıt
-export const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+// Email ile kayıt
+export const registerWithEmail = async (email: string, password: string, displayName: string) => {
   try {
+    console.log('📝 Auth: Email registration started');
     const result = await createUserWithEmailAndPassword(auth, email, password);
     
-    // Kullanıcı adını güncelle
-    await updateProfile(result.user, {
-      displayName: displayName
-    });
+    // Display name güncelle
+    await updateProfile(result.user, { displayName });
     
+    console.log('✅ Auth: Email registration successful');
     return { success: true, user: result.user };
   } catch (error: any) {
+    console.error('❌ Auth: Email registration failed:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Google ile giriş - popup kullan (production-safe)
-export const signInWithGoogle = async () => {
+// Google ile giriş - TEK POPUP
+let googleLoginInProgress = false;
+
+export const loginWithGoogle = async () => {
+  // Double-click protection
+  if (googleLoginInProgress) {
+    console.log('🚫 Auth: Google login already in progress');
+    return { success: false, error: 'Giriş işlemi devam ediyor' };
+  }
+
   try {
-    if (!auth) {
-      throw new Error('Firebase auth not initialized');
+    console.log('🚀 Auth: Google login started');
+    googleLoginInProgress = true;
+    
+    const result = await signInWithPopup(auth, googleProvider);
+    
+    console.log('✅ Auth: Google login successful:', result.user.email);
+    return { success: true, user: result.user };
+  } catch (error: any) {
+    console.error('❌ Auth: Google login failed:', error);
+    
+    // Popup kapatılırsa error verme
+    if (error.code === 'auth/popup-closed-by-user') {
+      return { success: false, error: 'Giriş işlemi iptal edildi' };
     }
     
-    const provider = new GoogleAuthProvider();
-    
-    // Popup kullan (retry logic ile)
-    try {
-      console.log('🔍 Attempting Google popup login...');
-      const result = await signInWithPopup(auth, provider);
-      console.log('✅ Google popup login successful');
-      return { success: true, user: result.user };
-    } catch (popupError: any) {
-      console.log('❌ Popup failed, trying redirect fallback:', popupError.code);
-      
-      // Popup fail olursa redirect kullan
-      if (popupError.code === 'auth/popup-blocked' || 
-          popupError.code === 'auth/popup-closed-by-user' ||
-          popupError.code === 'auth/cancelled-popup-request') {
-        
-        console.log('🔄 Falling back to redirect...');
-        await signInWithRedirect(auth, provider);
-        return { success: true, message: 'Redirecting to Google...' };
-      }
-      
-      throw popupError;
-    }
-  } catch (error: any) {
-    console.error('Google sign-in error:', error);
     return { success: false, error: error.message };
+  } finally {
+    googleLoginInProgress = false;
   }
 };
 
-// Redirect sonrası sonucu kontrol et
-export const handleRedirectResult = async () => {
-  try {
-    if (!auth) {
-      return { success: false, error: 'Firebase auth not initialized' };
-    }
-    
-    console.log('🔍 Checking redirect result...');
-    const result = await getRedirectResult(auth);
-    if (result) {
-      console.log('✅ Redirect result found:', result.user?.email);
-      return { success: true, user: result.user };
-    }
-    console.log('ℹ️ No redirect result');
-    return { success: false, error: 'No redirect result' };
-  } catch (error: any) {
-    console.error('❌ Redirect result error:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-// Telefon numarası ile giriş (reCAPTCHA gerekli)
-export const signInWithPhone = async (phoneNumber: string, recaptchaVerifier: RecaptchaVerifier) => {
-  try {
-    const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-    return { success: true, confirmationResult };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-};
-
-// Çıkış yap
+// Çıkış
 export const logout = async () => {
   try {
-    await signOut(auth);
+    console.log('👋 Auth: Logout started');
+    await firebaseSignOut(auth);
+    console.log('✅ Auth: Logout successful');
     return { success: true };
   } catch (error: any) {
+    console.error('❌ Auth: Logout failed:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Şifre sıfırlama
-export const resetPassword = async (email: string) => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-};
-
-// reCAPTCHA verifier oluştur
-export const createRecaptchaVerifier = (containerId: string) => {
-  return new RecaptchaVerifier(auth, containerId, {
-    'size': 'normal',
-    'callback': () => {
-      // reCAPTCHA solved - will proceed with submit function
-    }
-  });
+// Auth state listener helper
+export const onAuthStateChange = (callback: (user: User | null) => void) => {
+  return auth.onAuthStateChanged(callback);
 };
