@@ -134,14 +134,20 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
           <button
             type="button"
             className={`auth-method-btn ${authMethod === 'email' ? 'active' : ''}`}
-            onClick={() => setAuthMethod('email')}
+            onClick={() => {
+              console.log('🔍 FirebaseAuth: Email tab clicked');
+              setAuthMethod('email');
+            }}
           >
             📧 Email
           </button>
           <button
             type="button"
             className={`auth-method-btn ${authMethod === 'google' ? 'active' : ''}`}
-            onClick={() => setAuthMethod('google')}
+            onClick={() => {
+              console.log('🔍 FirebaseAuth: Google tab clicked');
+              setAuthMethod('google');
+            }}
           >
             🔍 Google
           </button>
@@ -211,6 +217,7 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
             type="submit"
             disabled={loading}
             className="auth-button"
+            onClick={() => console.log('🔍 FirebaseAuth: Submit button clicked, method:', authMethod)}
           >
             {loading ? 'Yükleniyor...' : (
               authMethod === 'google' ? 'Google ile Giriş Yap' :
