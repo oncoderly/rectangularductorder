@@ -9,9 +9,9 @@ import {
   resetPassword,
   createRecaptchaVerifier 
 } from '../firebase/auth';
+import './Auth.css';
 import { auth } from '../firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import './Auth.css';
 
 interface User {
   id: string;
