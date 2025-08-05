@@ -2219,16 +2219,23 @@ function registerAllRoutes() {
             
             console.log('🔑 Firebase Auth: Verifying ID token...');
             
-            // Basit token decode (production'da Firebase Admin SDK kullanılmalı)
-            // Şimdilik token'ı decode etmeden user bilgilerini frontend'den alacağız
-            const base64Payload = idToken.split('.')[1];
-            const payload = JSON.parse(atob(base64Payload));
-            
-            console.log('🔍 Firebase Auth: Token payload:', {
-                uid: payload.sub,
-                email: payload.email,
-                name: payload.name
-            });
+            // JWT token decode (Node.js compatible)
+            let payload;
+            try {
+                const base64Payload = idToken.split('.')[1];
+                // Node.js'te Buffer kullan (atob yerine)
+                const decodedPayload = Buffer.from(base64Payload, 'base64').toString('utf-8');
+                payload = JSON.parse(decodedPayload);
+                
+                console.log('🔍 Firebase Auth: Token payload:', {
+                    uid: payload.sub,
+                    email: payload.email,
+                    name: payload.name
+                });
+            } catch (error) {
+                console.error('❌ Firebase Auth: Token decode error:', error);
+                return res.status(400).json({ error: 'Token decode hatası' });
+            }
             
             const firebaseUid = payload.sub;
             const email = payload.email;
@@ -2241,27 +2248,48 @@ function registerAllRoutes() {
             await waitForInit();
             
             // Email ile kullanıcıyı bul veya oluştur (Firebase UID yerine)
-            let user = await db().getUserByEmail(email);
+            let user;
+            try {
+                user = await db().getUserByEmail(email);
+                console.log('🔍 Firebase Auth: User lookup result:', !!user);
+            } catch (dbError) {
+                console.error('❌ Firebase Auth: Database getUserByEmail error:', dbError);
+                throw new Error('Database user lookup failed');
+            }
             
             if (!user) {
-                // Yeni Firebase kullanıcısı oluştur
-                const firstName = displayName.split(' ')[0] || '';
-                const lastName = displayName.split(' ').slice(1).join(' ') || '';
-                
-                const userData = {
-                    id: crypto.randomUUID(),
-                    email: email,
-                    firstName: firstName,
-                    lastName: lastName,
-                    googleId: firebaseUid, // Firebase UID'yi googleId olarak sakla
-                    role: 'user',
-                    createdAt: new Date().toISOString()
-                };
-                
-                const userId = await db().createUser(userData);
-                user = await db().getUserById(userId) || userData;
-                
-                console.log('✅ Firebase Auth: New user created:', user.id);
+                try {
+                    // Yeni Firebase kullanıcısı oluştur
+                    const firstName = displayName.split(' ')[0] || '';
+                    const lastName = displayName.split(' ').slice(1).join(' ') || '';
+                    
+                    const userData = {
+                        id: crypto.randomUUID(),
+                        email: email,
+                        firstName: firstName,
+                        lastName: lastName,
+                        googleId: firebaseUid, // Firebase UID'yi googleId olarak sakla
+                        role: 'user',
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    console.log('🔍 Firebase Auth: Creating new user:', userData);
+                    const userId = await db().createUser(userData);
+                    
+                    if (userId) {
+                        user = await db().getUserById(userId);
+                    }
+                    
+                    // Fallback: userData'yı kullan
+                    if (!user) {
+                        user = userData;
+                    }
+                    
+                    console.log('✅ Firebase Auth: New user created:', user.id);
+                } catch (createError) {
+                    console.error('❌ Firebase Auth: User creation error:', createError);
+                    throw new Error('User creation failed');
+                }
             } else {
                 console.log('✅ Firebase Auth: Existing user found:', user.id);
             }
@@ -2278,9 +2306,9 @@ function registerAllRoutes() {
                 user: {
                     id: user.id,
                     email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role
+                    firstName: user.firstName || user.firstname,
+                    lastName: user.lastName || user.lastname,
+                    role: user.role || 'user'
                 }
             });
             
