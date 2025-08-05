@@ -1722,21 +1722,6 @@ app.post('/api/forgot-password',
                     throw new Error(emailResult.error);
                 }
                 
-            } else if (emailTransporter) {
-                // Nodemailer (Gmail/Outlook)
-                const mailOptions = {
-                    from: EMAIL_FROM,
-                    to: email,
-                    subject: 'Şifre Sıfırlama - Hava Kanalı Sipariş Sistemi',
-                    html: emailTemplate
-                };
-                
-                await emailTransporter.sendMail(mailOptions);
-                console.log(`✅ ${emailService} password reset email sent to ${email}`);
-                
-            } else {
-                // Demo mode - log the reset link
-                console.log(`🔑 Password reset link for ${email}: ${resetLink}`);
             }
         } catch (emailError) {
             console.error('❌ Email sending failed:', emailError);
