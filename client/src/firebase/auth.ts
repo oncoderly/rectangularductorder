@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPhoneNumber,
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
@@ -39,7 +40,7 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
   }
 };
 
-// Google ile giriş - redirect kullan (popup yerine)
+// Google ile giriş - popup kullan (production-safe)
 export const signInWithGoogle = async () => {
   try {
     if (!auth) {
@@ -48,9 +49,27 @@ export const signInWithGoogle = async () => {
     
     const provider = new GoogleAuthProvider();
     
-    // Popup yerine redirect kullan (daha güvenli)
-    await signInWithRedirect(auth, provider);
-    return { success: true, message: 'Redirecting to Google...' };
+    // Popup kullan (retry logic ile)
+    try {
+      console.log('🔍 Attempting Google popup login...');
+      const result = await signInWithPopup(auth, provider);
+      console.log('✅ Google popup login successful');
+      return { success: true, user: result.user };
+    } catch (popupError: any) {
+      console.log('❌ Popup failed, trying redirect fallback:', popupError.code);
+      
+      // Popup fail olursa redirect kullan
+      if (popupError.code === 'auth/popup-blocked' || 
+          popupError.code === 'auth/popup-closed-by-user' ||
+          popupError.code === 'auth/cancelled-popup-request') {
+        
+        console.log('🔄 Falling back to redirect...');
+        await signInWithRedirect(auth, provider);
+        return { success: true, message: 'Redirecting to Google...' };
+      }
+      
+      throw popupError;
+    }
   } catch (error: any) {
     console.error('Google sign-in error:', error);
     return { success: false, error: error.message };
@@ -64,13 +83,16 @@ export const handleRedirectResult = async () => {
       return { success: false, error: 'Firebase auth not initialized' };
     }
     
+    console.log('🔍 Checking redirect result...');
     const result = await getRedirectResult(auth);
     if (result) {
+      console.log('✅ Redirect result found:', result.user?.email);
       return { success: true, user: result.user };
     }
+    console.log('ℹ️ No redirect result');
     return { success: false, error: 'No redirect result' };
   } catch (error: any) {
-    console.error('Redirect result error:', error);
+    console.error('❌ Redirect result error:', error);
     return { success: false, error: error.message };
   }
 };

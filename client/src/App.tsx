@@ -31,15 +31,21 @@ function App() {
     console.log('🚀 App: Setting up Firebase auth listener...');
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      console.log('🔥 App: Firebase auth state changed:', !!firebaseUser);
+      console.log('🔥 App: Firebase auth state changed:', {
+        hasUser: !!firebaseUser,
+        email: firebaseUser?.email,
+        displayName: firebaseUser?.displayName,
+        uid: firebaseUser?.uid
+      });
       
       if (firebaseUser) {
         try {
-          // Firebase ID token'ını al
+          console.log('🔑 App: Getting Firebase ID token...');
           const idToken = await firebaseUser.getIdToken();
-          console.log('🔑 App: Got Firebase ID token');
+          console.log('🔑 App: Got Firebase ID token (length):', idToken.length);
           
           // Server'a ID token gönder ve session oluştur
+          console.log('📡 App: Sending request to /api/auth/firebase...');
           const response = await fetch('/api/auth/firebase', {
             method: 'POST',
             headers: {
@@ -47,6 +53,8 @@ function App() {
             },
             body: JSON.stringify({ idToken })
           });
+          
+          console.log('📡 App: Server response status:', response.status);
           
           if (response.ok) {
             const userData = await response.json();
@@ -64,7 +72,8 @@ function App() {
             console.log('✅ App: Setting user from Firebase:', user);
             setUser(user);
           } else {
-            console.error('❌ App: Failed to create server session');
+            const errorData = await response.text();
+            console.error('❌ App: Failed to create server session:', response.status, errorData);
             setUser(null);
           }
         } catch (error) {
