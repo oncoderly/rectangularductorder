@@ -30,21 +30,47 @@ function App() {
   useEffect(() => {
     console.log('🚀 App: Setting up Firebase auth listener...');
     
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       console.log('🔥 App: Firebase auth state changed:', !!firebaseUser);
       
       if (firebaseUser) {
-        // Firebase kullanıcısını uygulama kullanıcısına dönüştür
-        const user: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          firstName: firebaseUser.displayName?.split(' ')[0] || '',
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          role: 'user' // Varsayılan rol, Firebase'den gelen custom claims'e göre değiştirilebilir
-        };
-        
-        console.log('✅ App: Setting user from Firebase:', user);
-        setUser(user);
+        try {
+          // Firebase ID token'ını al
+          const idToken = await firebaseUser.getIdToken();
+          console.log('🔑 App: Got Firebase ID token');
+          
+          // Server'a ID token gönder ve session oluştur
+          const response = await fetch('/api/auth/firebase', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken })
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('✅ App: Server session created:', userData);
+            
+            // Firebase kullanıcısını uygulama kullanıcısına dönüştür
+            const user: User = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              firstName: firebaseUser.displayName?.split(' ')[0] || '',
+              lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+              role: userData.user?.role || 'user'
+            };
+            
+            console.log('✅ App: Setting user from Firebase:', user);
+            setUser(user);
+          } else {
+            console.error('❌ App: Failed to create server session');
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('❌ App: Firebase ID token error:', error);
+          setUser(null);
+        }
       } else {
         console.log('❌ App: No Firebase user, clearing user state');
         setUser(null);

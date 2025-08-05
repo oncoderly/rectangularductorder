@@ -868,6 +868,27 @@ const userDB = {
         }
     },
 
+    // Get user by Firebase UID
+    getUserByFirebaseUid: async (firebaseUid) => {
+        try {
+            console.log('🔍 PostgreSQL: Looking for user with Firebase UID:', firebaseUid);
+            const result = await pool.query('SELECT * FROM users WHERE firebase_uid = $1', [firebaseUid]);
+            const user = result.rows[0] || null;
+            console.log('🔍 PostgreSQL: Firebase user found:', {
+                found: !!user,
+                id: user?.id,
+                email: user?.email,
+                firebaseUid: user?.firebase_uid,
+                firstName: user?.firstname || user?.firstName,
+                lastName: user?.lastname || user?.lastName
+            });
+            return user;
+        } catch (error) {
+            console.error('❌ Error getting user by Firebase UID:', error);
+            return null;
+        }
+    },
+
     // Get user by ID
     getUserById: async (id) => {
         try {
