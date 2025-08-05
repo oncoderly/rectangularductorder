@@ -4,6 +4,8 @@ import {
   signInWithPhoneNumber,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   sendPasswordResetEmail,
   updateProfile,
@@ -38,13 +40,38 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
   }
 };
 
-// Google ile giriş
+// Google ile giriş - redirect kullan (popup yerine)
 export const signInWithGoogle = async () => {
   try {
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
+    
     const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    return { success: true, user: result.user };
+    
+    // Popup yerine redirect kullan (daha güvenli)
+    await signInWithRedirect(auth, provider);
+    return { success: true, message: 'Redirecting to Google...' };
   } catch (error: any) {
+    console.error('Google sign-in error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Redirect sonrası sonucu kontrol et
+export const handleRedirectResult = async () => {
+  try {
+    if (!auth) {
+      return { success: false, error: 'Firebase auth not initialized' };
+    }
+    
+    const result = await getRedirectResult(auth);
+    if (result) {
+      return { success: true, user: result.user };
+    }
+    return { success: false, error: 'No redirect result' };
+  } catch (error: any) {
+    console.error('Redirect result error:', error);
     return { success: false, error: error.message };
   }
 };

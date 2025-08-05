@@ -5,6 +5,7 @@ import {
   signUpWithEmail, 
   signInWithGoogle, 
   signInWithPhone,
+  handleRedirectResult,
   // logout,
   resetPassword,
   createRecaptchaVerifier 
@@ -45,8 +46,26 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ onLogin, onGuestMode, isMod
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<any>(null);
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
-  // Firebase Auth state değişikliklerini dinle
+  // Firebase Auth state değişikliklerini dinle ve redirect result'u handle et
   useEffect(() => {
+    // Redirect result'u kontrol et
+    const checkRedirectResult = async () => {
+      if (auth) {
+        try {
+          const result = await handleRedirectResult();
+          if (result.success && result.user) {
+            console.log('✅ Google redirect login successful');
+            // Auth state change zaten handle edilecek
+          }
+        } catch (error) {
+          console.error('❌ Redirect result error:', error);
+        }
+      }
+    };
+
+    // Sayfa yüklendiğinde redirect result'u kontrol et
+    checkRedirectResult();
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         // Firebase kullanıcısını uygulama kullanıcısına dönüştür
