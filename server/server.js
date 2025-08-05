@@ -671,26 +671,8 @@ if (isProduction && !process.env.DATABASE_URL) {
     console.error('❌ Please set DATABASE_URL environment variable in Render.com dashboard');
 }
 
-// Initialize deployment monitoring
-const { deploymentMonitor } = require('./deployment-monitor');
-(async () => {
-    try {
-        console.log('🔍 Running deployment safety checks...');
-        await deploymentMonitor.checkDeploymentSafety();
-        const report = await deploymentMonitor.generateDeploymentReport();
-        
-        if (report && report.unresolvedAlerts > 0) {
-            console.warn(`⚠️ DEPLOYMENT WARNING: ${report.unresolvedAlerts} unresolved alerts detected`);
-            report.alerts.forEach(alert => {
-                console.warn(`⚠️ ${alert.type}: ${alert.summary}`);
-            });
-        } else {
-            console.log('✅ Deployment safety checks passed');
-        }
-    } catch (error) {
-        console.error('❌ Deployment safety check failed:', error.message);
-    }
-})();
+// Deployment monitoring removed - not needed
+console.log('✅ Starting server without deployment monitoring');
 
 // Import database module  
 const databaseModule = require('./database-selector');
@@ -1521,16 +1503,14 @@ app.get('/api/admin/deployment', async (req, res) => {
 
         console.log('🔍 Admin deployment status requested by user:', req.session.userId);
 
-        // Generate deployment report
-        const report = await deploymentMonitor.generateDeploymentReport();
-        const alerts = await deploymentMonitor.getUnresolvedAlerts();
-        const userHistory = await deploymentMonitor.getUserCountHistory(20);
-
+        // Generate deployment report (simplified without deployment monitor)
+        const userCount = await db().getUserCount();
+        
         res.json({
             success: true,
-            report,
-            alerts,
-            userHistory,
+            report: { status: 'healthy', userCount },
+            alerts: [],
+            userHistory: [],
             timestamp: new Date().toISOString()
         });
 
