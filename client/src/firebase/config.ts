@@ -4,21 +4,41 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
-// .env dosyasından Firebase yapılandırma bilgilerini alıyoruz
+// Firebase yapılandırma bilgileri - production için hardcode
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBNNQVBlR0ODKicHPv2hYQFaS3t3oEBIWw",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ductorder-bd79a.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "ductorder-bd79a",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "ductorder-bd79a.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "770259223189",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:770259223189:web:5a06c47783926aad9bd19c"
 };
 
-// Firebase uygulamasını başlatıyoruz
-const app = initializeApp(firebaseConfig);
+// Check if Firebase config is valid
+const isValidConfig = firebaseConfig.apiKey && firebaseConfig.projectId;
 
-// Firebase servislerini dışa aktarıyoruz
-export const db = getFirestore(app); // Veritabanı
-export const auth = getAuth(app); // Kimlik doğrulama
-export const storage = getStorage(app); // Dosya depolama
+let app: any = null;
+let db: any = null;
+let auth: any = null;
+let storage: any = null;
+
+if (isValidConfig) {
+  try {
+    // Firebase uygulamasını başlatıyoruz
+    app = initializeApp(firebaseConfig);
+    
+    // Firebase servislerini dışa aktarıyoruz
+    db = getFirestore(app); // Veritabanı
+    auth = getAuth(app); // Kimlik doğrulama
+    storage = getStorage(app); // Dosya depolama
+    
+    console.log('✅ Firebase initialized successfully');
+  } catch (error) {
+    console.error('❌ Firebase initialization failed:', error);
+  }
+} else {
+  console.warn('⚠️ Firebase config invalid - Firebase features disabled');
+}
+
+export { db, auth, storage };
 export default app;
