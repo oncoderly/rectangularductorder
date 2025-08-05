@@ -3,7 +3,6 @@ import {
   createUserWithEmailAndPassword,
   signInWithPhoneNumber,
   GoogleAuthProvider,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut,
