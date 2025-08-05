@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type User as FirebaseUser } from 'firebase/auth';
-import { onAuthStateChange } from './firebase/auth';
+import { onAuthStateChange, handleGoogleRedirectResult } from './firebase/auth';
 import FirebaseAuth from './components/FirebaseAuth';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
@@ -26,9 +26,24 @@ function App() {
   
   console.log('📊 App: Current state - loading:', loading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
 
-  // Firebase Auth State Listener - Basitleştirilmiş
+  // Firebase Auth State Listener + Redirect Result Handler
   useEffect(() => {
-    console.log('🚀 App: Setting up Firebase auth listener...');
+    console.log('🚀 App: Setting up Firebase auth...');
+    
+    // Önce redirect result'u kontrol et
+    const checkRedirectResult = async () => {
+      try {
+        const redirectResult = await handleGoogleRedirectResult();
+        if (redirectResult.success) {
+          console.log('🔄 App: Google redirect login successful');
+        }
+      } catch (error) {
+        console.log('🔄 App: No redirect result or error:', error);
+      }
+    };
+    
+    // Sayfa yüklendiğinde redirect result'u kontrol et
+    checkRedirectResult();
     
     const unsubscribe = onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
       console.log('🔥 App: Auth state changed:', !!firebaseUser, firebaseUser?.email);

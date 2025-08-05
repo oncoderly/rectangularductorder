@@ -1,7 +1,8 @@
 import { 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   updateProfile,
@@ -42,7 +43,7 @@ export const registerWithEmail = async (email: string, password: string, display
   }
 };
 
-// Google ile giriş - TEK POPUP
+// Google ile giriş - REDIRECT (Production Safe)
 let googleLoginInProgress = false;
 
 export const loginWithGoogle = async () => {
@@ -53,24 +54,41 @@ export const loginWithGoogle = async () => {
   }
 
   try {
-    console.log('🚀 Auth: Google login started');
+    console.log('🚀 Auth: Google login started (redirect mode)');
     googleLoginInProgress = true;
     
-    const result = await signInWithPopup(auth, googleProvider);
+    // Redirect kullan - popup yerine
+    await signInWithRedirect(auth, googleProvider);
     
-    console.log('✅ Auth: Google login successful:', result.user.email);
-    return { success: true, user: result.user };
+    // Redirect başlatıldı
+    console.log('🔄 Auth: Redirecting to Google...');
+    return { success: true, message: 'Google\'a yönlendiriliyor...' };
   } catch (error: any) {
-    console.error('❌ Auth: Google login failed:', error);
-    
-    // Popup kapatılırsa error verme
-    if (error.code === 'auth/popup-closed-by-user') {
-      return { success: false, error: 'Giriş işlemi iptal edildi' };
-    }
-    
-    return { success: false, error: error.message };
-  } finally {
+    console.error('❌ Auth: Google redirect failed:', error);
     googleLoginInProgress = false;
+    return { success: false, error: error.message };
+  }
+};
+
+// Redirect sonucunu kontrol et (sayfa yüklendiğinde)
+export const handleGoogleRedirectResult = async () => {
+  try {
+    console.log('🔍 Auth: Checking for redirect result...');
+    const result = await getRedirectResult(auth);
+    
+    if (result) {
+      console.log('✅ Auth: Google redirect successful:', result.user.email);
+      googleLoginInProgress = false;
+      return { success: true, user: result.user };
+    } else {
+      console.log('ℹ️ Auth: No redirect result found');
+      googleLoginInProgress = false;
+      return { success: false, error: 'No redirect result' };
+    }
+  } catch (error: any) {
+    console.error('❌ Auth: Google redirect result error:', error);
+    googleLoginInProgress = false;
+    return { success: false, error: error.message };
   }
 };
 
