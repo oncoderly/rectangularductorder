@@ -131,8 +131,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onRequireAuth, is
                   </div>
                   <button
                     onClick={() => {
+                      console.log('🔍 Dashboard: Login button clicked!');
                       trackButtonClick('login_button', 'dashboard_header');
+                      console.log('🔍 Dashboard: Calling onRequireAuth...');
                       onRequireAuth?.();
+                      console.log('🔍 Dashboard: onRequireAuth called');
                     }}
                     className="dashboard-login-btn"
                   >

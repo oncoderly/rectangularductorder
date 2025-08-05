@@ -23,6 +23,7 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
   isModal, 
   onClose 
 }) => {
+  console.log('🔍 FirebaseAuth: Component rendered', { isModal, authMethod: 'email' });
   const [authMethod, setAuthMethod] = useState<'email' | 'google'>('email');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);

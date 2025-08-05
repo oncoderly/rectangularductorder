@@ -108,7 +108,9 @@ function App() {
   };
 
   const handleRequireAuth = () => {
+    console.log('🔍 App: handleRequireAuth called - opening auth modal');
     setShowAuthModal(true);
+    console.log('🔍 App: showAuthModal set to true');
   };
 
   const closeAuthModal = () => {
