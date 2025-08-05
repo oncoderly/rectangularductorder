@@ -127,15 +127,24 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ onLogin, onGuestMode, isMod
   };
 
   const handleGoogleAuth = async () => {
+    // Double-click protection
+    if (loading) {
+      console.log('🚫 Google Auth: Already in progress, ignoring click');
+      return;
+    }
+
+    console.log('🔍 Google Auth: Starting Google authentication...');
     setLoading(true);
     setError('');
 
     try {
       const result = await signInWithGoogle();
+      console.log('🔍 Google Auth: Result:', result);
       if (!result.success) {
         setError(result.error || 'Google ile giriş başarısız');
       }
     } catch (error: any) {
+      console.error('❌ Google Auth: Error:', error);
       setError(error.message || 'Google ile giriş başarısız');
     } finally {
       setLoading(false);
@@ -207,6 +216,14 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ onLogin, onGuestMode, isMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Double-submit protection
+    if (loading) {
+      console.log('🚫 Submit: Already in progress, ignoring submit');
+      return;
+    }
+    
+    console.log('🔍 Submit: Auth method:', authMethod);
     
     switch (authMethod) {
       case 'email':

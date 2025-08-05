@@ -24,15 +24,17 @@ let storage: any = null;
 
 if (isValidConfig) {
   try {
-    // Firebase uygulamasını başlatıyoruz
+    // Firebase uygulamasını başlatıyoruz (singleton check)
     app = initializeApp(firebaseConfig);
     
-    // Firebase servislerini dışa aktarıyoruz
+    // Firebase servislerini dışa aktarıyoruz (singleton check)
     db = getFirestore(app); // Veritabanı
-    auth = getAuth(app); // Kimlik doğrulama
+    auth = getAuth(app); // Kimlik doğrulama - singleton kullanır
     storage = getStorage(app); // Dosya depolama
     
     console.log('✅ Firebase initialized successfully');
+    console.log('🔍 Firebase app:', !!app);
+    console.log('🔍 Firebase auth:', !!auth);
   } catch (error) {
     console.error('❌ Firebase initialization failed:', error);
   }
