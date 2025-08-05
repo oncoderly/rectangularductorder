@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 const fs = require('fs-extra');
 const path = require('path');
-const { deploymentMonitor } = require('./deployment-monitor');
+// deployment-monitor module removed - not needed
 
 // Environment variables
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -156,7 +156,7 @@ async function createTables() {
                 console.log(`🏗️ [DEPLOY-SAFE] Found ${existingUserCount} existing users in PostgreSQL`);
                 
                 // Track user count for monitoring
-                await deploymentMonitor.trackUserCount(existingUserCount, 'before_table_operations');
+                console.log('📊 User count before table operations:', existingUserCount);
                 
                 // If users exist, DO NOT recreate tables!
                 if (existingUserCount > 0) {
@@ -170,7 +170,7 @@ async function createTables() {
                     // Final verification
                     const verifyCount = await pool.query('SELECT COUNT(*) as count FROM users');
                     const finalVerifyCount = parseInt(verifyCount.rows[0].count);
-                    await deploymentMonitor.trackUserCount(finalVerifyCount, 'after_missing_tables_only');
+                    console.log('📊 User count after missing tables operation:', finalVerifyCount);
                     
                     return;
                 }
@@ -209,7 +209,7 @@ async function createTables() {
         console.log('🏗️ [DEPLOY-SAFE] POST-DEPLOY VERIFICATION: Final user count:', finalCount);
         
         // Track final user count
-        await deploymentMonitor.trackUserCount(finalCount, 'post_deploy_verification');
+        console.log('📊 Final user count verification:', finalCount);
         
         // Verify data integrity
         if (existingUserCount > 0) {
@@ -217,7 +217,7 @@ async function createTables() {
                 console.error(`🏗️ [DEPLOY-SAFE] ❌ CRITICAL: User count dropped from ${existingUserCount} to ${finalCount}!`);
                 
                 // Create deployment alert
-                await deploymentMonitor.createAlert('CRITICAL_USER_DATA_LOSS', {
+                console.error('🚨 CRITICAL_USER_DATA_LOSS:', {
                     previous: existingUserCount,
                     current: finalCount,
                     lost: existingUserCount - finalCount,
@@ -232,7 +232,7 @@ async function createTables() {
                     // Verify restore
                     const afterRestoreCount = await pool.query('SELECT COUNT(*) as count FROM users');
                     const restoredCount = parseInt(afterRestoreCount.rows[0].count);
-                    await deploymentMonitor.trackUserCount(restoredCount, 'after_backup_restore');
+                    console.log('📊 User count after backup restore:', restoredCount);
                 } else {
                     console.error('🏗️ [DEPLOY-SAFE] ❌ Failed to restore from persistent backup');
                 }
