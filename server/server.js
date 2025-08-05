@@ -16,8 +16,85 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 const { google } = require('googleapis');
-const { sendPasswordResetEmail, sendWelcomeEmail } = require('./sendEmail');
-const { sendPasswordResetOTP, sendWelcomeEmail: sendWelcomeEmailGmail } = require('./email-gmail-simple');
+// Email functions implemented using nodemailer
+const createTransporter = () => {
+    return nodemailer.createTransporter({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+            user: process.env.SMTP_USER || process.env.GMAIL_USER,
+            pass: process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD
+        }
+    });
+};
+
+const sendPasswordResetEmail = async (email, resetToken, userName) => {
+    try {
+        const transporter = createTransporter();
+        const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+        
+        await transporter.sendMail({
+            from: process.env.SENDER_EMAIL || process.env.GMAIL_USER,
+            to: email,
+            subject: 'Şifre Sıfırlama',
+            html: `
+                <h2>Şifre Sıfırlama</h2>
+                <p>Merhaba ${userName},</p>
+                <p>Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:</p>
+                <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Şifreyi Sıfırla</a>
+                <p>Bu bağlantı 1 saat geçerlidir.</p>
+            `
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Email gönderme hatası:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+const sendWelcomeEmail = async (email, firstName) => {
+    try {
+        const transporter = createTransporter();
+        
+        await transporter.sendMail({
+            from: process.env.SENDER_EMAIL || process.env.GMAIL_USER,
+            to: email,
+            subject: 'Hoş Geldiniz!',
+            html: `
+                <h2>Hoş Geldiniz ${firstName}!</h2>
+                <p>Hesabınız başarıyla oluşturuldu.</p>
+                <p>Hizmetimizi kullanmaya başlayabilirsiniz.</p>
+            `
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Email gönderme hatası:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+const sendPasswordResetOTP = async (email, otp, userName) => {
+    try {
+        const transporter = createTransporter();
+        
+        await transporter.sendMail({
+            from: process.env.SENDER_EMAIL || process.env.GMAIL_USER,
+            to: email,
+            subject: 'Şifre Sıfırlama Kodu',
+            html: `
+                <h2>Şifre Sıfırlama Kodu</h2>
+                <p>Merhaba ${userName},</p>
+                <p>Şifre sıfırlama kodunuz: <strong>${otp}</strong></p>
+                <p>Bu kod 10 dakika geçerlidir.</p>
+            `
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Email gönderme hatası:', error);
+        return { success: false, error: error.message };
+    }
+};
 
 // Security middleware import
 const {
@@ -784,7 +861,7 @@ app.post('/api/register',
         });
         
         // Send welcome email with Gmail (non-blocking)
-        sendWelcomeEmailGmail(newUser.email, newUser.firstName).catch(error => {
+        sendWelcomeEmail(newUser.email, newUser.firstName).catch(error => {
             console.error('❌ Welcome email failed:', error);
             // Don't block registration if email fails
         });
@@ -1635,26 +1712,14 @@ app.post('/api/forgot-password',
                     throw new Error(emailResult.message);
                 }
                 
-            } else if (emailService === 'gmail') {
-                // Gmail with App Password (Ücretsiz)
-                const { sendPasswordResetEmailGmail } = require('./sendEmailGmail');
+            } else {
+                // Use nodemailer with current SMTP settings
                 const userName = user.firstName || user.email.split('@')[0];
-                const emailResult = await sendPasswordResetEmailGmail(email, resetToken, userName);
+                const emailResult = await sendPasswordResetEmail(email, resetToken, userName);
                 if (emailResult.success) {
-                    console.log(`✅ Gmail password reset email sent to ${email}`);
+                    console.log(`✅ Password reset email sent to ${email}`);
                 } else {
-                    throw new Error(emailResult.message);
-                }
-                
-            } else if (emailService === 'yaani') {
-                // Yaani.com SMTP (Kendi Mail Altyapınız - Tamamen Ücretsiz)
-                const { sendPasswordResetEmailYaani } = require('./sendEmailYaani');
-                const userName = user.firstName || user.email.split('@')[0];
-                const emailResult = await sendPasswordResetEmailYaani(email, resetToken, userName);
-                if (emailResult.success) {
-                    console.log(`✅ Yaani.com password reset email sent to ${email}`);
-                } else {
-                    throw new Error(emailResult.message);
+                    throw new Error(emailResult.error);
                 }
                 
             } else if (emailTransporter) {
