@@ -2266,7 +2266,7 @@ function registerAllRoutes() {
             // Email ile kullanıcıyı bul veya oluştur (Firebase UID yerine)
             let user;
             try {
-                user = await db().getUserByEmail(email);
+                user = await userDB().getUserByEmail(email);
                 console.log('🔍 Firebase Auth: User lookup result:', !!user);
             } catch (dbError) {
                 console.error('❌ Firebase Auth: Database getUserByEmail error:', dbError);
