@@ -33,12 +33,20 @@ function App() {
     // Önce redirect result'u kontrol et
     const checkRedirectResult = async () => {
       try {
+        console.log('🔄 App: Checking Google redirect result...');
         const redirectResult = await handleGoogleRedirectResult();
+        
         if (redirectResult.success) {
-          console.log('🔄 App: Google redirect login successful');
+          console.log('✅ App: Google redirect login successful!');
+          console.log('👤 App: Redirect user data:', redirectResult.user?.email);
+          
+          // Redirect başarılıysa, auth state listener otomatik olarak user'ı set edecek
+          // Bu yüzden burada manuel olarak setUser yapmıyoruz
+        } else {
+          console.log('ℹ️ App: No redirect result:', redirectResult.error);
         }
       } catch (error) {
-        console.log('🔄 App: No redirect result or error:', error);
+        console.error('❌ App: Redirect result error:', error);
       }
     };
     
@@ -46,35 +54,69 @@ function App() {
     checkRedirectResult();
     
     const unsubscribe = onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
-      console.log('🔥 App: Auth state changed:', !!firebaseUser, firebaseUser?.email);
+      console.log('🔥 App: Auth state changed:', !!firebaseUser);
       
       if (firebaseUser) {
+        console.log('👤 App: Firebase user details:', {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          emailVerified: firebaseUser.emailVerified,
+          photoURL: firebaseUser.photoURL
+        });
+        
+        // Kullanıcı rolünü server'dan al
+        let userRole = 'user';
+        try {
+          const idTokenResult = await firebaseUser.getIdTokenResult();
+          userRole = idTokenResult.claims.role || 'user';
+          console.log('🔑 App: User role from token:', userRole);
+        } catch (roleError) {
+          console.log('⚠️ App: Could not get user role, defaulting to user');
+        }
+        
         // Firebase kullanıcısını app user'a dönüştür
         const user: User = {
           id: firebaseUser.uid,
           email: firebaseUser.email || '',
           firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
           lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          role: 'user'
+          role: userRole
         };
         
-        console.log('✅ App: User logged in:', user.email);
+        console.log('✅ App: User logged in successfully:', {
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role
+        });
+        
         setUser(user);
+        setShowAuthModal(false); // Auth modal'ı kapat
         
         // Server session oluştur (background)
         try {
           const idToken = await firebaseUser.getIdToken();
-          fetch('/api/auth/firebase', {
+          console.log('📡 App: Creating server session...');
+          
+          const response = await fetch('/api/auth/firebase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken })
-          }).catch(err => console.log('⚠️ Server session failed:', err));
+          });
+          
+          if (response.ok) {
+            console.log('✅ App: Server session created successfully');
+          } else {
+            console.log('⚠️ App: Server session creation failed');
+          }
         } catch (err) {
-          console.log('⚠️ ID token failed:', err);
+          console.log('⚠️ App: Server session error:', err);
         }
       } else {
-        console.log('❌ App: User logged out');
+        console.log('❌ App: User logged out or null');
         setUser(null);
+        setShowAuthModal(false);
       }
       
       setLoading(false);

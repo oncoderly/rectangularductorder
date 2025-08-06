@@ -12,8 +12,13 @@ import {
 } from 'firebase/auth';
 import { auth } from './config';
 
-// Google Auth Provider (singleton)
+// Google Auth Provider (singleton) - Enhanced
 const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile'); 
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Email ile giriş + Email Doğrulama Kontrolü
 export const loginWithEmail = async (email: string, password: string) => {
@@ -92,7 +97,7 @@ export const loginWithGoogle = async () => {
   }
 };
 
-// Redirect sonucunu kontrol et (sayfa yüklendiğinde)
+// Redirect sonucunu kontrol et (sayfa yüklendiğinde) - Enhanced
 export const handleGoogleRedirectResult = async () => {
   try {
     console.log('🔍 Auth: Checking for redirect result...');
@@ -100,8 +105,21 @@ export const handleGoogleRedirectResult = async () => {
     
     if (result) {
       console.log('✅ Auth: Google redirect successful:', result.user.email);
+      console.log('🎯 Auth: User object:', {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        emailVerified: result.user.emailVerified
+      });
+      
       googleLoginInProgress = false;
-      return { success: true, user: result.user };
+      
+      // Firebase Auth state otomatik olarak güncellenecek
+      return { 
+        success: true, 
+        user: result.user,
+        isNewUser: result.additionalUserInfo?.isNewUser || false
+      };
     } else {
       console.log('ℹ️ Auth: No redirect result found');
       googleLoginInProgress = false;
@@ -109,8 +127,22 @@ export const handleGoogleRedirectResult = async () => {
     }
   } catch (error: any) {
     console.error('❌ Auth: Google redirect result error:', error);
+    console.error('❌ Auth: Error code:', error.code);
+    console.error('❌ Auth: Error message:', error.message);
+    
     googleLoginInProgress = false;
-    return { success: false, error: error.message };
+    
+    // Detaylı hata mesajı
+    let errorMessage = 'Google ile giriş başarısız';
+    if (error.code === 'auth/popup-closed-by-user') {
+      errorMessage = 'Popup kapatıldı';
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      errorMessage = 'Popup iptal edildi';
+    } else if (error.code === 'auth/popup-blocked') {
+      errorMessage = 'Popup engellenmiş';
+    }
+    
+    return { success: false, error: errorMessage, code: error.code };
   }
 };
 
