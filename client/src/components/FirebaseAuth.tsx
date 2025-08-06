@@ -289,9 +289,13 @@ Google
             disabled={loading}
             className="auth-button"
             onClick={(e) => {
+              console.log('🖱️ FirebaseAuth: Button clicked! authMethod:', authMethod);
               if (authMethod === 'google') {
+                console.log('✅ FirebaseAuth: Google method detected, calling handleGoogleAuth...');
                 e.preventDefault();
                 handleGoogleAuth();
+              } else {
+                console.log('📧 FirebaseAuth: Email method, form will submit normally');
               }
             }}
             style={{
