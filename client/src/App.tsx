@@ -55,6 +55,8 @@ function App() {
     
     const unsubscribe = onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
       console.log('🔥 App: Auth state changed:', !!firebaseUser);
+      console.log('🌍 App: Current URL:', window.location.href);
+      console.log('⏰ App: Timestamp:', new Date().toISOString());
       
       if (firebaseUser) {
         console.log('👤 App: Firebase user details:', {
@@ -62,8 +64,10 @@ function App() {
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           emailVerified: firebaseUser.emailVerified,
-          photoURL: firebaseUser.photoURL
+          photoURL: firebaseUser.photoURL,
+          providerData: firebaseUser.providerData
         });
+        console.log('🔑 App: Firebase user token claims incoming...');
         
         // Kullanıcı rolünü server'dan al
         let userRole = 'user';

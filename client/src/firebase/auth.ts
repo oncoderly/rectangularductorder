@@ -101,16 +101,21 @@ export const loginWithGoogle = async () => {
 export const handleGoogleRedirectResult = async () => {
   try {
     console.log('🔍 Auth: Checking for redirect result...');
+    console.log('🌍 Auth: Current URL:', window.location.href);
+    console.log('🔥 Auth: Firebase auth instance:', !!auth);
+    
     const result = await getRedirectResult(auth);
     
     if (result) {
-      console.log('✅ Auth: Google redirect successful:', result.user.email);
-      console.log('🎯 Auth: User object:', {
+      console.log('✅ Auth: Google redirect successful!');
+      console.log('👤 Auth: User details:', {
         uid: result.user.uid,
         email: result.user.email,
         displayName: result.user.displayName,
-        emailVerified: result.user.emailVerified
+        emailVerified: result.user.emailVerified,
+        photoURL: result.user.photoURL
       });
+      console.log('🆔 Auth: Additional info:', (result as any).additionalUserInfo);
       
       googleLoginInProgress = false;
       
@@ -122,6 +127,18 @@ export const handleGoogleRedirectResult = async () => {
       };
     } else {
       console.log('ℹ️ Auth: No redirect result found');
+      console.log('🔍 Auth: Checking if user is already logged in...');
+      
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        console.log('👤 Auth: User already logged in:', currentUser.email);
+        return { 
+          success: true, 
+          user: currentUser,
+          isNewUser: false
+        };
+      }
+      
       googleLoginInProgress = false;
       return { success: false, error: 'No redirect result' };
     }
@@ -129,12 +146,17 @@ export const handleGoogleRedirectResult = async () => {
     console.error('❌ Auth: Google redirect result error:', error);
     console.error('❌ Auth: Error code:', error.code);
     console.error('❌ Auth: Error message:', error.message);
+    console.error('❌ Auth: Full error object:', error);
     
     googleLoginInProgress = false;
     
     // Detaylı hata mesajı
     let errorMessage = 'Google ile giriş başarısız';
-    if (error.code === 'auth/popup-closed-by-user') {
+    if (error.code === 'auth/unauthorized-domain') {
+      errorMessage = 'Domain yetkisiz - Firebase Console authorized domains kontrol edin';
+    } else if (error.code === 'auth/configuration-not-found') {
+      errorMessage = 'Firebase konfigürasyon hatası';
+    } else if (error.code === 'auth/popup-closed-by-user') {
       errorMessage = 'Popup kapatıldı';
     } else if (error.code === 'auth/cancelled-popup-request') {
       errorMessage = 'Popup iptal edildi';
