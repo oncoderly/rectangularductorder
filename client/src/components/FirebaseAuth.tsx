@@ -112,26 +112,40 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
 
   // Google Auth - Redirect Mode
   const handleGoogleAuth = async () => {
-    if (loading) return;
+    console.log('🚀 FirebaseAuth: handleGoogleAuth called!');
+    console.log('🔍 FirebaseAuth: Loading state:', loading);
+    
+    if (loading) {
+      console.log('🚫 FirebaseAuth: Already loading, returning...');
+      return;
+    }
     
     setLoading(true);
     setError('');
     setSuccess('Google\'a yönlendiriliyor...');
+    console.log('✅ FirebaseAuth: State updated, calling loginWithGoogle...');
 
     try {
+      console.log('📡 FirebaseAuth: Calling loginWithGoogle function...');
       const result = await loginWithGoogle();
+      console.log('📊 FirebaseAuth: loginWithGoogle result:', result);
       
       if (!result.success) {
+        console.log('❌ FirebaseAuth: Google login failed:', result.error);
         if (result.error !== 'Giriş işlemi iptal edildi') {
           setError(result.error || 'Google ile giriş başarısız');
           setSuccess('');
         }
       } else {
+        console.log('✅ FirebaseAuth: Google login successful!');
         setSuccess('Google\'a yönlendiriliyor...');
       }
     } catch (error: any) {
+      console.error('💥 FirebaseAuth: Google auth exception:', error);
       setError(error.message || 'Google ile giriş başarısız');
       setSuccess('');
+    } finally {
+      console.log('🏁 FirebaseAuth: handleGoogleAuth completed');
     }
   };
 
