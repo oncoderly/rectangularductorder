@@ -110,32 +110,28 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
     }
   };
 
-  // Google Auth - TEK POPUP
+  // Google Auth - Redirect Mode
   const handleGoogleAuth = async () => {
     if (loading) return;
     
-    console.log('🚀 FirebaseAuth: Google auth starting...');
     setLoading(true);
     setError('');
+    setSuccess('Google\'a yönlendiriliyor...');
 
     try {
       const result = await loginWithGoogle();
       
-      console.log('🔍 FirebaseAuth: Google auth result:', result.success);
-      
       if (!result.success) {
         if (result.error !== 'Giriş işlemi iptal edildi') {
           setError(result.error || 'Google ile giriş başarısız');
+          setSuccess('');
         }
       } else {
-        console.log('✅ FirebaseAuth: Google auth successful');
-        // App.tsx Firebase auth listener will handle the user state
+        setSuccess('Google\'a yönlendiriliyor...');
       }
     } catch (error: any) {
-      console.error('❌ FirebaseAuth: Google auth error:', error);
       setError(error.message || 'Google ile giriş başarısız');
-    } finally {
-      setLoading(false);
+      setSuccess('');
     }
   };
 
@@ -162,6 +158,7 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
     return <ForgotPassword onBack={handleBackFromForgotPassword} />;
   }
 
+
   return (
     <div className={`auth-container ${isModal ? 'auth-modal' : ''}`}>
       {isModal && (
@@ -182,22 +179,16 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
           <button
             type="button"
             className={`auth-method-btn ${authMethod === 'email' ? 'active' : ''}`}
-            onClick={() => {
-              console.log('🔍 FirebaseAuth: Email tab clicked');
-              setAuthMethod('email');
-            }}
+            onClick={() => setAuthMethod('email')}
           >
             📧 Email
           </button>
           <button
             type="button"
             className={`auth-method-btn ${authMethod === 'google' ? 'active' : ''}`}
-            onClick={() => {
-              console.log('🔍 FirebaseAuth: Google tab clicked');
-              setAuthMethod('google');
-            }}
+            onClick={() => setAuthMethod('google')}
           >
-            🔍 Google
+Google
           </button>
         </div>
 
@@ -283,9 +274,26 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
             type="submit"
             disabled={loading}
             className="auth-button"
-            onClick={() => console.log('🔍 FirebaseAuth: Submit button clicked, method:', authMethod)}
+            onClick={(e) => {
+              if (authMethod === 'google') {
+                e.preventDefault();
+                handleGoogleAuth();
+              }
+            }}
+            style={{
+              backgroundColor: authMethod === 'google' ? '#4285f4' : '#007bff',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '6px',
+              fontSize: '16px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1
+            }}
           >
-            {loading ? 'Yükleniyor...' : (
+{loading ? (
+              authMethod === 'google' ? 'Google\'a yönlendiriliyor...' : 'Yükleniyor...'
+            ) : (
               authMethod === 'google' ? 'Google ile Giriş Yap' :
               isLogin ? 'Giriş Yap' : 'Kayıt Ol'
             )}
