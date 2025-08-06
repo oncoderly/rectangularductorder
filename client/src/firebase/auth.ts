@@ -103,8 +103,17 @@ export const handleGoogleRedirectResult = async () => {
     console.log('🔍 Auth: Checking for redirect result...');
     console.log('🌍 Auth: Current URL:', window.location.href);
     console.log('🔥 Auth: Firebase auth instance:', !!auth);
+    console.log('🔍 Auth: Auth instance details:', {
+      app: auth.app?.name,
+      config: auth.config,
+      currentUser: !!auth.currentUser
+    });
     
     const result = await getRedirectResult(auth);
+    console.log('🔍 Auth: Raw redirect result:', result);
+    console.log('🔍 Auth: Redirect result type:', typeof result);
+    console.log('🔍 Auth: Redirect result null?', result === null);
+    console.log('🔍 Auth: Redirect result undefined?', result === undefined);
     
     if (result) {
       console.log('✅ Auth: Google redirect successful!');
@@ -116,6 +125,8 @@ export const handleGoogleRedirectResult = async () => {
         photoURL: result.user.photoURL
       });
       console.log('🆔 Auth: Additional info:', (result as any).additionalUserInfo);
+      console.log('🔑 Auth: Credential:', (result as any).credential);
+      console.log('🌐 Auth: Provider ID:', (result as any).providerId);
       
       googleLoginInProgress = false;
       
@@ -127,9 +138,11 @@ export const handleGoogleRedirectResult = async () => {
       };
     } else {
       console.log('ℹ️ Auth: No redirect result found');
+      console.log('🔍 Auth: result is exactly:', result);
       console.log('🔍 Auth: Checking if user is already logged in...');
       
       const currentUser = auth.currentUser;
+      console.log('👤 Auth: Current user from auth:', currentUser);
       if (currentUser) {
         console.log('👤 Auth: User already logged in:', currentUser.email);
         return { 
