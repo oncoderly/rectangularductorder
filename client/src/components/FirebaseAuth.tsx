@@ -32,7 +32,6 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
   const [success, setSuccess] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -65,7 +64,6 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
         // Email doğrulama kontrolü
         if (result.needsVerification) {
           setNeedsVerification(true);
-          setCurrentUser(result.user);
           setError(result.error || '');
         } else if (!result.success) {
           setError(result.error || 'Bir hata oluştu');
