@@ -69,9 +69,9 @@ function App() {
         let userRole = 'user';
         try {
           const idTokenResult = await firebaseUser.getIdTokenResult();
-          userRole = idTokenResult.claims.role || 'user';
+          userRole = (idTokenResult.claims.role as string) || 'user';
           console.log('🔑 App: User role from token:', userRole);
-        } catch (roleError) {
+        } catch (roleError: any) {
           console.log('⚠️ App: Could not get user role, defaulting to user');
         }
         

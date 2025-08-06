@@ -118,7 +118,7 @@ export const handleGoogleRedirectResult = async () => {
       return { 
         success: true, 
         user: result.user,
-        isNewUser: result.additionalUserInfo?.isNewUser || false
+        isNewUser: (result as any).additionalUserInfo?.isNewUser || false
       };
     } else {
       console.log('ℹ️ Auth: No redirect result found');
