@@ -9,8 +9,7 @@ const pgSession = require('connect-pg-simple')(session);
 const fs = require('fs-extra');
 const axios = require('axios');
 const path = require('path');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+// Passport ve Google OAuth kaldırıldı - Firebase Auth kullanıyoruz
 const twilio = require('twilio');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -354,11 +353,10 @@ async function setupApplication() {
         console.log('✅ SESSION SETUP: Express session middleware configured with store:', 
                    sessionStore ? sessionStore.constructor.name : 'Memory Store');
 
-        // Passport initialization
-        console.log('🔧 Initializing Passport middleware...');
-        app.use(passport.initialize());
-        app.use(passport.session());
-        console.log('✅ Passport middleware initialized');
+        // Passport initialization - DEVRE DIŞI (Firebase Auth kullanıyor)
+        console.log('🔧 Passport middleware DISABLED - using Firebase Auth');
+        // app.use(passport.initialize());
+        // app.use(passport.session());
 
         // CRITICAL: Register all routes AFTER session middleware is configured
         console.log('🔧 Registering all API routes after session middleware...');
@@ -373,8 +371,8 @@ async function setupApplication() {
         
         // Fallback setup without PostgreSQL session store
         app.use(createSessionMiddleware());
-        app.use(passport.initialize());
-        app.use(passport.session());
+        // app.use(passport.initialize()); // DEVRE DIŞI - Firebase Auth
+        // app.use(passport.session()); // DEVRE DIŞI - Firebase Auth
         registerAllRoutes();
         startServer();
     }
@@ -404,7 +402,8 @@ console.log('🔧 GOOGLE_CLIENT_ID available:', !!GOOGLE_CLIENT_ID);
 console.log('🔧 GOOGLE_CLIENT_SECRET available:', !!GOOGLE_CLIENT_SECRET);
 console.log('🔧 SERVER_URL for callback:', SERVER_URL);
 
-if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+// Firebase Auth kullanıldığı için eski Google OAuth devre dışı
+if (false && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     console.log('✅ Setting up Google Strategy...');
     passport.use(new GoogleStrategy({
         clientID: GOOGLE_CLIENT_ID,
@@ -540,20 +539,20 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
     console.log('❌ Missing GOOGLE_CLIENT_SECRET:', !GOOGLE_CLIENT_SECRET);
 }
 
-// Passport serialization
-passport.serializeUser((user, done) => {
-    done(null, user.id);
-});
+// Passport serialization - DEVRE DIŞI (Firebase Auth kullanıyor)
+// passport.serializeUser((user, done) => {
+//     done(null, user.id);
+// });
 
-passport.deserializeUser(async (id, done) => {
-    try {
-        await waitForInit();
-        const user = await userDB().getUserById(id);
-        done(null, user);
-    } catch (error) {
-        done(error, null);
-    }
-});
+// passport.deserializeUser(async (id, done) => {
+//     try {
+//         await waitForInit();
+//         const user = await userDB().getUserById(id);
+//         done(null, user);
+//     } catch (error) {
+//         done(error, null);
+//     }
+// });
 
 // MOVED TO registerAllRoutes() function
 // app.use('/images', express.static(path.join(__dirname, '../public/images')));
@@ -2086,8 +2085,24 @@ function registerAllRoutes() {
         }
     });
     
-    // Google Auth routes that need session
-    console.log('🔧 Registering Google auth route...');
+    // Google Auth routes - DEVRE DIŞI (Firebase Auth kullanıyor)
+    console.log('🔧 Google auth routes DISABLED - using Firebase Auth');
+    
+    // Return 404 for old Google auth routes to prevent confusion
+    app.get('/api/auth/google', (req, res) => {
+        res.status(404).json({ error: 'Google Auth moved to Firebase - use client-side Firebase Auth' });
+    });
+    
+    app.get('/api/auth/google/callback', (req, res) => {
+        res.status(404).json({ error: 'Google Auth callback deprecated - using Firebase Auth' });
+    });
+    
+    app.get('/api/auth/google/success', (req, res) => {
+        res.status(404).json({ error: 'Google Auth success deprecated - using Firebase Auth' });
+    });
+    
+    /*
+    // ESKI GOOGLE AUTH ROUTES - DEVRE DIŞI
     app.get('/api/auth/google', (req, res, next) => {
         console.log('🔍 Google auth endpoint hit');
         console.log('🔍 DEBUG - Request URL:', req.url);
@@ -2207,6 +2222,7 @@ function registerAllRoutes() {
             res.status(500).json({ error: 'Sunucu hatası' });
         }
     });
+    */ // ESKI GOOGLE AUTH ROUTES SONU
 
     // Firebase Auth endpoint - ID token verify ve session oluştur
     app.post('/api/auth/firebase', async (req, res) => {
