@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_APP_TITLE?: string;
   readonly VITE_API_BASE_URL?: string;
+  readonly VITE_API_URL?: string;
   readonly VITE_SERVER_URL?: string;
   readonly VITE_CLIENT_URL?: string;
   readonly VITE_FIREBASE_API_KEY?: string;
@@ -26,6 +27,7 @@ interface ImportMeta {
 
 declare namespace React {
   type FC<P = {}> = FunctionComponent<P>;
+  type FocusEvent<T = Element> = any;
   interface FunctionComponent<P = {}> {
     (props: P, context?: any): any;
   }
