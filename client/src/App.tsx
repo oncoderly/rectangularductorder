@@ -7,7 +7,7 @@ import AdminDashboard from './components/AdminDashboard';
 import ResetPassword from './components/ResetPassword';
 import './index.css';
 
-// const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
+const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
 
 interface User {
   id: string;
@@ -99,7 +99,7 @@ function App() {
           const idToken = await firebaseUser.getIdToken();
           console.log('📡 App: Creating server session...');
           
-          const response = await fetch('/api/auth/firebase', {
+          const response = await fetch(`${API_URL}/api/auth/firebase`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken })
