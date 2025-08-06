@@ -56,13 +56,13 @@ function App() {
           console.log('ℹ️ App: No redirect result:', redirectResult.error);
           console.log('🔍 App: Redirect error code:', redirectResult.code);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ App: Redirect result error:', error);
         console.error('❌ App: Error details:', {
-          name: error.name,
-          message: error.message,
-          code: error.code,
-          stack: error.stack
+          name: error?.name,
+          message: error?.message,
+          code: error?.code,
+          stack: error?.stack
         });
       }
     };
