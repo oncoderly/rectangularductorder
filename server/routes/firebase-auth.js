@@ -203,4 +203,80 @@ router.delete('/admin/delete-user', verifyFirebaseToken, requireAdmin, async (re
   }
 });
 
+// Admin: Kullanıcı rolünü değiştir
+router.post('/admin/set-user-role', verifyFirebaseToken, requireAdmin, async (req, res) => {
+  try {
+    const { uid, role } = req.body;
+    
+    if (!uid || !role) {
+      return res.status(400).json({ error: 'Kullanıcı UID ve rol gerekli' });
+    }
+
+    // Geçerli roller
+    const validRoles = ['user', 'admin', 'moderator'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Geçersiz rol' });
+    }
+
+    // Custom claims güncelle
+    await auth.setCustomUserClaims(uid, { role });
+    
+    res.json({ 
+      success: true, 
+      message: `Kullanıcı rolü ${role} olarak güncellendi`,
+      uid,
+      role
+    });
+  } catch (error) {
+    console.error('❌ Firebase Auth: Failed to set user role:', error.message);
+    res.status(500).json({ error: 'Kullanıcı rolü güncellenemedi' });
+  }
+});
+
+// Admin: Sistem istatistikleri
+router.get('/admin/stats', verifyFirebaseToken, requireAdmin, async (req, res) => {
+  try {
+    // Firebase Auth kullanıcı sayısı
+    const allUsers = await auth.listUsers(1000);
+    const totalUsers = allUsers.users.length;
+    
+    // Aktif kullanıcılar (son 30 gün içinde giriş yapan)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const activeUsers = allUsers.users.filter(user => 
+      user.metadata.lastSignInTime && 
+      new Date(user.metadata.lastSignInTime) > thirtyDaysAgo
+    ).length;
+    
+    // Email doğrulaması yapılanlar
+    const verifiedUsers = allUsers.users.filter(user => user.emailVerified).length;
+    
+    // Adminler
+    const adminUsers = allUsers.users.filter(user => 
+      user.customClaims?.role === 'admin'
+    ).length;
+    
+    // Devre dışı kullanıcılar
+    const disabledUsers = allUsers.users.filter(user => user.disabled).length;
+    
+    const stats = {
+      totalUsers,
+      activeUsers,
+      verifiedUsers,
+      adminUsers,
+      disabledUsers,
+      unverifiedUsers: totalUsers - verifiedUsers,
+      newUsersThisMonth: allUsers.users.filter(user => 
+        new Date(user.metadata.creationTime) > thirtyDaysAgo
+      ).length
+    };
+
+    res.json({ stats });
+  } catch (error) {
+    console.error('❌ Firebase Auth: Failed to get stats:', error.message);
+    res.status(500).json({ error: 'İstatistikler alınamadı' });
+  }
+});
+
 module.exports = router;

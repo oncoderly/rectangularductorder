@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { loginWithEmail, registerWithEmail, loginWithGoogle } from '../firebase/auth';
+import { loginWithEmail, registerWithEmail, loginWithGoogle, resendEmailVerification } from '../firebase/auth';
+import ForgotPassword from './ForgotPassword';
 import './Auth.css';
 
 interface User {
@@ -28,6 +29,10 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -48,27 +53,60 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
     
     setLoading(true);
     setError('');
+    setSuccess('');
+    setNeedsVerification(false);
 
     try {
       let result;
       if (isLogin) {
         console.log('🔐 FirebaseAuth: Email login started');
         result = await loginWithEmail(formData.email, formData.password);
+        
+        // Email doğrulama kontrolü
+        if (result.needsVerification) {
+          setNeedsVerification(true);
+          setCurrentUser(result.user);
+          setError(result.error || '');
+        } else if (!result.success) {
+          setError(result.error || 'Bir hata oluştu');
+        } else {
+          console.log('✅ FirebaseAuth: Email login successful');
+        }
       } else {
         console.log('📝 FirebaseAuth: Email registration started');
         const displayName = `${formData.firstName} ${formData.lastName}`;
         result = await registerWithEmail(formData.email, formData.password, displayName);
-      }
-
-      if (!result.success) {
-        setError(result.error || 'Bir hata oluştu');
-      } else {
-        console.log('✅ FirebaseAuth: Email auth successful');
-        // App.tsx Firebase auth listener will handle the user state
+        
+        if (!result.success) {
+          setError(result.error || 'Bir hata oluştu');
+        } else {
+          setSuccess(result.message || 'Kayıt başarılı!');
+          console.log('✅ FirebaseAuth: Email registration successful');
+        }
       }
     } catch (error: any) {
       console.error('❌ FirebaseAuth: Email auth error:', error);
       setError(error.message || 'Bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Email doğrulama tekrar gönder
+  const handleResendVerification = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const result = await resendEmailVerification();
+      if (result.success) {
+        setSuccess(result.message || 'Doğrulama emaili gönderildi!');
+      } else {
+        setError(result.error || 'Email gönderilemedi');
+      }
+    } catch (error: any) {
+      setError('Email gönderilirken hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -113,6 +151,18 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
       await handleGoogleAuth();
     }
   };
+
+  // Şifre sıfırlama sayfasından dönüş
+  const handleBackFromForgotPassword = () => {
+    setShowForgotPassword(false);
+    setError('');
+    setSuccess('');
+  };
+
+  // Şifre sıfırlama modal'ı göster
+  if (showForgotPassword) {
+    return <ForgotPassword onBack={handleBackFromForgotPassword} />;
+  }
 
   return (
     <div className={`auth-container ${isModal ? 'auth-modal' : ''}`}>
@@ -209,8 +259,26 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
             </div>
           )}
 
+          {/* Success Message */}
+          {success && <div className="auth-success">{success}</div>}
+
           {/* Error Message */}
           {error && <div className="auth-error">{error}</div>}
+
+          {/* Email Verification Warning */}
+          {needsVerification && (
+            <div className="auth-verification">
+              <p>📧 Email adresinizi doğrulayın</p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                className="auth-link"
+                disabled={loading}
+              >
+                Doğrulama emailini tekrar gönder
+              </button>
+            </div>
+          )}
 
           {/* Submit Button */}
           <button
@@ -226,7 +294,7 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
           </button>
         </form>
 
-        {/* Switch between login/register */}
+        {/* Switch between login/register + Forgot Password */}
         {authMethod === 'email' && (
           <div className="auth-switch">
             <button
@@ -236,6 +304,16 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
             >
               {isLogin ? 'Hesabınız yok mu? Kayıt olun' : 'Hesabınız var mı? Giriş yapın'}
             </button>
+            
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="auth-link forgot-password-link"
+              >
+                Şifrenizi mi unuttunuz?
+              </button>
+            )}
           </div>
         )}
 
