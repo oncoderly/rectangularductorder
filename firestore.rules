@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 👤 Kullanıcı Profilleri - Kendi verilerini okuyabilir/yazabilir
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // 👨‍💼 Admin'ler tüm kullanıcıları görebilir
+      allow read: if request.auth != null && 
+                     request.auth.token.role == 'admin';
+      
+      // 👨‍💼 Admin'ler kullanıcı bilgilerini güncelleyebilir
+      allow write: if request.auth != null && 
+                      request.auth.token.role == 'admin';
+    }
+    
+    // 📦 Siparişler - Kullanıcı kendi siparişlerini görebilir/oluşturabilir
+    match /orders/{orderId} {
+      // Kullanıcı kendi siparişlerini görebilir
+      allow read, write: if request.auth != null && 
+                            request.auth.uid == resource.data.userId;
+      
+      // Yeni sipariş oluşturma - userId kontrollü
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      // 👨‍💼 Admin'ler tüm siparişleri görebilir
+      allow read, write: if request.auth != null && 
+                            request.auth.token.role == 'admin';
+    }
+    
+    // 🔧 Ürün Katalogu - Herkes okuyabilir, sadece admin yazabilir
+    match /products/{productId} {
+      // Herkes ürünleri görebilir (authentication gerekli)
+      allow read: if request.auth != null;
+      
+      // 👨‍💼 Sadece admin'ler ürün ekleyebilir/düzenleyebilir
+      allow write: if request.auth != null && 
+                      request.auth.token.role == 'admin';
+    }
+    
+    // ⚙️ Sistem Ayarları - Sadece admin erişimi
+    match /settings/{settingId} {
+      allow read, write: if request.auth != null && 
+                            request.auth.token.role == 'admin';
+    }
+    
+    // 📊 Analytics ve Loglar - Sadece admin okuyabilir
+    match /analytics/{docId} {
+      allow read: if request.auth != null && 
+                     request.auth.token.role == 'admin';
+      allow write: if request.auth != null;
+    }
+    
+    // 📝 Destek Talepleri
+    match /support/{ticketId} {
+      // Kullanıcı kendi destek taleplerini görebilir
+      allow read, write: if request.auth != null && 
+                            request.auth.uid == resource.data.userId;
+      
+      // Yeni destek talebi oluşturma
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      // 👨‍💼 Admin'ler tüm destek taleplerini görebilir
+      allow read, write: if request.auth != null && 
+                            request.auth.token.role == 'admin';
+    }
+    
+    // 🚫 Diğer tüm koleksiyonlar için erişim engellendi
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
