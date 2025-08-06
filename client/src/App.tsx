@@ -34,19 +34,36 @@ function App() {
     const checkRedirectResult = async () => {
       try {
         console.log('🔄 App: Checking Google redirect result...');
+        console.log('🌐 App: Current URL when checking redirect:', window.location.href);
+        console.log('🔍 App: URL search params:', window.location.search);
+        console.log('🔍 App: URL hash:', window.location.hash);
+        
         const redirectResult = await handleGoogleRedirectResult();
+        console.log('📊 App: Redirect result received:', redirectResult);
         
         if (redirectResult.success) {
           console.log('✅ App: Google redirect login successful!');
-          console.log('👤 App: Redirect user data:', redirectResult.user?.email);
+          console.log('👤 App: Redirect user data:', {
+            email: redirectResult.user?.email,
+            uid: redirectResult.user?.uid,
+            displayName: redirectResult.user?.displayName,
+            isNewUser: redirectResult.isNewUser
+          });
           
           // Redirect başarılıysa, auth state listener otomatik olarak user'ı set edecek
           // Bu yüzden burada manuel olarak setUser yapmıyoruz
         } else {
           console.log('ℹ️ App: No redirect result:', redirectResult.error);
+          console.log('🔍 App: Redirect error code:', redirectResult.code);
         }
       } catch (error) {
         console.error('❌ App: Redirect result error:', error);
+        console.error('❌ App: Error details:', {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
       }
     };
     
@@ -155,8 +172,9 @@ function App() {
 
   const handleRequireAuth = () => {
     console.log('🔍 App: handleRequireAuth called - opening auth modal');
+    console.log('🔍 App: Current showAuthModal state:', showAuthModal);
     setShowAuthModal(true);
-    console.log('🔍 App: showAuthModal set to true');
+    console.log('✅ App: showAuthModal set to true');
   };
 
   const closeAuthModal = () => {
