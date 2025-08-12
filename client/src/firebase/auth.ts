@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithRedirect,
   getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   updateProfile,
@@ -80,20 +81,28 @@ export const loginWithGoogle = async () => {
     return { success: false, error: 'Giriş işlemi devam ediyor' };
   }
 
+  googleLoginInProgress = true;
+
+  console.log('🚀 Auth: Google login started (redirect mode)');
   try {
-    console.log('🚀 Auth: Google login started (redirect mode)');
-    googleLoginInProgress = true;
-    
-    // Redirect kullan - popup yerine
+    // İlk olarak redirect dene
     await signInWithRedirect(auth, googleProvider);
-    
-    // Redirect başlatıldı
     console.log('🔄 Auth: Redirecting to Google...');
     return { success: true, message: 'Google\'a yönlendiriliyor...' };
-  } catch (error: any) {
-    console.error('❌ Auth: Google redirect failed:', error);
-    googleLoginInProgress = false;
-    return { success: false, error: error.message };
+  } catch (redirectError: any) {
+    console.warn('⚠️ Auth: Redirect failed, trying popup instead', redirectError);
+
+    try {
+      // Redirect başarısız olursa popup'a düş
+      const popupResult = await signInWithPopup(auth, googleProvider);
+      console.log('✅ Auth: Popup login successful');
+      return { success: true, user: popupResult.user };
+    } catch (error: any) {
+      console.error('❌ Auth: Google login failed:', error);
+      return { success: false, error: error.message };
+    } finally {
+      googleLoginInProgress = false;
+    }
   }
 };
 
