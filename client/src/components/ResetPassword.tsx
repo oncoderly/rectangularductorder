@@ -1,30 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { supabase } from '../supabase/config';
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { useInputClear } from '../hooks/useInputClear';
 import './ResetPassword.css';
 
 const ResetPassword: React.FC = () => {
-  const [token, setToken] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [message, setMessage] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isValidToken, setIsValidToken] = useState<boolean>(true);
-  
-  // Input clear hook'unu kullan
+  const { updatePassword } = useSupabaseAuth();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isValidLink, setIsValidLink] = useState(true);
+
   const { createPlaceholderFocusHandler } = useInputClear();
 
   useEffect(() => {
-    // URL'den token parametresini al
-    const urlParams = new URLSearchParams(window.location.search);
-    const tokenParam = urlParams.get('token');
-    
-    if (tokenParam) {
-      setToken(tokenParam);
+    const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      supabase.auth
+        .setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        .then(({ error }) => {
+          if (error) {
+            setError('Geçersiz veya süresi dolmuş bağlantı');
+            setIsValidLink(false);
+          }
+        });
     } else {
       setError('Geçersiz şifre sıfırlama bağlantısı');
-      setIsValidToken(false);
+      setIsValidLink(false);
     }
   }, []);
 
@@ -33,7 +43,6 @@ const ResetPassword: React.FC = () => {
     setError('');
     setMessage('');
 
-    // Form validasyonu
     if (!newPassword || !confirmPassword) {
       setError('Lütfen tüm alanları doldurun');
       return;
@@ -52,26 +61,20 @@ const ResetPassword: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await axios.post('/api/reset-password', {
-        token,
-        newPassword
-      });
-
-      setMessage('Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz.');
-      setNewPassword('');
-      setConfirmPassword('');
-      
-      // 3 saniye sonra ana sayfaya yönlendir
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 3000);
-
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
+      const { error } = await updatePassword(newPassword);
+      if (error) {
+        setError(error.message || 'Şifre sıfırlama sırasında bir hata oluştu');
       } else {
-        setError('Şifre sıfırlama sırasında bir hata oluştu');
+        setMessage('Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz.');
+        setNewPassword('');
+        setConfirmPassword('');
+
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 3000);
       }
+    } catch (err) {
+      setError('Şifre sıfırlama sırasında bir hata oluştu');
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +84,7 @@ const ResetPassword: React.FC = () => {
     window.location.href = '/';
   };
 
-  if (!isValidToken) {
+  if (!isValidLink) {
     return (
       <div className="reset-password-container">
         <div className="reset-password-card">
@@ -89,12 +92,12 @@ const ResetPassword: React.FC = () => {
             <h1>🏭 Hava Kanalı Sipariş Sistemi</h1>
             <h2>⚠️ Geçersiz Bağlantı</h2>
           </div>
-          
+
           <div className="error-message">
             <p>{error}</p>
           </div>
-          
-          <button 
+
+          <button
             onClick={goToHome}
             className="btn btn-primary"
           >
@@ -166,7 +169,7 @@ const ResetPassword: React.FC = () => {
         </form>
 
         <div className="reset-password-footer">
-          <button 
+          <button
             onClick={goToHome}
             className="btn btn-secondary"
             disabled={isLoading}
@@ -180,3 +183,4 @@ const ResetPassword: React.FC = () => {
 };
 
 export default ResetPassword;
+
