@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { resetPassword } from '../firebase/auth';
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import './Auth.css';
 
 interface ForgotPasswordProps {
@@ -7,13 +7,14 @@ interface ForgotPasswordProps {
 }
 
 const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
+  const { resetPassword } = useSupabaseAuth();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  // Firebase ile şifre sıfırlama
+  // Supabase ile şifre sıfırlama
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -27,13 +28,13 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
     setIsLoading(true);
 
     try {
-      const result = await resetPassword(email);
+      const { error } = await resetPassword(email);
       
-      if (result.success) {
-        setMessage(result.message || 'Şifre sıfırlama bağlantısı gönderildi!');
-        setEmailSent(true);
+      if (error) {
+        setError(error.message || 'Bir hata oluştu');
       } else {
-        setError(result.error || 'Bir hata oluştu');
+        setMessage('Şifre sıfırlama bağlantısı gönderildi!');
+        setEmailSent(true);
       }
     } catch (error: any) {
       setError('Bir hata oluştu. Lütfen tekrar deneyin.');

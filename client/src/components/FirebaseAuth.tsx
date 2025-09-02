@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { loginWithEmail, registerWithEmail, loginWithGoogle, resendEmailVerification } from '../firebase/auth';
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import ForgotPassword from './ForgotPassword';
 import './Auth.css';
 
@@ -19,19 +19,19 @@ interface FirebaseAuthProps {
 }
 
 const FirebaseAuth: React.FC<FirebaseAuthProps> = ({ 
-  onLogin: _onLogin, // Firebase auth listener in App.tsx handles user state
+  onLogin,
   onGuestMode, 
   isModal, 
   onClose 
 }) => {
-  console.log('🔍 FirebaseAuth: Component rendered', { isModal, authMethod: 'email' });
-  const [authMethod, setAuthMethod] = useState<'email' | 'google'>('email');
+  console.log('🔍 SupabaseAuth: Component rendered', { isModal, authMethod: 'email' });
+  const { signIn, signUp, resetPassword } = useSupabaseAuth();
+  const [authMethod, setAuthMethod] = useState<'email'>('email');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -53,111 +53,51 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
     setLoading(true);
     setError('');
     setSuccess('');
-    setNeedsVerification(false);
 
     try {
-      let result;
       if (isLogin) {
-        console.log('🔐 FirebaseAuth: Email login started');
-        result = await loginWithEmail(formData.email, formData.password);
+        console.log('🔐 SupabaseAuth: Email login started');
+        const { data, error } = await signIn(formData.email, formData.password);
         
-        // Email doğrulama kontrolü
-        if (result.needsVerification) {
-          setNeedsVerification(true);
-          setError(result.error || '');
-        } else if (!result.success) {
-          setError(result.error || 'Bir hata oluştu');
-        } else {
-          console.log('✅ FirebaseAuth: Email login successful');
+        if (error) {
+          setError(error.message || 'Giriş başarısız');
+        } else if (data.user) {
+          console.log('✅ SupabaseAuth: Email login successful');
+          onLogin({
+            id: data.user.id,
+            email: data.user.email || '',
+            firstName: data.user.user_metadata?.firstName || '',
+            lastName: data.user.user_metadata?.lastName || '',
+            role: data.user.user_metadata?.role || 'user'
+          });
         }
       } else {
-        console.log('📝 FirebaseAuth: Email registration started');
-        const displayName = `${formData.firstName} ${formData.lastName}`;
-        result = await registerWithEmail(formData.email, formData.password, displayName);
+        console.log('📝 SupabaseAuth: Email registration started');
+        const { data, error } = await signUp(formData.email, formData.password, {
+          firstName: formData.firstName,
+          lastName: formData.lastName
+        });
         
-        if (!result.success) {
-          setError(result.error || 'Bir hata oluştu');
+        if (error) {
+          setError(error.message || 'Kayıt başarısız');
         } else {
-          setSuccess(result.message || 'Kayıt başarılı!');
-          console.log('✅ FirebaseAuth: Email registration successful');
+          setSuccess('Kayıt başarılı! Email adresinizi kontrol edin.');
+          console.log('✅ SupabaseAuth: Email registration successful');
         }
       }
     } catch (error: any) {
-      console.error('❌ FirebaseAuth: Email auth error:', error);
+      console.error('❌ SupabaseAuth: Email auth error:', error);
       setError(error.message || 'Bir hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
-  // Email doğrulama tekrar gönder
-  const handleResendVerification = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const result = await resendEmailVerification();
-      if (result.success) {
-        setSuccess(result.message || 'Doğrulama emaili gönderildi!');
-      } else {
-        setError(result.error || 'Email gönderilemedi');
-      }
-    } catch (error: any) {
-      setError('Email gönderilirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Google Auth - Redirect Mode
-  const handleGoogleAuth = async () => {
-    console.log('🚀 FirebaseAuth: handleGoogleAuth called!');
-    console.log('🔍 FirebaseAuth: Loading state:', loading);
-    
-    if (loading) {
-      console.log('🚫 FirebaseAuth: Already loading, returning...');
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
-    setSuccess('Google\'a yönlendiriliyor...');
-    console.log('✅ FirebaseAuth: State updated, calling loginWithGoogle...');
-
-    try {
-      console.log('📡 FirebaseAuth: Calling loginWithGoogle function...');
-      const result = await loginWithGoogle();
-      console.log('📊 FirebaseAuth: loginWithGoogle result:', result);
-      
-      if (!result.success) {
-        console.log('❌ FirebaseAuth: Google login failed:', result.error);
-        if (result.error !== 'Giriş işlemi iptal edildi') {
-          setError(result.error || 'Google ile giriş başarısız');
-          setSuccess('');
-        }
-      } else {
-        console.log('✅ FirebaseAuth: Google login successful!');
-        setSuccess('Google\'a yönlendiriliyor...');
-      }
-    } catch (error: any) {
-      console.error('💥 FirebaseAuth: Google auth exception:', error);
-      setError(error.message || 'Google ile giriş başarısız');
-      setSuccess('');
-    } finally {
-      console.log('🏁 FirebaseAuth: handleGoogleAuth completed');
-    }
-  };
 
   // Form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (authMethod === 'email') {
-      await handleEmailAuth();
-    } else if (authMethod === 'google') {
-      await handleGoogleAuth();
-    }
+    await handleEmailAuth();
   };
 
   // Şifre sıfırlama sayfasından dönüş
@@ -188,78 +128,49 @@ const FirebaseAuth: React.FC<FirebaseAuthProps> = ({
           {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
         </h2>
 
-        {/* Auth Method Selection */}
-        <div className="auth-method-selection">
-          <button
-            type="button"
-            className={`auth-method-btn ${authMethod === 'email' ? 'active' : ''}`}
-            onClick={() => setAuthMethod('email')}
-          >
-            📧 Email
-          </button>
-          <button
-            type="button"
-            className={`auth-method-btn ${authMethod === 'google' ? 'active' : ''}`}
-            onClick={() => setAuthMethod('google')}
-          >
-Google
-          </button>
-        </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {/* Email Form */}
-          {authMethod === 'email' && (
+          <input
+            type="email"
+            name="email"
+            placeholder="E-posta"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+            className="auth-input"
+          />
+          
+          <input
+            type="password"
+            name="password"
+            placeholder="Şifre"
+            value={formData.password}
+            onChange={handleInputChange}
+            required
+            className="auth-input"
+          />
+          
+          {!isLogin && (
             <>
               <input
-                type="email"
-                name="email"
-                placeholder="E-posta"
-                value={formData.email}
+                type="text"
+                name="firstName"
+                placeholder="Ad"
+                value={formData.firstName}
                 onChange={handleInputChange}
                 required
                 className="auth-input"
               />
-              
               <input
-                type="password"
-                name="password"
-                placeholder="Şifre"
-                value={formData.password}
+                type="text"
+                name="lastName"
+                placeholder="Soyad"
+                value={formData.lastName}
                 onChange={handleInputChange}
                 required
                 className="auth-input"
               />
-              
-              {!isLogin && (
-                <>
-                  <input
-                    type="text"
-                    name="firstName"
-                    placeholder="Ad"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                    className="auth-input"
-                  />
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Soyad"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    required
-                    className="auth-input"
-                  />
-                </>
-              )}
             </>
-          )}
-
-          {/* Google Info */}
-          {authMethod === 'google' && (
-            <div className="google-auth-info">
-              <p>Google hesabınızla tek tıkla giriş yapın</p>
-            </div>
           )}
 
           {/* Success Message */}
@@ -268,78 +179,36 @@ Google
           {/* Error Message */}
           {error && <div className="auth-error">{error}</div>}
 
-          {/* Email Verification Warning */}
-          {needsVerification && (
-            <div className="auth-verification">
-              <p>📧 Email adresinizi doğrulayın</p>
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                className="auth-link"
-                disabled={loading}
-              >
-                Doğrulama emailini tekrar gönder
-              </button>
-            </div>
-          )}
-
           {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             className="auth-button"
-            onClick={(e) => {
-              console.log('🖱️ FirebaseAuth: Button clicked! authMethod:', authMethod);
-              if (authMethod === 'google') {
-                console.log('✅ FirebaseAuth: Google method detected, calling handleGoogleAuth...');
-                e.preventDefault();
-                handleGoogleAuth();
-              } else {
-                console.log('📧 FirebaseAuth: Email method, form will submit normally');
-              }
-            }}
-            style={{
-              backgroundColor: authMethod === 'google' ? '#4285f4' : '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '6px',
-              fontSize: '16px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
-            }}
           >
-{loading ? (
-              authMethod === 'google' ? 'Google\'a yönlendiriliyor...' : 'Yükleniyor...'
-            ) : (
-              authMethod === 'google' ? 'Google ile Giriş Yap' :
-              isLogin ? 'Giriş Yap' : 'Kayıt Ol'
-            )}
+            {loading ? 'Yükleniyor...' : (isLogin ? 'Giriş Yap' : 'Kayıt Ol')}
           </button>
         </form>
 
         {/* Switch between login/register + Forgot Password */}
-        {authMethod === 'email' && (
-          <div className="auth-switch">
+        <div className="auth-switch">
+          <button
+            type="button"
+            onClick={() => setIsLogin(!isLogin)}
+            className="auth-link"
+          >
+            {isLogin ? 'Hesabınız yok mu? Kayıt olun' : 'Hesabınız var mı? Giriş yapın'}
+          </button>
+          
+          {isLogin && (
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="auth-link"
+              onClick={() => setShowForgotPassword(true)}
+              className="auth-link forgot-password-link"
             >
-              {isLogin ? 'Hesabınız yok mu? Kayıt olun' : 'Hesabınız var mı? Giriş yapın'}
+              Şifrenizi mi unuttunuz?
             </button>
-            
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                className="auth-link forgot-password-link"
-              >
-                Şifrenizi mi unuttunuz?
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Guest Mode */}
         {onGuestMode && (

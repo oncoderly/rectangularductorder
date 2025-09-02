@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type User as FirebaseUser } from 'firebase/auth';
-import { onAuthStateChange, handleGoogleRedirectResult } from './firebase/auth';
+import { useSupabaseAuth } from './hooks/useSupabaseAuth';
 import FirebaseAuth from './components/FirebaseAuth';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
@@ -19,147 +18,47 @@ interface User {
 
 function App() {
   console.log('🏁 App: Component initializing...');
+  const { user: supabaseUser, loading: authLoading, signOut } = useSupabaseAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
   
-  console.log('📊 App: Current state - loading:', loading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
+  console.log('📊 App: Current state - authLoading:', authLoading, 'user:', !!user, 'showAdminDashboard:', showAdminDashboard);
 
-  // Firebase Auth State Listener + Redirect Result Handler
+  // Supabase Auth State Listener
   useEffect(() => {
-    console.log('🚀 App: Setting up Firebase auth...');
-    
-    // Önce redirect result'u kontrol et
-    const checkRedirectResult = async () => {
-      try {
-        console.log('🔄 App: Checking Google redirect result...');
-        console.log('🌐 App: Current URL when checking redirect:', window.location.href);
-        console.log('🔍 App: URL search params:', window.location.search);
-        console.log('🔍 App: URL hash:', window.location.hash);
-        
-        const redirectResult = await handleGoogleRedirectResult();
-        console.log('📊 App: Redirect result received:', redirectResult);
-        
-        if (redirectResult.success) {
-          console.log('✅ App: Google redirect login successful!');
-          console.log('👤 App: Redirect user data:', {
-            email: redirectResult.user?.email,
-            uid: redirectResult.user?.uid,
-            displayName: redirectResult.user?.displayName,
-            isNewUser: redirectResult.isNewUser
-          });
-          
-          // Redirect başarılıysa, auth state listener otomatik olarak user'ı set edecek
-          // Bu yüzden burada manuel olarak setUser yapmıyoruz
-        } else {
-          console.log('ℹ️ App: No redirect result:', redirectResult.error);
-          console.log('🔍 App: Redirect error code:', redirectResult.code);
-        }
-      } catch (error: any) {
-        console.error('❌ App: Redirect result error:', error);
-        console.error('❌ App: Error details:', {
-          name: error?.name,
-          message: error?.message,
-          code: error?.code,
-          stack: error?.stack
-        });
-      }
-    };
-    
-    // Sayfa yüklendiğinde redirect result'u kontrol et
-    checkRedirectResult();
-    
-    const unsubscribe = onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
-      console.log('🔥 App: Auth state changed:', !!firebaseUser);
-      console.log('🌍 App: Current URL:', window.location.href);
-      console.log('⏰ App: Timestamp:', new Date().toISOString());
-      
-      if (firebaseUser) {
-        console.log('👤 App: Firebase user details:', {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          emailVerified: firebaseUser.emailVerified,
-          photoURL: firebaseUser.photoURL,
-          providerData: firebaseUser.providerData
-        });
-        console.log('🔑 App: Firebase user token claims incoming...');
-        
-        // Kullanıcı rolünü server'dan al
-        let userRole = 'user';
-        try {
-          const idTokenResult = await firebaseUser.getIdTokenResult();
-          userRole = (idTokenResult.claims.role as string) || 'user';
-          console.log('🔑 App: User role from token:', userRole);
-        } catch (roleError: any) {
-          console.log('⚠️ App: Could not get user role, defaulting to user');
-        }
-        
-        // Firebase kullanıcısını app user'a dönüştür
-        const user: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          role: userRole
-        };
-        
-        console.log('✅ App: User logged in successfully:', {
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role
-        });
-        
-        setUser(user);
-        setShowAuthModal(false); // Auth modal'ı kapat
-        
-        // Server session oluştur (background)
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          console.log('📡 App: Creating server session...');
-          
-          const response = await fetch(`${API_URL}/api/auth/firebase`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken })
-          });
-          
-          if (response.ok) {
-            console.log('✅ App: Server session created successfully');
-          } else {
-            console.log('⚠️ App: Server session creation failed');
-          }
-        } catch (err) {
-          console.log('⚠️ App: Server session error:', err);
-        }
-      } else {
-        console.log('❌ App: User logged out or null');
-        setUser(null);
-        setShowAuthModal(false);
-      }
-      
-      setLoading(false);
-    });
+    if (supabaseUser) {
+      setUser({
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        firstName: supabaseUser.user_metadata?.firstName || '',
+        lastName: supabaseUser.user_metadata?.lastName || '',
+        role: supabaseUser.user_metadata?.role || 'user'
+      });
+    } else {
+      setUser(null);
+    }
+  }, [supabaseUser]);
 
-    // Admin dashboard URL check
+  // Admin dashboard URL check
+  useEffect(() => {
     if (window.location.pathname.includes('admin')) {
       setShowAdminDashboard(true);
     }
-
-    return () => unsubscribe();
   }, []);
 
-  // Firebase tabanlı logout
+  // Supabase logout
   const handleLogout = async () => {
     try {
-      const { logout } = await import('./firebase/auth');
-      await logout();
-      setUser(null);
-      console.log('✅ App: User logged out successfully');
+      const { error } = await signOut();
+      if (error) {
+        console.error('❌ App: Logout failed:', error.message);
+      } else {
+        console.log('✅ App: User logged out successfully');
+      }
+      setShowAdminDashboard(false);
     } catch (error) {
-      console.error('❌ App: Logout failed:', error);
+      console.error('❌ App: Logout error:', error);
     }
   };
 
@@ -185,7 +84,7 @@ function App() {
     setShowAdminDashboard(!showAdminDashboard);
   };
 
-  if (loading) {
+  if (authLoading) {
     console.log('⏳ App: Still loading, showing loading screen...');
     return (
       <div className="min-h-screen flex items-center justify-center">
