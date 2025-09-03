@@ -31,7 +31,15 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
       const { error } = await resetPassword(email);
       
       if (error) {
-        setError(error.message || 'Bir hata oluştu');
+        let errorMessage = 'Bir hata oluştu';
+        if (error.message.includes('Invalid email')) {
+          errorMessage = 'Geçersiz e-posta adresi';
+        } else if (error.message.includes('User not found')) {
+          errorMessage = 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Çok fazla istek gönderdiniz. Lütfen daha sonra tekrar deneyin';
+        }
+        setError(errorMessage);
       } else {
         setMessage('Şifre sıfırlama bağlantısı gönderildi!');
         setEmailSent(true);
