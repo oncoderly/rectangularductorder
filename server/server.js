@@ -29,7 +29,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Catch-all handler: client-side routing için
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(clientPath, 'index.html'));
 });
 
