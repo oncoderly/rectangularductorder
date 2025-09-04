@@ -9,8 +9,9 @@ interface AuthState {
 }
 
 interface AuthActions {
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ error: AuthError | null }>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ data: any, error: AuthError | null }>
+  signIn: (email: string, password: string) => Promise<{ data: any, error: AuthError | null }>
+  signInWithGoogle: () => Promise<{ data: any, error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
 }
@@ -63,7 +64,7 @@ export function useSupabaseAuth(): AuthState & AuthActions {
     })
 
     setLoading(false)
-    return { error }
+    return { data, error }
   }
 
   // Sign in function
@@ -76,7 +77,22 @@ export function useSupabaseAuth(): AuthState & AuthActions {
     })
 
     setLoading(false)
-    return { error }
+    return { data, error }
+  }
+
+  // Google Sign in function
+  const signInWithGoogle = async () => {
+    setLoading(true)
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    })
+
+    setLoading(false)
+    return { data, error }
   }
 
   // Sign out function
@@ -104,6 +120,7 @@ export function useSupabaseAuth(): AuthState & AuthActions {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     resetPassword
   }

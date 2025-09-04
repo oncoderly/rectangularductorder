@@ -4,6 +4,7 @@ import FirebaseAuth from './components/FirebaseAuth';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import ResetPassword from './components/ResetPassword';
+import AuthCallback from './components/AuthCallback';
 import './index.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (window.location.origin);
@@ -97,10 +98,14 @@ function App() {
 
   console.log('🎨 App: About to render with showAdminDashboard:', showAdminDashboard, 'user:', !!user);
   
-  // Check if this is a reset password page
+  // Check for special pages
   const path = window.location.pathname;
   if (path === '/reset-password') {
     return <ResetPassword />;
+  }
+  
+  if (path === '/auth/callback') {
+    return <AuthCallback />;
   }
   
   return (
