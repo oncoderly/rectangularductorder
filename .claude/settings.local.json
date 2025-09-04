@@ -38,7 +38,9 @@
       "Bash(powershell:*)",
       "Bash(del:*)",
       "Bash(mv:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "WebFetch(domain:localhost)",
+      "WebFetch(domain:rectangularductorder.vercel.app)"
     ],
     "deny": []
   }
